@@ -16,35 +16,39 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <ucontext.h>
 #include <stdint.h>
 
 typedef uint my_pthread_t;
 
-// TODO: Bharti
-typedef struct _ll {
-  void get_head();
-  void get_tail();
-  void delete_head();
-  void insert_head(void* thing);
-  void insert_tail(void* thing);
+typedef struct _node {
+	void* data;
+	struct _ll* next;
+} node_t;
+
+typedef struct _ll { 
+	 node_t* head;
+	 node_t* tail;
 } linked_list_t;
+ 
+typedef struct _hashmap {
+ 
+} hashmap;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
   /* add something here */
   // 0 free, 1 locked
-  bool locked = 0;
+  int locked;// = 0;
   // 0 if not locked
-  uint32_t owner = 0;
+  uint32_t owner;// = 0;
   // priority assigned to this mutex. Updated when any thread blocks on this mutex.
-  int hoisted_priority = 127;
+  int hoisted_priority;// = 127;
 } my_pthread_mutex_t;
 
 typedef struct threadControlBlock {
 	/* add something here */
-  uint32_t id;
+  int32_t id;
   void* stack_ptr;
   ucontext_t context;
   char retval;
@@ -59,30 +63,37 @@ typedef struct threadControlBlock {
 
 
 // TODO: adapt to priority queue
-/* define your data structures here: */
 typedef linked_list_t ready_q_t;
 
-// TODO: Bharti
-typedef struct _hashmap {
-  
-  tcb* get(int id);
-  void put(tcb* thing);
-} hashmap;
-
 // ready queue, will be inited when scheduler created
-ready_q_t* ready = 0;
+ready_q_t* ready;//=0
 
 // if scheduler is running
-bool in_scheduler = 0;
+int in_scheduler;// = 0;
 
 // set by signal interrupt if current context is 0 but a scheduled swap should occur
 // will be set by the scheduler to 0 after each scheduling decision
-bool should_swap = 0;
+int should_swap;// = 0;
 
 hashmap done;
 
 /* Function Declarations: */
 
+/* Datastructure functions */
+
+void printList(linked_list_t* list, void (*fptr)(void *));
+void* get_head(linked_list_t* list);
+void* get_tail(linked_list_t* list);
+node_t* create_node(void* data);
+linked_list_t* creat_list(void* data);
+void insert_head(linked_list_t* head, void* thing);
+void insert_tail(linked_list_t* head, void* thing);
+void* delete_head(linked_list_t* list);
+ 
+tcb* get(int id);
+void put(tcb* thing);
+
+ 
 /* create a new thread */
 /**
  * If it's the first thing created (ready = 0), spin up a new scheduler.
