@@ -5,11 +5,11 @@
 // name:
 // username of iLab:
 // iLab Server:
-#include "my_pthread_t.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "my_pthread_t.h"
 
-void printList(linked_list_t* list, void (*fptr)(void *)){
+void print_list(linked_list_t* list, void (*fptr)(void *)){
 	if (list == NULL) {return;}
 	node_t* ptr = list->head;
 	while (ptr != NULL) 
@@ -17,6 +17,7 @@ void printList(linked_list_t* list, void (*fptr)(void *)){
         	(*fptr)(ptr ->data); 
         	ptr = ptr->next; 
 	} 
+	printf("\n");
 }
 
 void* get_head(linked_list_t* list) {
@@ -50,7 +51,7 @@ void insert_head(linked_list_t* list, void* thing){
 	node_t* node = create_node(thing);
 	if (list-> head == NULL) { 
 		list -> head = node;
-		list -> rear = node;
+		list -> tail = node;
 	}
 	else {
 		node -> next = list -> head;
@@ -62,19 +63,19 @@ void insert_head(linked_list_t* list, void* thing){
 void insert_tail(linked_list_t* list, void* thing){
 	if (list == NULL) {return;}
 	node_t* node = create_node(thing);
-	if (list-> rear == NULL) { 
+	if (list-> tail == NULL) { 
 		list -> head = node;
-		list -> rear = node;
+		list -> tail = node;
 	}
 	else {
-		list -> rear -> next = node;
-		list -> rear = node;
+		list -> tail -> next = node;
+		list -> tail = node;
 	}
 }
 
 void* delete_head(linked_list_t* list) {
-	if (list == NULL) {return;}
-	if (list-> head == NULL) {return;}
+	if (list == NULL) {return NULL;}
+	if (list-> head == NULL) {return NULL;}
   	node_t* temp = list->head; 
   
  	list -> head = list -> head -> next; 
@@ -82,7 +83,7 @@ void* delete_head(linked_list_t* list) {
 		list->tail = NULL;
 	}
 
-    	free(temp); 
+    	free(temp);
 	return temp->data;
 }
 

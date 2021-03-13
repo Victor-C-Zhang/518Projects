@@ -23,12 +23,12 @@ typedef uint my_pthread_t;
 
 typedef struct _node {
 	void* data;
-	struct _ll* next;
+	struct _node* next;
 } node_t;
 
 typedef struct _ll { 
-	 node_t* head;
-	 node_t* tail;
+	node_t* head;
+	node_t* tail;
 } linked_list_t;
  
 typedef struct _hashmap {
@@ -81,11 +81,11 @@ hashmap done;
 
 /* Datastructure functions */
 
-void printList(linked_list_t* list, void (*fptr)(void *));
+void print_list(linked_list_t* list, void (*fptr)(void *));
 void* get_head(linked_list_t* list);
 void* get_tail(linked_list_t* list);
 node_t* create_node(void* data);
-linked_list_t* creat_list(void* data);
+linked_list_t* create_list();
 void insert_head(linked_list_t* head, void* thing);
 void insert_tail(linked_list_t* head, void* thing);
 void* delete_head(linked_list_t* list);
