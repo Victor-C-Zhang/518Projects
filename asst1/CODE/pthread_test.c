@@ -37,7 +37,27 @@ void testLinkedList() {
 	return;
 }
 
+void testHashMap() {
+	hashmap* map = create_map();
+	tcb* t1 = (tcb*) malloc(sizeof(tcb));
+	tcb* t2 = (tcb*) malloc(sizeof(tcb));
+	tcb* t3 = (tcb*) malloc(sizeof(tcb));
+	tcb* t1p = put(map, 123, t1);
+	tcb* t2p = put(map, 333, t2);
+	tcb* t3p = put(map, 123, t3);
+	printf("%d\n", t1p == t1);
+	printf("%d\n", t2p == t2);
+	printf("%d\n", t3p == t1);	
+	printf("%d\n", t2 == get(map, 333));
+	printf("%d\n", t3 == get(map, 123));
+	free(t1);
+	free(t2);
+	free(t3);
+	free_map(map);
+	return;
+}
 int main(int argc, char** argv){
 	testLinkedList();
+	testHashMap();
 	return 0;
 }

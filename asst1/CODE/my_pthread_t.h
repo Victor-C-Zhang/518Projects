@@ -19,6 +19,8 @@
 #include <ucontext.h>
 #include <stdint.h>
 
+#define HASHSIZE 256 //must be a power of 2!
+
 typedef uint my_pthread_t;
 
 typedef struct _node {
@@ -30,10 +32,6 @@ typedef struct _ll {
 	node_t* head;
 	node_t* tail;
 } linked_list_t;
- 
-typedef struct _hashmap {
- 
-} hashmap;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
@@ -62,6 +60,18 @@ typedef struct threadControlBlock {
 } tcb; 
 
 
+typedef struct _hash_node {
+	uint32_t key;
+	tcb* value;
+	struct _hash_node* next;
+} hash_node; 
+
+typedef struct _hashmap {
+	size_t num_buckets;
+	size_t entries; /* Total number of entries in the table. */
+	hash_node** buckets;
+} hashmap;
+
 // TODO: adapt to priority queue
 typedef linked_list_t ready_q_t;
 
@@ -89,11 +99,12 @@ linked_list_t* create_list();
 void insert_head(linked_list_t* head, void* thing);
 void insert_tail(linked_list_t* head, void* thing);
 void* delete_head(linked_list_t* list);
- 
-tcb* get(int id);
-void put(tcb* thing);
 
- 
+hashmap* create_map();
+void free_map(hashmap* h);
+tcb* put(hashmap* h, uint32_t key, tcb* value);
+tcb* get(hashmap* h, uint32_t key);
+
 /* create a new thread */
 /**
  * If it's the first thing created (ready = 0), spin up a new scheduler.
