@@ -1,21 +1,38 @@
-#include "my_pthread_t.h"
-
 #ifndef MY_SCHEDULER_T_H
 #define MY_SCHEDULER_T_H
 
-#define MY_STACK_SIZE 16384
+#include <signal.h>
+#include "datastructs_t.h"
+
+#define STACKSIZE 32768
 #define QUANTUM 25000000
 
-extern ready_q_t* ready;
+typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
 
-// if scheduler is running
-int in_scheduler;// = 0;
+/* mutex struct definition */
+typedef struct my_pthread_mutex_t {
+  int locked; //0 FREE, 1 LOCKED
+  uint32_t owner;
+  int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
+} my_pthread_mutex_t;
 
-// set by signal interrupt if in_scheduler is true but a scheduled swap should occur
+/* tcb struct definition */
+typedef struct threadControlBlock {
+  uint32_t id;
+  void* stack_ptr;
+  ucontext_t* context;
+  void* ret_val;
+  linked_list_t* waited_on; // linked-list of threads waiting on this thread
+  my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
+} tcb;
+
+
+ready_q_t* ready_q; // ready queue, will be inited when scheduler created
+int in_scheduler; // if scheduler is running
+// set by signal interrupt if current context is 0 but a scheduled swap should occur
 // will be set by the scheduler to 0 after each scheduling decision
-int should_swap;// = 0;
-
-extern hashmap done;
+int should_swap;
+hashmap* done; //threads that have completed
 
 /**
  * Will only be called via SIGALRM. (No need to set SA mask to ignore duplicate signal)

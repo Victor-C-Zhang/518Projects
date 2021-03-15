@@ -1,4 +1,4 @@
-// File:	my_pthread.c
+// File:	my_pthread_block.c
 // Author:	Yujie REN
 // Date:	09/23/2017
 
@@ -9,7 +9,8 @@
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
 
-int32_t tid = 0;
+static uint32_t tid = 0;
+static int initScheduler = 1; //if 1, initialize scheduler
 
 timer_t* sig_timer;
 
@@ -17,39 +18,52 @@ timer_t* sig_timer;
  * Mallocs struct sigevent, struct sigaction, struct itimerspec without freeing.
  */
 /* create a new thread */
-int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
-	ucontext_t* new_context = malloc(sizeof(ucontext_t));
-  getcontext(new_context);
-  new_context->uc_stack.ss_size = MY_STACK_SIZE;
-  new_context->uc_stack.ss_sp = malloc(MY_STACK_SIZE);
-  // TODO: make this the context of scheduler
-  new_context->uc_link = NULL;
-  makecontext(new_context, function, 1, arg);
 
-  tcb* new_thread = malloc(sizeof(tcb));
-  new_thread->id = ++tid;
+void thread_func_wrapper(void* (*function)(void*), void* arg){
+	tcb* currThread = get_active_thread();
+	currThread->ret_val = function(arg);
+}
+
+tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
+                my_pthread_t id) {
+  ucontext_t* new_context = malloc(sizeof(ucontext_t));
+  getcontext(new_context);
+  new_context->uc_stack.ss_size = STACKSIZE;
+  new_context->uc_stack.ss_sp = malloc(STACKSIZE);
+  new_context->uc_link = uc_link;
+  sigemptyset(&new_context->uc_sigmask);
+  makecontext(new_context, thread_func_wrapper, 2, function, arg);
+
+	tcb* new_thread = (tcb*) malloc(sizeof(tcb));
+  new_thread->id = id;
   new_thread->context = new_context;
-  new_thread->retval = 69; // nice
+  new_thread->ret_val = NULL;
   new_thread->waited_on = NULL;
   new_thread->waiting_on = NULL;
+	return new_thread;
+}
 
-  *thread = tid;
+/* create a new thread */
+int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
+  ucontext_t* curr_context = malloc(sizeof(ucontext_t));
+  getcontext(curr_context);
+  tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
+  if (initScheduler == 1) {
+		ready_q = create_list();
+		done = create_map();
 
-  if (ready == NULL) { // create new scheduler and peripherals
-    ready = create_list();
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = tid++;
-    curr_thread->retval = 69; // nice
+    curr_thread->ret_val = NULL;
     curr_thread->waited_on = NULL;
     curr_thread->waiting_on = NULL;
-    curr_thread->context = malloc(sizeof(ucontext_t));
-    getcontext(curr_thread->context);
+    curr_thread->context = curr_context;
 
     // add new thread to ready queue
-    insert_head(ready, new_thread);
+    insert_head(ready_q, new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
-    insert_head(ready, curr_thread);
+    insert_head(ready_q, curr_thread);
 
     // create timer
     sig_timer = malloc(sizeof(timer_t));
@@ -69,15 +83,17 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_100ms->it_value.tv_nsec = QUANTUM;
     timer_100ms->it_value.tv_sec = 0;
     timer_settime(*sig_timer, 0, timer_100ms, NULL);
-  } else {
-    // TODO: insert to one after head
-    insert_tail(ready, new_thread);
+		initScheduler = 0;
+	} else {
+    insert_tail(ready_q,new_thread);
   }
-//  in_scheduler = 0;
-  return 0;
+	// TODO: worry about concurrency when pushing to ready queue, manipulating TID
+  *thread = new_thread->id;
+	return 0;
 };
 
-/* give CPU pocession to other user level threads voluntarily */
+
+/* give CPU pocession to other user level thread_blocks voluntarily */
 int my_pthread_yield() {
 	return 0;
 };
