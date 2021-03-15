@@ -11,31 +11,31 @@
 #include "datastructs_t.h"
 
 void printInt(void* data){
- printf("%d ", *(int *)data); 
+  printf("%d ", *(int *)data); 
 }
 
 void freeList(linked_list_t* list) {
- while (list->head != NULL) {
-   delete_head(list);
- }
- free(list);
+  while (list->head != NULL) {
+    delete_head(list);
+  }
+  free(list);
 }
 
 void testLinkedList() {
- linked_list_t* list = create_list();
- int i = 2;
- int i2 = 3;
- int i3 = 1;
- int i4 = 4;
- insert_head(list, (void*) &i);
- insert_tail(list, (void*) &i2);
- insert_head(list, (void*) &i3);
- insert_tail(list, (void*) &i4);
- print_list(list, printInt);
- printf("head: %d \n", *(int *)get_head(list)); 
- printf("tail: %d \n", *(int *)get_tail(list)); 
- freeList(list);
- return;
+  linked_list_t* list = create_list();
+  int i = 2;
+  int i2 = 3;
+  int i3 = 1;
+  int i4 = 4;
+  insert_head(list, (void*) &i);
+  insert_tail(list, (void*) &i2);
+  insert_head(list, (void*) &i3);
+  insert_tail(list, (void*) &i4);
+  print_list(list, printInt);
+  printf("head: %d \n", *(int *)get_head(list)); 
+  printf("tail: %d \n", *(int *)get_tail(list)); 
+  freeList(list);
+  return;
 }
 
 void testHashMap() {
