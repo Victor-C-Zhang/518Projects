@@ -5,19 +5,19 @@
 
 extern ready_q_t* ready;
 
-extern bool in_scheduler;
+extern int in_scheduler;
 
-extern bool should_swap;
+extern int should_swap;
 
 extern hashmap done;
 
 /**
- * Will ONLY be called via signal. (Set SA mask to ignore this signal)
+ * Will ONLY be called via SIGALRM. (No need to set SA mask to ignore duplicate signal)
  * Check in_scheduler. If 0, set should_swap and yield.
  * Saves context of currently running thread (?).
  * Moves thread to end of ready queue.
  * sets context to head of ready queue.
  */
-void schedule();
+void schedule(int sig, siginfo_t* info, void* ucontext);
 
 #endif

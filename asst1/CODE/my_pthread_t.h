@@ -18,10 +18,15 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <stdint.h>
+#include <signal.h>
+#include <time.h>
+
+// so it will compile
+#include <pthread.h>
 
 #define HASHSIZE 256 //must be a power of 2!
 
-typedef uint my_pthread_t;
+typedef uint32_t my_pthread_t;
 
 typedef struct _node {
 	void* data;
@@ -47,8 +52,7 @@ typedef struct my_pthread_mutex_t {
 typedef struct threadControlBlock {
 	/* add something here */
   int32_t id;
-  void* stack_ptr;
-  ucontext_t context;
+  ucontext_t* context;
   char retval;
 
   // linked-list of threads waiting on this thread
