@@ -69,7 +69,7 @@ void sig_handler(int sig, siginfo_t* info, void* ucontext) {
 }
 
 void test_alarm() {
-	// timer_t* sig_timer = malloc(sizeof(timer_t));
+	timer_t* sig_timer = malloc(sizeof(timer_t));
   struct sigevent* sigev_config = malloc(sizeof(struct sigevent));
   sigev_config->sigev_notify = SIGEV_SIGNAL;
   sigev_config->sigev_signo = SIGALRM;

@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -std=c99 -lrt -g -c
+TESTFLAGS = -std=c99 -lrt -g -o
 AR = ar -rc
 RANLIB = ranlib
 
@@ -16,7 +17,7 @@ my_pthread.o: my_pthread_t.h
 
 test: datastructs.c pthread_test.c
 	$(CC) $(CFLAGS) -Wall datastructs.c
-	$(CC) -g -o test pthread_test.c datastructs.c
+	$(CC) $(TESTFLAGS) test pthread_test.c datastructs.c
 
 clean:
 	rm -rf testfile *.o *.a
