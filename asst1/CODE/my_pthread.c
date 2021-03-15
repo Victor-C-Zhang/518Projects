@@ -1,6 +1,6 @@
-// File:	my_pthread_block.c
-// Author:	Yujie REN
-// Date:	09/23/2017
+// File:  my_pthread_block.c
+// Author:  Yujie REN
+// Date:  09/23/2017
 
 // name:
 // username of iLab:
@@ -20,8 +20,8 @@ timer_t* sig_timer;
 /* create a new thread */
 
 void thread_func_wrapper(void* (*function)(void*), void* arg){
-	tcb* currThread = get_active_thread();
-	currThread->ret_val = function(arg);
+  tcb* currThread = get_active_thread();
+  currThread->ret_val = function(arg);
 }
 
 tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
@@ -34,13 +34,13 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   sigemptyset(&new_context->uc_sigmask);
   makecontext(new_context, thread_func_wrapper, 2, function, arg);
 
-	tcb* new_thread = (tcb*) malloc(sizeof(tcb));
+  tcb* new_thread = (tcb*) malloc(sizeof(tcb));
   new_thread->id = id;
   new_thread->context = new_context;
   new_thread->ret_val = NULL;
   new_thread->waited_on = NULL;
   new_thread->waiting_on = NULL;
-	return new_thread;
+  return new_thread;
 }
 
 /* create a new thread */
@@ -49,8 +49,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
   getcontext(curr_context);
   tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
   if (initScheduler == 1) {
-		ready_q = create_list();
-		done = create_map();
+    ready_q = create_list();
+    done = create_map();
 
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
@@ -83,19 +83,19 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_100ms->it_value.tv_nsec = QUANTUM;
     timer_100ms->it_value.tv_sec = 0;
     timer_settime(*sig_timer, 0, timer_100ms, NULL);
-		initScheduler = 0;
-	} else {
+    initScheduler = 0;
+  } else {
     insert_tail(ready_q,new_thread);
   }
-	// TODO: worry about concurrency when pushing to ready queue, manipulating TID
+  // TODO: worry about concurrency when pushing to ready queue, manipulating TID
   *thread = new_thread->id;
-	return 0;
+  return 0;
 };
 
 
 /* give CPU pocession to other user level thread_blocks voluntarily */
 int my_pthread_yield() {
-	return 0;
+  return 0;
 };
 
 /* terminate a thread */
@@ -104,26 +104,26 @@ void my_pthread_exit(void *value_ptr) {
 
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
-	return 0;
+  return 0;
 };
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
-	return 0;
+  return 0;
 };
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-	return 0;
+  return 0;
 };
 
 /* release the mutex lock */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
-	return 0;
+  return 0;
 };
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	return 0;
+  return 0;
 };
 

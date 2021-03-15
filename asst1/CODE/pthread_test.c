@@ -85,7 +85,7 @@ void test_alarm() {
   timer_settime(*sig_timer, 0, timer_100ms, NULL);
 
   printf("Timer set, looping\n");
-  long long int bignum = 1000000000;
+  long long int bignum = 500000000;
   long long int mod = 10e9+7;
   int a = 2;
 
@@ -116,9 +116,9 @@ void test_thread_create() {
 }
 
 int main(int argc, char** argv){
-  // testLinkedList();
-  // testHashMap();
-  // test_alarm();
+  testLinkedList();
+  testHashMap();
+  test_alarm();
   test_thread_create();
   return 0;
 }

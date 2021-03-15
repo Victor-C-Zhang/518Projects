@@ -1,6 +1,6 @@
-// File:	my_pthread_t.h
-// Author:	Yujie REN
-// Date:	09/23/2017
+// File:  my_pthread_t.h
+// Author:  Yujie REN
+// Date:  09/23/2017
 
 // name:
 // username of iLab:
@@ -19,26 +19,26 @@
 
 /* linked list structs */
 typedef struct _node {
-	void* data;
-	struct _node* next;
+  void* data;
+  struct _node* next;
 } node_t;
 
 typedef struct _ll { 
-	node_t* head;
-	node_t* tail;
+  node_t* head;
+  node_t* tail;
 } linked_list_t;
 
 /* hashmap structs */
 typedef struct _hash_node {
-	uint32_t key;
-	void* value;
-	struct _hash_node* next;
+  uint32_t key;
+  void* value;
+  struct _hash_node* next;
 } hash_node; 
 
 typedef struct _hashmap {
-	size_t num_buckets;
-	size_t entries; /* Total number of entries in the table. */
-	hash_node** buckets;
+  size_t num_buckets;
+  size_t entries; /* Total number of entries in the table. */
+  hash_node** buckets;
 } hashmap;
 
 /* Function Declarations: */
