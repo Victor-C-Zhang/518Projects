@@ -1,79 +1,73 @@
-// File:	my_pthread.c
-// Author:	Yujie REN
-// Date:	09/23/2017
+// File:  my_pthread.c
+// Author:  Yujie REN
+// Date:  09/23/2017
 
 // name:
 // username of iLab:
 // iLab Server:
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <time.h>
-// #include <ucontext.h>
-// #include "my_pthread_t.h"
+#include "my_pthread_t.h"
 
-// void printInt(void* data){
-// 	printf("%d ", *(int *)data); 
-// }
+void printInt(void* data){
+ printf("%d ", *(int *)data); 
+}
 
-// void freeList(linked_list_t* list) {
-// 	while (list->head != NULL) {
-// 		delete_head(list);
-// 	}
-// 	free(list);
-// }
+void freeList(linked_list_t* list) {
+ while (list->head != NULL) {
+   delete_head(list);
+ }
+ free(list);
+}
 
-// void testLinkedList() {
-// 	linked_list_t* list = create_list();
-// 	int i = 2;
-// 	int i2 = 3;
-// 	int i3 = 1;
-// 	int i4 = 4;
-// 	insert_head(list, (void*) &i);
-// 	insert_tail(list, (void*) &i2);
-// 	insert_head(list, (void*) &i3);
-// 	insert_tail(list, (void*) &i4);
-// 	print_list(list, printInt);
-// 	printf("head: %d \n", *(int *)get_head(list)); 
-// 	printf("tail: %d \n", *(int *)get_tail(list)); 
-// 	freeList(list);
-// 	return;
-// }
+void testLinkedList() {
+ linked_list_t* list = create_list();
+ int i = 2;
+ int i2 = 3;
+ int i3 = 1;
+ int i4 = 4;
+ insert_head(list, (void*) &i);
+ insert_tail(list, (void*) &i2);
+ insert_head(list, (void*) &i3);
+ insert_tail(list, (void*) &i4);
+ print_list(list, printInt);
+ printf("head: %d \n", *(int *)get_head(list)); 
+ printf("tail: %d \n", *(int *)get_tail(list)); 
+ freeList(list);
+ return;
+}
 
-// void testHashMap() {
-// 	hashmap* map = create_map();
-// 	tcb* t1 = (tcb*) malloc(sizeof(tcb));
-// 	tcb* t2 = (tcb*) malloc(sizeof(tcb));
-// 	tcb* t3 = (tcb*) malloc(sizeof(tcb));
-// 	tcb* t1p = put(map, 123, t1);
-// 	tcb* t2p = put(map, 333, t2);
-// 	tcb* t3p = put(map, 123, t3);
-// 	printf("%d\n", t1p == t1);
-// 	printf("%d\n", t2p == t2);
-// 	printf("%d\n", t3p == t1);	
-// 	printf("%d\n", t2 == get(map, 333));
-// 	printf("%d\n", t3 == get(map, 123));
-// 	free(t1);
-// 	free(t2);
-// 	free(t3);
-// 	free_map(map);
-// 	return;
-// }
+void testHashMap() {
+ hashmap* map = create_map();
+ tcb* t1 = (tcb*) malloc(sizeof(tcb));
+ tcb* t2 = (tcb*) malloc(sizeof(tcb));
+ tcb* t3 = (tcb*) malloc(sizeof(tcb));
+ tcb* t1p = put(map, 123, t1);
+ tcb* t2p = put(map, 333, t2);
+ tcb* t3p = put(map, 123, t3);
+ printf("%d\n", t1p == t1);
+ printf("%d\n", t2p == t2);
+ printf("%d\n", t3p == t1);  
+ printf("%d\n", t2 == get(map, 333));
+ printf("%d\n", t3 == get(map, 123));
+ free(t1);
+ free(t2);
+ free(t3);
+ free_map(map);
+ return;
+}
 
 void sig_handler(int sig, siginfo_t* info, void* ucontext) {
-	if (sig != SIGALRM) {
-		printf("Oops! Not SIGALRM\n");
-		exit(69);
-	}
-	printf("Timer %ld\n", clock());
+  if (sig != SIGALRM) {
+    printf("Oops! Not SIGALRM\n");
+    exit(69);
+  }
+  printf("Timer %ld\n", clock());
 }
 
 void test_alarm() {
-	timer_t* sig_timer = malloc(sizeof(timer_t));
-  struct sigevent* sigev_config = malloc(sizeof(struct sigevent));
-  sigev_config->sigev_notify = SIGEV_SIGNAL;
-  sigev_config->sigev_signo = SIGALRM;
-  timer_create(CLOCK_THREAD_CPUTIME_ID, sigev_config, sig_timer);
+  timer_t* sig_timer = malloc(sizeof(timer_t));
+  timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, sig_timer);
 
   // register signal handler for alarms
   struct sigaction* act = malloc(sizeof(struct sigaction));
@@ -87,12 +81,43 @@ void test_alarm() {
   timer_100ms->it_interval.tv_sec = 0;
   timer_100ms->it_value.tv_nsec = 100000000;
   timer_100ms->it_value.tv_sec = 0;
-  timer_settime(sig_timer, 0, timer_100ms, NULL);
+  timer_settime(*sig_timer, 0, timer_100ms, NULL);
+
+  printf("Timer set, looping\n");
+  long long int bignum = 1000000000;
+  long long int mod = 10e9+7;
+  int a = 2;
+
+  while (bignum--) {
+    a = a*3;
+    a%=mod;
+    if (!(a%69420)) printf("Nice\n");
+  }
+}
+
+void* thread_func(void* ignored) {
+  long long n = 1000000000;
+  ucontext_t* new_context = malloc(sizeof(ucontext_t));
+  getcontext(new_context);
+  while (n--) {
+    if (!(n%5000000)) printf("Thread: %lld\n",n);
+  }
+  return NULL;
+}
+
+void test_thread_create() {
+  my_pthread_t other;
+  my_pthread_create(&other, NULL, thread_func, NULL);
+  long long n = 1000000000;
+  while (n--) {
+    if (!(n%5000000)) printf("Main: %lld\n",n);
+  }
 }
 
 int main(int argc, char** argv){
-	// testLinkedList();
-	// testHashMap();
-	test_alarm();
-	return 0;
+  // testLinkedList();
+  // testHashMap();
+  // test_alarm();
+  test_thread_create();
+  return 0;
 }

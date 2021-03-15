@@ -19,14 +19,21 @@ timer_t* sig_timer;
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
 	ucontext_t* new_context = malloc(sizeof(ucontext_t));
-  makecontext(new_context, *function, 1, arg);
+  getcontext(new_context);
+  new_context->uc_stack.ss_size = MY_STACK_SIZE;
+  new_context->uc_stack.ss_sp = malloc(MY_STACK_SIZE);
+  // TODO: make this the context of scheduler
+  new_context->uc_link = NULL;
+  makecontext(new_context, function, 1, arg);
 
   tcb* new_thread = malloc(sizeof(tcb));
-  new_thread->id = tid++;
+  new_thread->id = ++tid;
   new_thread->context = new_context;
   new_thread->retval = 69; // nice
   new_thread->waited_on = NULL;
   new_thread->waiting_on = NULL;
+
+  *thread = tid;
 
   if (ready == NULL) { // create new scheduler and peripherals
     ready = create_list();
@@ -36,6 +43,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     curr_thread->retval = 69; // nice
     curr_thread->waited_on = NULL;
     curr_thread->waiting_on = NULL;
+    curr_thread->context = malloc(sizeof(ucontext_t));
+    getcontext(curr_thread->context);
 
     // add new thread to ready queue
     insert_head(ready, new_thread);
@@ -44,28 +53,27 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 
     // create timer
     sig_timer = malloc(sizeof(timer_t));
-    struct sigevent* sigev_config = malloc(sizeof(struct sigevent));
-    sigev_config->sigev_notify = SIGEV_SIGNAL;
-    sigev_config->sigev_signo = SIGALRM;
-    timer_create(CLOCK_THREAD_CPUTIME_ID, sigev_config, sig_timer);
+    timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, sig_timer);
 
     // register signal handler for alarms
     struct sigaction* act = malloc(sizeof(struct sigaction));
     act->sa_sigaction = schedule;
-    act->sa_flags = SA_SIGINFO;
+    act->sa_flags = SA_SIGINFO | SA_RESTART;
+    sigemptyset(&act->sa_mask);
     sigaction(SIGALRM, act, NULL);
 
     // set timer
     struct itimerspec* timer_100ms = malloc(sizeof(struct itimerspec));
-    timer_100ms->it_interval.tv_nsec = 100000000;
+    timer_100ms->it_interval.tv_nsec = QUANTUM;
     timer_100ms->it_interval.tv_sec = 0;
-    timer_100ms->it_value.tv_nsec = 100000000;
+    timer_100ms->it_value.tv_nsec = QUANTUM;
     timer_100ms->it_value.tv_sec = 0;
-    timer_settime(sig_timer, 0, timer_100ms, NULL);
+    timer_settime(*sig_timer, 0, timer_100ms, NULL);
   } else {
     // TODO: insert to one after head
     insert_tail(ready, new_thread);
   }
+//  in_scheduler = 0;
   return 0;
 };
 

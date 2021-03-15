@@ -1,6 +1,6 @@
-// File:	my_pthread_t.h
-// Author:	Yujie REN
-// Date:	09/23/2017
+// File:  my_pthread_t.h
+// Author:  Yujie REN
+// Date:  09/23/2017
 
 // name:
 // username of iLab:
@@ -29,13 +29,13 @@
 typedef uint32_t my_pthread_t;
 
 typedef struct _node {
-	void* data;
-	struct _node* next;
+  void* data;
+  struct _node* next;
 } node_t;
 
 typedef struct _ll { 
-	node_t* head;
-	node_t* tail;
+  node_t* head;
+  node_t* tail;
 } linked_list_t;
 
 /* mutex struct definition */
@@ -50,7 +50,7 @@ typedef struct my_pthread_mutex_t {
 } my_pthread_mutex_t;
 
 typedef struct threadControlBlock {
-	/* add something here */
+  /* add something here */
   int32_t id;
   ucontext_t* context;
   char retval;
@@ -65,15 +65,15 @@ typedef struct threadControlBlock {
 
 
 typedef struct _hash_node {
-	uint32_t key;
-	tcb* value;
-	struct _hash_node* next;
+  uint32_t key;
+  tcb* value;
+  struct _hash_node* next;
 } hash_node; 
 
 typedef struct _hashmap {
-	size_t num_buckets;
-	size_t entries; /* Total number of entries in the table. */
-	hash_node** buckets;
+  size_t num_buckets;
+  size_t entries; /* Total number of entries in the table. */
+  hash_node** buckets;
 } hashmap;
 
 // TODO: adapt to priority queue
@@ -81,13 +81,6 @@ typedef linked_list_t ready_q_t;
 
 // ready queue, will be inited when scheduler created
 ready_q_t* ready;//=0
-
-// if scheduler is running
-int in_scheduler;// = 0;
-
-// set by signal interrupt if current context is 0 but a scheduled swap should occur
-// will be set by the scheduler to 0 after each scheduling decision
-int should_swap;// = 0;
 
 hashmap done;
 
