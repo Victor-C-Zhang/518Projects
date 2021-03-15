@@ -19,6 +19,6 @@ tcb* get_active_thread() {
  * Moves thread to end of ready queue.
  * sets context to head of ready queue.
  */
-void schedule(){
-
+void schedule(){	
+	//SIGALRM to set timers!
 }
