@@ -18,92 +18,70 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <stdint.h>
+#include "datastructs_t.h"
 
-#define HASHSIZE 256 //must be a power of 2!
+#define STACKSIZE 32768 
 
+/**
+ * STRUCT DEFINITIONS
+ */
 typedef uint my_pthread_t;
-
-typedef struct _node {
-	void* data;
-	struct _node* next;
-} node_t;
-
-typedef struct _ll { 
-	node_t* head;
-	node_t* tail;
-} linked_list_t;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
-  /* add something here */
-  // 0 free, 1 locked
-  int locked;// = 0;
-  // 0 if not locked
-  uint32_t owner;// = 0;
-  // priority assigned to this mutex. Updated when any thread blocks on this mutex.
-  int hoisted_priority;// = 127;
+  int locked; //0 FREE, 1 LOCKED
+  uint32_t owner;
+  int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
 } my_pthread_mutex_t;
 
+/* tcb struct definition */
 typedef struct threadControlBlock {
-	/* add something here */
   int32_t id;
   void* stack_ptr;
   ucontext_t context;
-  char retval;
-
-  // linked-list of threads waiting on this thread
-  linked_list_t* waited_on;
-
-  // lock it's waiting on right now
-  my_pthread_mutex_t* waiting_on;
-
+  void* ret_val;
+  linked_list_t* waited_on; // linked-list of threads waiting on this thread
+  my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb; 
 
-
-typedef struct _hash_node {
-	uint32_t key;
-	tcb* value;
-	struct _hash_node* next;
-} hash_node; 
-
-typedef struct _hashmap {
-	size_t num_buckets;
-	size_t entries; /* Total number of entries in the table. */
-	hash_node** buckets;
-} hashmap;
+/* global variables */
+tcb* scheduler_tcb;
 
 // TODO: adapt to priority queue
 typedef linked_list_t ready_q_t;
 
-// ready queue, will be inited when scheduler created
-ready_q_t* ready;//=0
+ready_q_t* ready_q; // ready queue, will be inited when scheduler created
 
-// if scheduler is running
-int in_scheduler;// = 0;
+int in_scheduler; // == 1 is true 
 
 // set by signal interrupt if current context is 0 but a scheduled swap should occur
 // will be set by the scheduler to 0 after each scheduling decision
 int should_swap;// = 0;
 
+//threads that have completed 
 hashmap done;
 
 /* Function Declarations: */
 
-/* Datastructure functions */
+/**
+ * Returns currently running thread
+ */
+tcb* get_active_thread();
 
-void print_list(linked_list_t* list, void (*fptr)(void *));
-void* get_head(linked_list_t* list);
-void* get_tail(linked_list_t* list);
-node_t* create_node(void* data);
-linked_list_t* create_list();
-void insert_head(linked_list_t* head, void* thing);
-void insert_tail(linked_list_t* head, void* thing);
-void* delete_head(linked_list_t* list);
+/**
+* Insert function for ready queue
+* update based on queue type, intially FIFIO, update later to priority
+*/
+void insert_ready_q(); 
 
-hashmap* create_map();
-void free_map(hashmap* h);
-tcb* put(hashmap* h, uint32_t key, tcb* value);
-tcb* get(hashmap* h, uint32_t key);
+/**
+ * Will ONLY be called via signal. (Set SA mask to ignore this signal)
+ * Check in_scheduler. If 0, set should_swap and yield.
+ * Saves context of currently running thread (?).
+ * Moves thread to end of ready queue.
+ * sets context to head of ready queue.
+ */
+void scheduler();
 
 /* create a new thread */
 /**

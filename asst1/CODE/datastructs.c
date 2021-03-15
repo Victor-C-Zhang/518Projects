@@ -8,13 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "my_pthread_t.h"
-
-#define HASHMAP_INITIAL_SIZE 64
-	/* grow / shrink by 2^2 */
-#define HASHMAP_RESIZE_BITS 2
-	/* load factor in percent */
-#define HASHMAP_LOAD_FACTOR 80
+#include "datastructs_t.h"
 
 /** linked list functions **/ 
 void print_list(linked_list_t* list, void (*fptr)(void *)){
@@ -131,7 +125,7 @@ int rehash(hashmap* h) {
 	return 1;
 }
 
-hash_node* create_hash_node(uint32_t key, tcb* value) {	
+hash_node* create_hash_node(uint32_t key, void* value) {	
 	hash_node* node = (hash_node*) calloc(1, sizeof(hash_node));
 	node->key = key;
 	node->value = value;
@@ -163,7 +157,7 @@ void free_map(hashmap* h) {
 	return;
 }
 
-tcb* put(hashmap* h, uint32_t key, tcb* value){
+void* put(hashmap* h, uint32_t key, void* value){
 	if (h == NULL) {return NULL;}
 	unsigned int index = hash(h->num_buckets, key);
 	hash_node* node = NULL;
@@ -173,7 +167,7 @@ tcb* put(hashmap* h, uint32_t key, tcb* value){
 	}
 
 	if (node) {
-		tcb* temp = node->value;
+		void* temp = node->value;
 		node->value = value;
 		return temp;
 	}
@@ -186,7 +180,7 @@ tcb* put(hashmap* h, uint32_t key, tcb* value){
 	return node->value;
 }
 
-tcb* get(hashmap* h, uint32_t key){
+void* get(hashmap* h, uint32_t key){
 	if (h == NULL) {return NULL;}
 	unsigned int index = hash(h->num_buckets, key);
 	hash_node* node;

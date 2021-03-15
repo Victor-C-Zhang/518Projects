@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "my_pthread_t.h"
+#include "datastructs_t.h"
 
 void printInt(void* data){
 	printf("%d ", *(int *)data); 
@@ -42,14 +43,14 @@ void testHashMap() {
 	tcb* t1 = (tcb*) malloc(sizeof(tcb));
 	tcb* t2 = (tcb*) malloc(sizeof(tcb));
 	tcb* t3 = (tcb*) malloc(sizeof(tcb));
-	tcb* t1p = put(map, 123, t1);
-	tcb* t2p = put(map, 333, t2);
-	tcb* t3p = put(map, 123, t3);
+	tcb* t1p = (tcb*) put(map, 123, (void*) t1);
+	tcb* t2p = (tcb*) put(map, 333, (void*) t2);
+	tcb* t3p = (tcb*) put(map, 123, (void*) t3);
 	printf("%d\n", t1p == t1);
 	printf("%d\n", t2p == t2);
 	printf("%d\n", t3p == t1);	
-	printf("%d\n", t2 == get(map, 333));
-	printf("%d\n", t3 == get(map, 123));
+	printf("%d\n", t2 == (tcb*) get(map, 333));
+	printf("%d\n", t3 == (tcb*) get(map, 123));
 	free(t1);
 	free(t2);
 	free(t3);
