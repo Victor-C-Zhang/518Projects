@@ -22,9 +22,9 @@
 
 #define STACKSIZE 32768 
 
-/**
- * STRUCT DEFINITIONS
- */
+/***********************************
+* STRUCT DEFINITIONS 
+***********************************/
 typedef uint my_pthread_t;
 
 /* mutex struct definition */
@@ -44,24 +44,22 @@ typedef struct threadControlBlock {
   my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb; 
 
-/* global variables */
-tcb* scheduler_tcb;
-
-// TODO: adapt to priority queue
-typedef linked_list_t ready_q_t;
-
+/***********************************
+* GLOBAL VARIABLES 
+***********************************/
+typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
 ready_q_t* ready_q; // ready queue, will be inited when scheduler created
-
+tcb* scheduler_tcb;
 int in_scheduler; // == 1 is true 
-
 // set by signal interrupt if current context is 0 but a scheduled swap should occur
 // will be set by the scheduler to 0 after each scheduling decision
-int should_swap;// = 0;
+int should_swap;
+hashmap done; //threads that have completed 
 
-//threads that have completed 
-hashmap done;
 
-/* Function Declarations: */
+/**********************************
+ * FUNCTION DEFINITIONS 
+***********************************/
 
 /**
  * Returns currently running thread
