@@ -47,9 +47,6 @@ ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler cr
 int curr_prio; // priority of the currently scheduled thread. should usually
 // be 0.
 int in_scheduler; // if scheduler is running
-// set by signal interrupt if current context is 0 but a scheduled swap should occur
-// will be set by the scheduler to 0 after each scheduling decision
-int should_swap;
 hashmap* all_threads; //all threads accessed by ids
 
 /**

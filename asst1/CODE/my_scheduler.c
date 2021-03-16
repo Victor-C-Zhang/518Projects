@@ -8,6 +8,7 @@ void insert_ready_q(tcb* thread, int queue_num){
 
 void enter_scheduler(struct itimerspec* ovalue) {
   timer_settime(sig_timer,0,&timer_stopper,ovalue);
+  in_scheduler = 1;
 }
 
 void exit_scheduler(struct itimerspec* ovalue) {
@@ -18,8 +19,6 @@ void exit_scheduler(struct itimerspec* ovalue) {
 //  threads to run for multiple interrupt cycles?
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-  // TODO: quantum sizing
-
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
   ucontext_t* old_context = old_thread->context;
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
@@ -43,7 +42,10 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
       break;
     }
   }
-  exit_scheduler(&timer_pause_dump);
+  if (in_scheduler) {
+    in_scheduler = 0;
+    exit_scheduler(&timer_pause_dump);
+  }
   if (new_context == NULL) {
     exit(0); // TODO: teardown and cleanup
   }
