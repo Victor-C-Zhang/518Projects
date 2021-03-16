@@ -99,7 +99,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 int my_pthread_yield() {
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
-  curr_thread->priority = -1; // tell the scheduler the scheduling is caused
+  curr_thread->cycles_left = -1; // tell the scheduler the scheduling is caused
   // by yield
   raise(SIGALRM);
   return 0;
@@ -113,7 +113,7 @@ void my_pthread_exit(void *value_ptr) {
   while (curr_thread->waited_on->head != NULL){
 	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
 	  signal_thread->status = READY; 
-	  insert_head(ready_q[signal_thread->priority],signal_thread);
+	  insert_head(ready_q[signal_thread->cycles_left], signal_thread);
   }
   curr_thread->status = DONE;
   raise(SIGALRM);

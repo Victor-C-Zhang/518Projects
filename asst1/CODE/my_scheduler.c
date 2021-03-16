@@ -22,13 +22,20 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
   ucontext_t* old_context = old_thread->context;
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
-  	if (old_thread->priority == -1) { // yield() doesn't impact priority
-  	  old_thread->priority = curr_prio;
+  	if (old_thread->cycles_left > 0) { // allow threads to run for
+      // multiple interrupt cycles
+      --(old_thread->cycles_left);
+      return;
+  	}
+    if (old_thread->cycles_left == -1) { // yield() doesn't impact priority
+  	  old_thread->cycles_left = curr_prio;
   	  insert_ready_q(old_thread, curr_prio);
-  	} else if (old_thread->priority == NUM_QUEUES - 1) { // cannot increase
+  	} // TODO: check for hoisted prio
+  	else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
+      old_thread->cycles_left = NUM_QUEUES - 1;
   	  insert_ready_q(old_thread,curr_prio);
   	} else {
-  	  ++(old_thread->priority);
+  	  old_thread->cycles_left = curr_prio + 1;
   	  insert_ready_q(old_thread,curr_prio+1);
   	}
   }

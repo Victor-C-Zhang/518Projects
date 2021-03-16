@@ -26,7 +26,7 @@ typedef struct threadControlBlock {
   ucontext_t* context;
   void* ret_val;
   thread_status status;
-  int priority; // number from 0 to NUM_QUEUES-1, highest prio it 0
+  int cycles_left; // number from 0 to NUM_QUEUES-1, proxy for priority
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
   my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
