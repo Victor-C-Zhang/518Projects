@@ -108,6 +108,7 @@ void my_pthread_exit(void *value_ptr) {
   if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
   while (curr_thread->waited_on->head != NULL){
 	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
+	  signal_thread->status = READY; 
 	  insert_ready_q(signal_thread);
   }
   curr_thread->status = DONE;
