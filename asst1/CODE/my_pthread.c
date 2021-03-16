@@ -12,8 +12,6 @@
 static uint32_t tid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
 
-timer_t* sig_timer;
-
 void thread_func_wrapper(void* (*function)(void*), void* arg){
   tcb* currThread = (tcb*) get_head(ready_q);
   currThread->ret_val = function(arg);
@@ -41,7 +39,7 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
 }
 
 /* MEMORY LEAK:
- * Mallocs struct sigevent, struct sigaction, struct itimerspec without freeing.
+ * Mallocs struct sigevent, struct sigaction without freeing.
  */
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
@@ -80,12 +78,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     sigaction(SIGALRM, act, NULL);
 
     // set timer
-    struct itimerspec* timer_25ms = malloc(sizeof(struct itimerspec));
-    timer_25ms->it_interval.tv_nsec = QUANTUM;
-    timer_25ms->it_interval.tv_sec = 0;
-    timer_25ms->it_value.tv_nsec = QUANTUM;
-    timer_25ms->it_value.tv_sec = 0;
-    timer_settime(*sig_timer, 0, timer_25ms, NULL);
+    timer_settime(*sig_timer, 0, &timer_25ms, NULL);
     initScheduler = 0;
   } else {
     insert_ready_q(new_thread);
@@ -99,6 +92,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 
 /* give CPU pocession to other user level thread_blocks voluntarily */
 int my_pthread_yield() {
+  enter_scheduler(&timer_pause_dump);
+  raise(SIGALRM);
   return 0;
 };
 

@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "my_pthread_t.h"
-#include "datastructs_t.h"
 
 void printInt(void* data){
   printf("%d ", *(int *)data); 
@@ -123,11 +122,34 @@ void test_thread_create_join() {
   printf("thread %d returned %ld\n", other, (long int) ret_val);
 }
 
+void* yield_thread_func(void* ignored) {
+  long long n = 1000000000;
+  printf("Before yield\n");
+  while (1) my_pthread_yield();
+  // should be inaccessible
+  printf("After yield\n");
+  while (n--) {
+    if (!(n%5000000)) printf("Thread: %lld\n",n);
+  }
+  return (void*)30;
+}
+
+void test_thread_yield() {
+  my_pthread_t other1;
+  my_pthread_t other2;
+  my_pthread_create(&other1, NULL, yield_thread_func, NULL);
+  my_pthread_create(&other2, NULL, yield_thread_func, NULL);
+  long long n = 1000000000;
+  while (n--) {
+    if (!(n%5000000)) printf("Main: %lld\n",n);
+  }
+}
 int main(int argc, char** argv){
   testLinkedList();
   testHashMap();
   test_alarm();
   test_thread_create();
   test_thread_create_join();
+  test_thread_yield();
   return 0;
 }

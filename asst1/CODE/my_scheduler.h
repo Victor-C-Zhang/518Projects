@@ -2,6 +2,7 @@
 #define MY_SCHEDULER_T_H
 
 #include <signal.h>
+#include <time.h>
 #include "datastructs_t.h"
 
 #define STACKSIZE 32768
@@ -28,6 +29,17 @@ typedef struct threadControlBlock {
   my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
 
+timer_t* sig_timer;
+static struct itimerspec timer_25ms = {
+      .it_interval = {
+            .tv_nsec = QUANTUM,
+      },
+      .it_value = {
+            .tv_nsec = QUANTUM,
+      }
+};
+static struct itimerspec timer_stopper = {};
+struct itimerspec timer_pause_dump;
 
 ready_q_t* ready_q; // ready queue, will be inited when scheduler created
 int in_scheduler; // if scheduler is running
@@ -35,6 +47,19 @@ int in_scheduler; // if scheduler is running
 // will be set by the scheduler to 0 after each scheduling decision
 int should_swap;
 hashmap* all_threads; //all threads accessed by ids
+
+/**
+ * Pauses the alarm counter so the "scheduler" can work uninterrupted.
+ * @param ovalue a pointer to store the current itimerspec in.
+ */
+void enter_scheduler(struct itimerspec* ovalue);
+
+/**
+ * Resumes the alarm counter. Must be the LAST thing done prior to returning
+ * control to user threads.
+ * @param ovalue the itimerspec to resume.
+ */
+void exit_scheduler(struct itimerspec* ovalue);
 
 /**
  * Will only be called via SIGALRM. (No need to set SA mask to ignore duplicate signal)
