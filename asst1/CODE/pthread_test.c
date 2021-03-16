@@ -98,12 +98,12 @@ void test_alarm() {
 
 void* thread_func(void* ignored) {
   long long n = 1000000000;
-  ucontext_t* new_context = malloc(sizeof(ucontext_t));
-  getcontext(new_context);
+ // ucontext_t* new_context = malloc(sizeof(ucontext_t));
+ // getcontext(new_context);
   while (n--) {
     if (!(n%5000000)) printf("Thread: %lld\n",n);
   }
-  return NULL;
+  return (void*)30;
 }
 
 void test_thread_create() {
@@ -115,10 +115,19 @@ void test_thread_create() {
   }
 }
 
+void test_thread_create_join() {
+  my_pthread_t other;
+  my_pthread_create(&other, NULL, thread_func, NULL);
+  void* ret_val;
+  my_pthread_join(other, &ret_val);
+  printf("thread %d returned %ld\n", other, (long int) ret_val);
+}
+
 int main(int argc, char** argv){
   testLinkedList();
   testHashMap();
   test_alarm();
   test_thread_create();
+  test_thread_create_join();
   return 0;
 }

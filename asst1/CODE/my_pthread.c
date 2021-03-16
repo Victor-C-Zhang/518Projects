@@ -15,8 +15,9 @@ static int initScheduler = 1; //if 1, initialize scheduler
 timer_t* sig_timer;
 
 void thread_func_wrapper(void* (*function)(void*), void* arg){
-  tcb* currThread = get_active_thread();
+  tcb* currThread = (tcb*) get_head(ready_q);
   currThread->ret_val = function(arg);
+  my_pthread_exit(NULL);
 }
 
 tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
@@ -27,14 +28,15 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   new_context->uc_stack.ss_sp = malloc(STACKSIZE);
   new_context->uc_link = uc_link;
   sigemptyset(&new_context->uc_sigmask);
-  makecontext(new_context, thread_func_wrapper, 2, function, arg);
+  makecontext(new_context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
 
   tcb* new_thread = (tcb*) malloc(sizeof(tcb));
   new_thread->id = id;
   new_thread->context = new_context;
   new_thread->ret_val = NULL;
-  new_thread->waited_on = NULL;
+  new_thread->waited_on = create_list();
   new_thread->waiting_on = NULL;
+  new_thread->status= READY;
   return new_thread;
 }
 
@@ -46,18 +48,21 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
   ucontext_t* curr_context = malloc(sizeof(ucontext_t));
   getcontext(curr_context);
   tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
+  
   if (initScheduler == 1) {
     ready_q = create_list();
-    done = create_map();
+    all_threads = create_map();
 
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = tid++;
     curr_thread->ret_val = NULL;
-    curr_thread->waited_on = NULL;
+    curr_thread->waited_on = create_list();
     curr_thread->waiting_on = NULL;
     curr_thread->context = curr_context;
-
+    curr_thread->status = READY;
+    put(all_threads, curr_thread->id, curr_thread);
+    
     // add new thread to ready queue
     insert_head(ready_q, new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
@@ -83,10 +88,11 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_settime(*sig_timer, 0, timer_25ms, NULL);
     initScheduler = 0;
   } else {
-    insert_tail(ready_q,new_thread);
+    insert_ready_q(new_thread);
   }
   // TODO: worry about concurrency when pushing to ready queue, manipulating TID
   *thread = new_thread->id;
+  put(all_threads, new_thread->id, new_thread);
   return 0;
 };
 
@@ -97,11 +103,31 @@ int my_pthread_yield() {
 };
 
 /* terminate a thread */
-void my_pthread_exit(void *value_ptr) {
+void my_pthread_exit(void *value_ptr) { 
+  tcb* curr_thread = (tcb*) get_head(ready_q);
+  if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
+  while (curr_thread->waited_on->head != NULL){
+	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
+	  insert_ready_q(signal_thread);
+  }
+  curr_thread->status = DONE;
+  schedule(SIGALRM, NULL, curr_thread->context);
 };
 
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
+  if (tid < thread) {
+	  return -1;
+  }
+
+  tcb* curr_thread = (tcb*) get_head(ready_q);
+  tcb* t_block = get(all_threads, thread);
+  if (t_block->status != DONE) {
+	  insert_head(t_block -> waited_on, curr_thread);
+	  curr_thread->status = BLOCKED;
+  }
+  schedule(SIGALRM, NULL, curr_thread->context);
+  *value_ptr = t_block->ret_val;
   return 0;
 };
 

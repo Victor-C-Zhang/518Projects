@@ -20,10 +20,8 @@
 #include <stdint.h>
 #include <signal.h>
 #include <time.h>
-
-#include "datastructs_t.h"
 #include "my_scheduler.h"
-
+#include "datastructs_t.h"
 // so it will compile
 #include <pthread.h>
 
@@ -31,6 +29,7 @@
 * STRUCT DEFINITIONS 
 ***********************************/
 typedef uint my_pthread_t;
+
 
 /**********************************
  * FUNCTION DEFINITIONS 

@@ -9,6 +9,7 @@
 
 typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
 
+typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
   int locked; //0 FREE, 1 LOCKED
@@ -22,6 +23,7 @@ typedef struct threadControlBlock {
   void* stack_ptr;
   ucontext_t* context;
   void* ret_val;
+  thread_status status;
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
   my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
@@ -32,7 +34,7 @@ int in_scheduler; // if scheduler is running
 // set by signal interrupt if current context is 0 but a scheduled swap should occur
 // will be set by the scheduler to 0 after each scheduling decision
 int should_swap;
-hashmap* done; //threads that have completed
+hashmap* all_threads; //all threads accessed by ids
 
 /**
  * Will only be called via SIGALRM. (No need to set SA mask to ignore duplicate signal)
@@ -44,5 +46,6 @@ hashmap* done; //threads that have completed
  * sets context to head of ready queue.
  */
 void schedule(int sig, siginfo_t* info, void* ucontext);
+void insert_ready_q(tcb* thread);
 
 #endif

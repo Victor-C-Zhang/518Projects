@@ -18,9 +18,9 @@
 #define HASHSIZE 256 //must be a power of 2!
 
 /* linked list structs */
-typedef struct _node {
+typedef struct _node_t {
   void* data;
-  struct _node* next;
+  struct _node_t* next;
 } node_t;
 
 typedef struct _ll { 
