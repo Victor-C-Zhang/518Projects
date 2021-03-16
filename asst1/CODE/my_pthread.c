@@ -47,14 +47,13 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
   ucontext_t* curr_context = malloc(sizeof(ucontext_t));
   getcontext(curr_context);
   tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
-  
+  	//no thread has 0 tid
   if (initScheduler == 1) {
     ready_q = create_list();
     all_threads = create_map();
-
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
-    curr_thread->id = ++tid;
+    curr_thread->id = ++tid; //no thread has 0 tid
     curr_thread->ret_val = NULL;
     curr_thread->waited_on = create_list();
     curr_thread->waiting_on = NULL;
@@ -150,16 +149,36 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) { 
+  tcb* curr_thread = (tcb*) get_head(ready_q);
+  if (mutex->locked){
+//    if (m->hoisted_priority < curr_thread->priority) update hoisted priority
+      curr_thread->waiting_on = mutex;
+      my_pthread_yield();
+  }
+  else {
+  	mutex->locked = 1;
+	mutex->owner = curr_thread->id;
+	curr_thread -> waiting_on = NULL;
+	//reset hoisted priority ???
+  }
   return 0;
 };
 
 /* release the mutex lock */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
-  return 0;
+ 
+  tcb* curr_thread = (tcb*) get_head(ready_q);
+  if ( (mutex -> locked) && (mutex->owner == curr_thread->id)) {
+  	mutex->locked = 0;
+	mutex->owner = 0;
+	//hoisted priority???
+  }
+ return 0;
 };
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
+  free(mutex);
   return 0;
 };
 
