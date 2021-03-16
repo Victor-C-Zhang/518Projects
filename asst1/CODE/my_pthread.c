@@ -60,6 +60,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     curr_thread->context = curr_context;
     curr_thread->status = READY;
     put(all_threads, curr_thread->id, curr_thread);
+    *thread = new_thread->id;
 //    printf("sched thread %d\n", curr_thread->id);
     // add new thread to ready queue
     insert_head(ready_q, new_thread);
@@ -81,11 +82,12 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_settime(*sig_timer, 0, &timer_25ms, NULL);
     initScheduler = 0;
   } else {
+    enter_scheduler(&timer_pause_dump);
     insert_ready_q(new_thread);
+    *thread = new_thread->id;
+    put(all_threads, new_thread->id, new_thread);
+    exit_scheduler(&timer_pause_dump);
   }
-  // TODO: worry about concurrency when pushing to ready queue, manipulating TID
-  *thread = new_thread->id;
-  put(all_threads, new_thread->id, new_thread);
 //  printf("new thread %d\n", new_thread->id);
   return 0;
 };
@@ -99,7 +101,8 @@ int my_pthread_yield() {
 };
 
 /* terminate a thread */
-void my_pthread_exit(void *value_ptr) { 
+void my_pthread_exit(void *value_ptr) {
+  enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q);
   if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
   while (curr_thread->waited_on->head != NULL){
@@ -108,9 +111,7 @@ void my_pthread_exit(void *value_ptr) {
 	  insert_ready_q(signal_thread);
   }
   curr_thread->status = DONE;
-  enter_scheduler(&timer_pause_dump);
   raise(SIGALRM);
-  //schedule(SIGALRM, NULL, curr_thread->context);
 };
 
 /* wait for thread termination */
@@ -118,7 +119,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   if (tid < thread) {
 	  return -1;
   }
-
+  enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q);
   tcb* t_block = get(all_threads, thread);
   //printf("curr thread: %d join w %d\n", curr_thread->id, thread);
@@ -130,7 +131,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 	  insert_head(t_block -> waited_on, curr_thread);
 	  curr_thread->status = BLOCKED;
   }
-  enter_scheduler(&timer_pause_dump);
   raise(SIGALRM);
   //schedule(SIGALRM, NULL, curr_thread->context);
   *value_ptr = t_block->ret_val;
