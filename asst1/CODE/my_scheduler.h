@@ -7,6 +7,8 @@
 
 #define STACKSIZE 32768
 #define QUANTUM 25000000
+#define ONE_SECOND 1000000000
+#define NUM_QUEUES 5
 
 typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
 
@@ -21,10 +23,10 @@ typedef struct my_pthread_mutex_t {
 /* tcb struct definition */
 typedef struct threadControlBlock {
   uint32_t id;
-  void* stack_ptr;
   ucontext_t* context;
   void* ret_val;
   thread_status status;
+  int priority; // number from 0 to NUM_QUEUES-1, highest prio it 0
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
   my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
@@ -41,7 +43,9 @@ static struct itimerspec timer_25ms = {
 static struct itimerspec timer_stopper = {};
 struct itimerspec timer_pause_dump;
 
-ready_q_t* ready_q; // ready queue, will be inited when scheduler created
+ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
+int curr_prio; // priority of the currently scheduled thread. should usually
+// be 0.
 int in_scheduler; // if scheduler is running
 // set by signal interrupt if current context is 0 but a scheduled swap should occur
 // will be set by the scheduler to 0 after each scheduling decision
@@ -63,14 +67,17 @@ void exit_scheduler(struct itimerspec* ovalue);
 
 /**
  * Will only be called via SIGALRM. (No need to set SA mask to ignore duplicate signal)
- * Check in_scheduler. If 1, set should_swap and yield.
- * Another instance of the scheduler should check should_swap to see if a swap is requested
- * and raise a signal, if necessary.
- * Saves context of currently running thread (?).
+ * Saves context of currently running thread.
  * Moves thread to end of ready queue.
- * sets context to head of ready queue.
+ * Sets context to head of ready queue.
  */
 void schedule(int sig, siginfo_t* info, void* ucontext);
-void insert_ready_q(tcb* thread);
+
+/**
+ * Insert a thread to the back of a queue
+ * @param thread
+ * @param queue_num the queue to insert to. 0 is highest priority.
+ */
+void insert_ready_q(tcb* thread, int queue_num);
 
 #endif

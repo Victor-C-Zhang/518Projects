@@ -49,7 +49,9 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
   tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
   	//no thread has 0 tid
   if (initScheduler == 1) {
-    ready_q = create_list();
+    for (int i = 0; i < NUM_QUEUES; ++i) {
+      ready_q[i] = create_list();
+    }
     all_threads = create_map();
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
@@ -63,9 +65,9 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     *thread = new_thread->id;
 //    printf("sched thread %d\n", curr_thread->id);
     // add new thread to ready queue
-    insert_head(ready_q, new_thread);
+    insert_head(ready_q[0], new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
-    insert_head(ready_q, curr_thread);
+    insert_head(ready_q[0], curr_thread);
 
     // create timer
     sig_timer = malloc(sizeof(timer_t));
@@ -83,7 +85,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     initScheduler = 0;
   } else {
     enter_scheduler(&timer_pause_dump);
-    insert_ready_q(new_thread);
+    insert_ready_q(new_thread,0);
     *thread = new_thread->id;
     put(all_threads, new_thread->id, new_thread);
     exit_scheduler(&timer_pause_dump);
@@ -96,6 +98,9 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 /* give CPU pocession to other user level thread_blocks voluntarily */
 int my_pthread_yield() {
   enter_scheduler(&timer_pause_dump);
+  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
+  curr_thread->priority = -1; // tell the scheduler the scheduling is caused
+  // by yield
   raise(SIGALRM);
   return 0;
 };
@@ -103,12 +108,12 @@ int my_pthread_yield() {
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
   enter_scheduler(&timer_pause_dump);
-  tcb* curr_thread = (tcb*) get_head(ready_q);
+  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
   while (curr_thread->waited_on->head != NULL){
 	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
 	  signal_thread->status = READY; 
-	  insert_ready_q(signal_thread);
+	  insert_head(ready_q[signal_thread->priority],signal_thread);
   }
   curr_thread->status = DONE;
   raise(SIGALRM);
@@ -120,7 +125,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 	  return -1;
   }
   enter_scheduler(&timer_pause_dump);
-  tcb* curr_thread = (tcb*) get_head(ready_q);
+  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   tcb* t_block = get(all_threads, thread);
   //printf("curr thread: %d join w %d\n", curr_thread->id, thread);
   if (t_block == NULL) {

@@ -89,6 +89,10 @@ void* delete_head(linked_list_t* list) {
   return d;
 }
 
+int isEmpty(linked_list_t *list) {
+  return list->head == NULL;
+}
+
 /** hashmap functions **/
 unsigned int hash(size_t num_buckets, unsigned int x) {
   //  printf("id: %d\n", x);
