@@ -53,6 +53,7 @@ dkms.conf
 
 # CLion ignores
 cmake-build-debug
+.idea
 
 # latexmk ignores
 *.aux

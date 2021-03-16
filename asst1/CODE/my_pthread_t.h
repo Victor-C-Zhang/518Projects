@@ -1,6 +1,6 @@
-// File:	my_pthread_t.h
-// Author:	Yujie REN
-// Date:	09/23/2017
+// File:  my_pthread_t.h
+// Author:  Yujie REN
+// Date:  09/23/2017
 
 // name:
 // username of iLab:
@@ -18,44 +18,19 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <stdint.h>
-#include "datastructs_t.h"
+#include <signal.h>
+#include <time.h>
 
-#define STACKSIZE 32768 
+#include "datastructs_t.h"
+#include "my_scheduler.h"
+
+// so it will compile
+#include <pthread.h>
 
 /***********************************
 * STRUCT DEFINITIONS 
 ***********************************/
 typedef uint my_pthread_t;
-
-/* mutex struct definition */
-typedef struct my_pthread_mutex_t {
-  int locked; //0 FREE, 1 LOCKED
-  uint32_t owner;
-  int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
-} my_pthread_mutex_t;
-
-/* tcb struct definition */
-typedef struct threadControlBlock {
-  int32_t id;
-  void* stack_ptr;
-  ucontext_t context;
-  void* ret_val;
-  linked_list_t* waited_on; // linked-list of threads waiting on this thread
-  my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
-} tcb; 
-
-/***********************************
-* GLOBAL VARIABLES 
-***********************************/
-typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
-ready_q_t* ready_q; // ready queue, will be inited when scheduler created
-tcb* scheduler_tcb;
-int in_scheduler; // == 1 is true 
-// set by signal interrupt if current context is 0 but a scheduled swap should occur
-// will be set by the scheduler to 0 after each scheduling decision
-int should_swap;
-hashmap done; //threads that have completed 
-
 
 /**********************************
  * FUNCTION DEFINITIONS 
@@ -68,18 +43,9 @@ tcb* get_active_thread();
 
 /**
 * Insert function for ready queue
-* update based on queue type, intially FIFIO, update later to priority
+* update based on queue type, intially FIFO, update later to priority
 */
-void insert_ready_q(); 
-
-/**
- * Will ONLY be called via signal. (Set SA mask to ignore this signal)
- * Check in_scheduler. If 0, set should_swap and yield.
- * Saves context of currently running thread (?).
- * Moves thread to end of ready queue.
- * sets context to head of ready queue.
- */
-void scheduler();
+void insert_ready_q();
 
 /* create a new thread */
 /**
