@@ -16,7 +16,7 @@ my_pthread.o: my_pthread_t.h
 	$(CC) -pthread $(CFLAGS) my_pthread.c -lrt
 
 test: datastructs.c my_pthread.c pthread_test.c my_scheduler.c
-	$(CC) -o test pthread_test.c datastructs.c my_pthread.c my_scheduler.c -lrt
+	$(CC) -g -o test pthread_test.c datastructs.c my_pthread.c my_scheduler.c -lrt
 
 clean:
 	rm -rf testfile *.o *.a

@@ -97,11 +97,13 @@ void test_alarm() {
 
 void* thread_func(void* ignored) {
   long long n = 1000000000;
+  int id = *((int*)ignored);
  // ucontext_t* new_context = malloc(sizeof(ucontext_t));
  // getcontext(new_context);
   while (n--) {
-    if (!(n%5000000)) printf("Thread: %lld\n",n);
+    if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
+  printf("thread %d done\n", id);
   return (void*)30;
 }
 
@@ -115,11 +117,19 @@ void test_thread_create() {
 }
 
 void test_thread_create_join() {
-  my_pthread_t other;
-  my_pthread_create(&other, NULL, thread_func, NULL);
-  void* ret_val;
-  my_pthread_join(other, &ret_val);
-  printf("thread %d returned %ld\n", other, (long int) ret_val);
+  my_pthread_t other[3];
+  void* ret_val[3]; 
+  my_pthread_create(&other[0], NULL, thread_func, (void*) &other[0]);
+  printf("test: thread id %d created\n", other[0]);
+  my_pthread_create(&other[1], NULL, thread_func, (void*) &other[1]);
+  printf("test: thread id %d created\n", other[1]);
+  my_pthread_create(&other[2], NULL, thread_func, (void*) &other[2]);
+  printf("test: thread id %d created\n", other[2]);
+  for (int i=0; i<3; i++) {
+	printf("test: thread %d join\n", other[i]);
+  	my_pthread_join(other[i], &ret_val[i]);
+  	printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
+  }
 }
 
 void* yield_thread_func(void* ignored) {
@@ -145,11 +155,11 @@ void test_thread_yield() {
   }
 }
 int main(int argc, char** argv){
-  testLinkedList();
+/*  testLinkedList();
   testHashMap();
   test_alarm();
   test_thread_create();
-  test_thread_create_join();
-  test_thread_yield();
+*/  test_thread_create_join();
+ // test_thread_yield();
   return 0;
 }

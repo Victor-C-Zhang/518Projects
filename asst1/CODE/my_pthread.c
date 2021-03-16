@@ -10,6 +10,7 @@
 #include "my_scheduler.h"
 
 static uint32_t tid = 0;
+static int mid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
 
 void thread_func_wrapper(void* (*function)(void*), void* arg){
@@ -53,14 +54,14 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
-    curr_thread->id = tid++;
+    curr_thread->id = ++tid;
     curr_thread->ret_val = NULL;
     curr_thread->waited_on = create_list();
     curr_thread->waiting_on = NULL;
     curr_thread->context = curr_context;
     curr_thread->status = READY;
     put(all_threads, curr_thread->id, curr_thread);
-    
+//    printf("sched thread %d\n", curr_thread->id);
     // add new thread to ready queue
     insert_head(ready_q, new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
@@ -86,6 +87,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
   // TODO: worry about concurrency when pushing to ready queue, manipulating TID
   *thread = new_thread->id;
   put(all_threads, new_thread->id, new_thread);
+//  printf("new thread %d\n", new_thread->id);
   return 0;
 };
 
@@ -107,7 +109,9 @@ void my_pthread_exit(void *value_ptr) {
 	  insert_ready_q(signal_thread);
   }
   curr_thread->status = DONE;
-  schedule(SIGALRM, NULL, curr_thread->context);
+  enter_scheduler(&timer_pause_dump);
+  raise(SIGALRM);
+  //schedule(SIGALRM, NULL, curr_thread->context);
 };
 
 /* wait for thread termination */
@@ -118,22 +122,34 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 
   tcb* curr_thread = (tcb*) get_head(ready_q);
   tcb* t_block = get(all_threads, thread);
+  //printf("curr thread: %d join w %d\n", curr_thread->id, thread);
+  if (t_block == NULL) {
+  	printf("block NULL\n");
+	return -1;
+  }
   if (t_block->status != DONE) {
 	  insert_head(t_block -> waited_on, curr_thread);
 	  curr_thread->status = BLOCKED;
   }
-  schedule(SIGALRM, NULL, curr_thread->context);
+  enter_scheduler(&timer_pause_dump);
+  raise(SIGALRM);
+  //schedule(SIGALRM, NULL, curr_thread->context);
   *value_ptr = t_block->ret_val;
   return 0;
 };
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
+  my_pthread_mutex_t* m = (my_pthread_mutex_t*) malloc(sizeof(my_pthread_mutex_t));
+  m->locked = 0;
+  m->owner = 0;
+  m->hoisted_priority = 0;
+  mutex = m;
   return 0;
 };
 
 /* aquire the mutex lock */
-int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
+int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) { 
   return 0;
 };
 

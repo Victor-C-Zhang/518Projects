@@ -91,10 +91,29 @@ void* delete_head(linked_list_t* list) {
 
 /** hashmap functions **/
 unsigned int hash(size_t num_buckets, unsigned int x) {
-    x = ((x >> 16) ^ x) * 0x45d9f3b;
+  //  printf("id: %d\n", x);
+    
+    register size_t i = sizeof(x);
+	register unsigned int hv = 0; /* could put a seed here instead of zero */
+	register const unsigned char *s = (const unsigned char *) &x;
+	while (i--) {
+		hv += *s++;
+		hv += (hv << 10);
+		hv ^= (hv >> 6);
+	}
+	hv += (hv << 3);
+	hv ^= (hv >> 11);
+	hv += (hv << 15);
+
+    	unsigned int hashval = hv & (num_buckets-1);
+//    printf("hashval: %d\n", x);
+	return hashval;
+    
+    
+/*    x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = (x >> 16) ^ x;
-    return x & (num_buckets -1);
+    return hashval; */
 }
 
 static unsigned int hash_size(unsigned int s) {
