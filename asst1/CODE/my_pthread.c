@@ -14,11 +14,6 @@ static int initScheduler = 1; //if 1, initialize scheduler
 
 timer_t* sig_timer;
 
-/* MEMORY LEAK:
- * Mallocs struct sigevent, struct sigaction, struct itimerspec without freeing.
- */
-/* create a new thread */
-
 void thread_func_wrapper(void* (*function)(void*), void* arg){
   tcb* currThread = get_active_thread();
   currThread->ret_val = function(arg);
@@ -43,6 +38,9 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   return new_thread;
 }
 
+/* MEMORY LEAK:
+ * Mallocs struct sigevent, struct sigaction, struct itimerspec without freeing.
+ */
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
   ucontext_t* curr_context = malloc(sizeof(ucontext_t));
@@ -77,12 +75,12 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     sigaction(SIGALRM, act, NULL);
 
     // set timer
-    struct itimerspec* timer_100ms = malloc(sizeof(struct itimerspec));
-    timer_100ms->it_interval.tv_nsec = QUANTUM;
-    timer_100ms->it_interval.tv_sec = 0;
-    timer_100ms->it_value.tv_nsec = QUANTUM;
-    timer_100ms->it_value.tv_sec = 0;
-    timer_settime(*sig_timer, 0, timer_100ms, NULL);
+    struct itimerspec* timer_25ms = malloc(sizeof(struct itimerspec));
+    timer_25ms->it_interval.tv_nsec = QUANTUM;
+    timer_25ms->it_interval.tv_sec = 0;
+    timer_25ms->it_value.tv_nsec = QUANTUM;
+    timer_25ms->it_value.tv_sec = 0;
+    timer_settime(*sig_timer, 0, timer_25ms, NULL);
     initScheduler = 0;
   } else {
     insert_tail(ready_q,new_thread);
