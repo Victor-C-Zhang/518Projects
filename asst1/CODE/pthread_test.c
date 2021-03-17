@@ -8,7 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "my_pthread_t.h"
-
+typedef struct params {
+	my_pthread_mutex_t* lock;
+	int* id; 
+} params;
 void printInt(void* data){
   printf("%d ", *(int *)data); 
 }
@@ -109,7 +112,7 @@ void* thread_func(void* ignored) {
 
 void test_thread_create() {
   my_pthread_t other;
-  my_pthread_create(&other, NULL, thread_func, NULL);
+  my_pthread_create(&other, NULL, thread_func, (void*)&other);
   long long n = 1000000000;
   while (n--) {
     if (!(n%5000000)) printf("Main: %lld\n",n);
@@ -130,6 +133,43 @@ void test_thread_create_join() {
   	my_pthread_join(other[i], &ret_val[i]);
   	printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
   }
+}
+
+void* thread_func_mutex(void* args) {
+  long long n = 1000000000;
+  params* vals = (params*)args;
+  my_pthread_mutex_t* lock  = (my_pthread_mutex_t*)vals->lock;
+  int id = *( (int*)vals->id );
+  printf("Thread %d about to lock\n", id);
+  my_pthread_mutex_lock(lock);
+  while (n--) {
+    if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
+  }
+  my_pthread_mutex_unlock(lock);
+  return (void*)30;
+}
+
+void testMutex(){
+	my_pthread_mutex_t lock;
+	my_pthread_mutex_init(&lock, NULL);
+	my_pthread_t threads[5];	
+	params* args[5];
+	for (int i = 0; i <5; i++) {
+		args[i] = (params*) malloc(sizeof(params));
+		args[i] -> lock = &lock;
+		args[i] -> id = &threads[i];
+		my_pthread_create(&threads[i], NULL, thread_func_mutex, (void*)args[i]);
+	}
+	
+	for (int i = 0; i <5; i++) {
+		my_pthread_join(threads[i], NULL);
+	}
+	
+	for (int i = 0; i <5; i++) {
+		free(args[i]);
+	}
+
+//	my_pthread_mutex_destroy(&lock);
 }
 
 void* yield_thread_func(void* ignored) {
@@ -154,12 +194,16 @@ void test_thread_yield() {
     if (!(n%5000000)) printf("Main: %lld\n",n);
   }
 }
+
+
 int main(int argc, char** argv){
 /*  testLinkedList();
   testHashMap();
   test_alarm();
-  test_thread_create();
-*/  test_thread_create_join();
+*/  
+//  test_thread_create();
+  testMutex();
+//  test_thread_create_join();
  // test_thread_yield();
   return 0;
 }

@@ -22,15 +22,26 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
 //    return;
 //  }
 
+ // TODO: if the status is BLOCKED, how do we maintain access to the tcb?
   should_swap = 0;
   tcb* old_thread = (tcb*) delete_head(ready_q);
   ucontext_t* old_context = old_thread->context;
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
   	insert_ready_q(old_thread); 
   }
-  // TODO: if the status is BLOCKED, how do we maintain access to the tcb?
-//  assert(0);
-
+  tcb* new_thread = (tcb*) get_head(ready_q);
+  while (new_thread->waiting_on != NULL){
+	if (new_thread->waiting_on->locked == 0){
+  		new_thread->waiting_on->locked = 1;
+		new_thread->waiting_on->owner = new_thread->id;
+		new_thread -> waiting_on = NULL;
+		printf("thread %d got lock \n", new_thread->id);
+		break;        
+	}
+    	insert_tail(ready_q, delete_head(ready_q));
+	new_thread = (tcb*) get_head(ready_q);
+  }
+  
   exit_scheduler(&timer_pause_dump);
-  swapcontext(old_context, ((tcb*)get_head(ready_q))->context);
+  swapcontext(old_context, new_thread->context);
 }
