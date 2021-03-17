@@ -21,28 +21,29 @@ void exit_scheduler(struct itimerspec* ovalue) {
 void schedule(int sig, siginfo_t* info, void* ucontext) {
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
   // TODO: if the status is BLOCKED, how do we maintain access to the tcb?
-  should_swap = 0;
-  tcb* old_thread = (tcb*) delete_head(ready_q);
+//  should_swap = 0;
+//  tcb* old_thread = (tcb*) delete_head(ready_q);
 
   ucontext_t* old_context = old_thread->context;
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
-  	if (old_thread->cycles_left > 0) { // allow threads to run for
+    if (old_thread->cycles_left > 0) { // allow threads to run for
       // multiple interrupt cycles
       --(old_thread->cycles_left);
       insert_head(ready_q[curr_prio], old_thread);
       return;
-  	}
+    }
     if (old_thread->cycles_left == -1) { // yield() doesn't impact priority
-  	  old_thread->cycles_left = curr_prio;
-  	  insert_ready_q(old_thread, curr_prio);
-  	} // TODO: check for hoisted prio
-  	else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
+      old_thread->cycles_left = curr_prio;
+      insert_ready_q(old_thread, curr_prio);
+    } // TODO: check for hoisted prio
+    else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
       old_thread->cycles_left = NUM_QUEUES - 1;
-  	  insert_ready_q(old_thread,curr_prio);
-  	} else {
-  	  old_thread->cycles_left = curr_prio + 1;
-  	  insert_ready_q(old_thread,curr_prio+1);
-  	}
+      insert_ready_q(old_thread,curr_prio);
+    } 
+    else {
+      old_thread->cycles_left = curr_prio + 1;
+      insert_ready_q(old_thread,curr_prio+1);
+    }
   }
 
   struct ucontext_t* new_context = NULL;

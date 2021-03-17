@@ -14,8 +14,8 @@ static int mid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
 
 void thread_func_wrapper(void* (*function)(void*), void* arg){
-  tcb* currThread = (tcb*) get_head(ready_q);
-  currThread->ret_val = function(arg);
+  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
+  curr_thread->ret_val = function(arg);
   my_pthread_exit(NULL);
 }
 
@@ -139,7 +139,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 	  curr_thread->status = BLOCKED;
   }
   raise(SIGALRM);
-  //schedule(SIGALRM, NULL, curr_thread->context);
   if (value_ptr != NULL){
     *value_ptr = t_block->ret_val;
   }
@@ -148,42 +147,67 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
-  my_pthread_mutex_t* m = (my_pthread_mutex_t*) malloc(sizeof(my_pthread_mutex_t));
-  m->locked = 0;
-  m->owner = 0;
-  m->hoisted_priority = 0;
-  mutex = m;
+  mutex->locked = 0;
+  mutex->owner = 0;
+  mutex->hoisted_priority = INT8_MAX;
+  mutex->leftover_cycles = 0;
+  mutex->waiting_on = create_list();
   return 0;
 };
 
+void mutex_lock(my_pthread_mutex_t* mutex, tcb* thread, int cycles){
+  mutex->locked = 1;
+  mutex->owner = thread->id; 
+  mutex->leftover_cycles = cycles;
+  thread -> waiting_on = NULL;
+  thread -> status = READY;
+  printf("thread %d got lock \n", mutex->owner);
+
+}
+
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) { 
-  tcb* curr_thread = (tcb*) get_head(ready_q);
+  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
 
   if (mutex->locked == 1){
-	  printf("locked\n");
-//    if (m->hoisted_priority < curr_thread->priority) update hoisted priority
+      enter_scheduler(&timer_pause_dump);
+      printf("locked\n");
+      if ( mutex->hoisted_priority > curr_prio) mutex->hoisted_priority = curr_prio;
       curr_thread->waiting_on = mutex;
-      my_pthread_yield();
+      insert_tail(mutex->waiting_on, curr_thread);
+      curr_thread->status = BLOCKED;
+      raise(SIGALRM);
   }
   else {
-  	mutex->locked = 1;
-	mutex->owner = curr_thread->id;
-	curr_thread -> waiting_on = NULL;
+	//when here, hoisted_prio will be INT8_MAX, aka not set, so don't need to subtract
+	mutex_lock(mutex,  curr_thread, curr_prio);
 	printf("thread %d got lock \n", mutex->owner);
-	//reset hoisted priority ???
+	//update hoisted priority ??? 
   }
+
   return 0;
 };
 
 /* release the mutex lock */
-int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
- 
-  tcb* curr_thread = (tcb*) get_head(ready_q);
+/*what if hoisted priority thread isn't waiting anymore, 
+ * should hoisted priority update to next highest value? 
+ */
+int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) { 
+  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   if ( (mutex -> locked) && (mutex->owner == curr_thread->id)) {
-  	mutex->locked = 0;
-	mutex->owner = 0;
-	//hoisted priority???
+
+  	curr_thread->cycles_left = curr_thread->cycles_left + mutex->leftover_cycles;
+
+	if ( get_head(mutex->waiting_on) != NULL) {
+		tcb* signal_thread = (tcb*) delete_head( mutex -> waiting_on);
+		mutex_lock(mutex, signal_thread, (curr_prio-mutex->hoisted_priority) );	
+		insert_head(ready_q[mutex->hoisted_priority], signal_thread); 
+	}
+	else {
+  		mutex->locked = 0;
+		mutex->owner = 0;
+  		mutex->hoisted_priority = INT8_MAX;
+	}
   }
  return 0;
 };
@@ -193,7 +217,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 //edge case: calling thread does not join and destroys before the called threads are done using it
 //need to wait for all threads w/ access to mutex to be done?
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-  free(mutex);
+  //free waiting_on list in mutex
   return 0;
 };
 
