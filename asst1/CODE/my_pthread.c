@@ -62,6 +62,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     curr_thread->context = curr_context;
     curr_thread->status = READY;
     put(all_threads, curr_thread->id, curr_thread);
+    put(all_threads, new_thread->id, new_thread);
+
     *thread = new_thread->id;
 //    printf("sched thread %d\n", curr_thread->id);
     // add new thread to ready queue

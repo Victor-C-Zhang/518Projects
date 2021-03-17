@@ -126,7 +126,7 @@ void test_thread_create_join() {
   my_pthread_create(&other[2], NULL, thread_func, (void*) &other[2]);
   printf("test: thread id %d created\n", other[2]);
   for (int i=0; i<3; i++) {
-	printf("test: thread %d join\n", other[i]);
+	  printf("test: thread %d join\n", other[i]);
   	my_pthread_join(other[i], &ret_val[i]);
   	printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
   }

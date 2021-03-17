@@ -25,6 +25,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   	if (old_thread->cycles_left > 0) { // allow threads to run for
       // multiple interrupt cycles
       --(old_thread->cycles_left);
+      insert_head(ready_q[curr_prio], old_thread);
       return;
   	}
     if (old_thread->cycles_left == -1) { // yield() doesn't impact priority
