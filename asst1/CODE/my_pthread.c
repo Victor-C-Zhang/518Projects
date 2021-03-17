@@ -65,7 +65,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     put(all_threads, new_thread->id, new_thread);
 
     *thread = new_thread->id;
-//    printf("sched thread %d\n", curr_thread->id);
+    printf("sched thread %d\n", curr_thread->id);
     // add new thread to ready queue
     insert_head(ready_q[0], new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
@@ -92,7 +92,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     put(all_threads, new_thread->id, new_thread);
     exit_scheduler(&timer_pause_dump);
   }
-//  printf("new thread %d\n", new_thread->id);
+  printf("new thread %d\n", new_thread->id);
   return 0;
 };
 
@@ -129,7 +129,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   tcb* t_block = get(all_threads, thread);
-  //printf("curr thread: %d join w %d\n", curr_thread->id, thread);
+  printf("curr thread: %d join w %d\n", curr_thread->id, thread);
   if (t_block == NULL) {
   	printf("block NULL\n");
 	return -1;
@@ -140,7 +140,9 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   }
   raise(SIGALRM);
   //schedule(SIGALRM, NULL, curr_thread->context);
-  *value_ptr = t_block->ret_val;
+  if (value_ptr != NULL){
+    *value_ptr = t_block->ret_val;
+  }
   return 0;
 };
 
@@ -157,7 +159,9 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) { 
   tcb* curr_thread = (tcb*) get_head(ready_q);
-  if (mutex->locked){
+
+  if (mutex->locked == 1){
+	  printf("locked\n");
 //    if (m->hoisted_priority < curr_thread->priority) update hoisted priority
       curr_thread->waiting_on = mutex;
       my_pthread_yield();
@@ -166,6 +170,7 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
   	mutex->locked = 1;
 	mutex->owner = curr_thread->id;
 	curr_thread -> waiting_on = NULL;
+	printf("thread %d got lock \n", mutex->owner);
 	//reset hoisted priority ???
   }
   return 0;
@@ -184,6 +189,9 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 };
 
 /* destroy the mutex */
+//seg faults ???
+//edge case: calling thread does not join and destroys before the called threads are done using it
+//need to wait for all threads w/ access to mutex to be done?
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
   free(mutex);
   return 0;

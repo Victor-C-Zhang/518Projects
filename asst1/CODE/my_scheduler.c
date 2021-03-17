@@ -20,6 +20,10 @@ void exit_scheduler(struct itimerspec* ovalue) {
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
+  // TODO: if the status is BLOCKED, how do we maintain access to the tcb?
+  should_swap = 0;
+  tcb* old_thread = (tcb*) delete_head(ready_q);
+
   ucontext_t* old_context = old_thread->context;
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
   	if (old_thread->cycles_left > 0) { // allow threads to run for
