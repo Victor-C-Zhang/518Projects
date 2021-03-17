@@ -167,6 +167,9 @@ void mutex_lock(my_pthread_mutex_t* mutex, tcb* thread, int cycles){
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) { 
+  if (mutex->waiting_on == NULL) { //mutex been destroyed
+  	return -1;
+  }
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
 
   if (mutex->locked == 1){
@@ -193,6 +196,9 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
  * should hoisted priority update to next highest value? 
  */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) { 
+  if (mutex->waiting_on == NULL) { //mutex been destroyed
+  	return -1;
+  }
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   if ( (mutex -> locked) && (mutex->owner == curr_thread->id)) {
 
@@ -217,7 +223,12 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 //edge case: calling thread does not join and destroys before the called threads are done using it
 //need to wait for all threads w/ access to mutex to be done?
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-  //free waiting_on list in mutex
-  return 0;
+	if (mutex == NULL) return -1;
+	if (mutex->locked == 1 || mutex->waiting_on == NULL) return -1;
+	while ( get_head(mutex->waiting_on) != NULL) {
+		free(delete_head(mutex->waiting_on));
+	}
+	free(mutex->waiting_on);
+	return 0;
 };
 

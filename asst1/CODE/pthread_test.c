@@ -170,7 +170,7 @@ void testMutex(){
 		free(args[i]);
 	}
 
-//	my_pthread_mutex_destroy(&lock);
+	my_pthread_mutex_destroy(&lock);
 }
 
 void* yield_thread_func(void* ignored) {
