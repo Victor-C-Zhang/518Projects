@@ -37,10 +37,12 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   new_thread->id = id;
   new_thread->context = new_context;
   new_thread->ret_val = NULL;
+  new_thread->status= READY;
+  new_thread->priority = 0;
+  new_thread->cycles_left = 0;
+  new_thread->last_run = cycles_run;
   new_thread->waited_on = create_list();
   new_thread->waiting_on = NULL;
-  new_thread->status= READY;
-  new_thread->last_run = cycles_run;
   return new_thread;
 }
 
@@ -49,7 +51,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
   ucontext_t* curr_context = malloc(sizeof(ucontext_t));
   getcontext(curr_context);
   tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
-  	//no thread has 0 tid
+  //no thread has 0 tid
   if (initScheduler == 1) {
     for (int i = 0; i < NUM_QUEUES; ++i) {
       ready_q[i] = create_list();
@@ -59,11 +61,13 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = ++tid; //no thread has 0 tid
+    curr_thread->context = curr_context;
     curr_thread->ret_val = NULL;
+    curr_thread->status = READY;
+    curr_thread->priority = 0;
+    curr_thread->cycles_left = 0;
     curr_thread->waited_on = create_list();
     curr_thread->waiting_on = NULL;
-    curr_thread->context = curr_context;
-    curr_thread->status = READY;
     put(all_threads, curr_thread->id, curr_thread);
     put(all_threads, new_thread->id, new_thread);
 
@@ -108,7 +112,7 @@ int my_pthread_yield() {
   // by yield
   raise(SIGALRM);
   return 0;
-};
+}
 
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
@@ -118,7 +122,7 @@ void my_pthread_exit(void *value_ptr) {
   while (curr_thread->waited_on->head != NULL){
 	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
 	  signal_thread->status = READY; 
-	  insert_head(ready_q[signal_thread->cycles_left], signal_thread);
+	  insert_ready_q(signal_thread, signal_thread->priority);
   }
   curr_thread->status = DONE;
   raise(SIGALRM);

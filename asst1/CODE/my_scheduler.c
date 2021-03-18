@@ -39,10 +39,12 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
       insert_ready_q(old_thread, curr_prio);
     } // TODO: check for hoisted prio
     else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
+      old_thread->priority = NUM_QUEUES - 1;
       old_thread->cycles_left = NUM_QUEUES - 1;
       insert_ready_q(old_thread,curr_prio);
     } 
     else {
+      old_thread->priority = curr_prio + 1;
       old_thread->cycles_left = curr_prio + 1;
       insert_ready_q(old_thread,curr_prio+1);
     }
@@ -64,7 +66,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   }
   if (in_scheduler) {
     in_scheduler = 0;
-    exit_scheduler(&timer_pause_dump);
+    exit_scheduler(&timer_25ms);
   }
   if (new_context == NULL) { // teardown and cleanup
     // TODO: free tcb contents: context, linkedlist

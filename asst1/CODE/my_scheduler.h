@@ -22,7 +22,9 @@ typedef struct threadControlBlock {
   ucontext_t* context;
   void* ret_val;
   thread_status status;
-  int cycles_left; // number from 0 to NUM_QUEUES-1, proxy for priority
+  int priority; // number from 0 to NUM_QUEUES-1
+  int cycles_left; // how many cycles the thread has left to run in its
+  // timeslice
   uint64_t last_run; // cycle during which the thread was last run
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
   // TODO: remove this
