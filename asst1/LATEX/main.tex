@@ -17,6 +17,7 @@
 % \usepackage{bm}
 % \usepackage{empheq}
 \usepackage{tikz}
+\usepackage{dirtytalk}
 
 \newcommand{\contra}{\raisebox{\depth}{\#}}
 
@@ -39,7 +40,66 @@
 % \end{center}
 
 \section{Introduction}
+The purpose of this assignment was to create a scheduler to expose \verb|pthread|-like functionality via user threads. Our solution assumes that we are given one kernel thread and unlimited space within which to develop scheduling and multithreading. If the user is allowed to mix kernel and user threads, scheduling would become intractably difficult, since we have no control over how or when kernel threads run.
+
 \section{Methodology}
+\subsection{Timing and Scheduler Concurrency}
+The core scheduler relies on signals sent by an alarm \verb|timer| to run scheduling events.
+\verb|SIGALRM| invokes \verb|schedule()|, which swaps threads and will be discussed later in this section.
+Immediately, interrupt signals introduce thorny concurrency issues.
+What happens if \verb|schedule| is called while we're in the middle of another scheduling decision?
+Luckily, the signal handler blocks the same signal while executing, so we need not worry about interrupting while swapping.
+Further, since we assume a single-threaded process, we may \say{enter} the scheduler by disarming the timer and \say{exit} the scheduler by re-arming the timer.
+This gives us exclusive control of the process while scheduler-specific queues and other data are being accessed.
+In particular, \verb|pthread| functions that require sequential access to important data structures call \verb|enter_scheduler()| like a user program would acquire a lock.
+
+The \verb|schedule()| function handles swapping and is called by \verb|pthread| function to finish execution.
+It is responsible for swapping out the currently running thread (front of the currently running queue), aging, and decay.
+Finally, it invokes \verb|swapcontext| to run a new context.
+The particulars of swapping will be discussed in a later section.
+
+\subsection{Priority, Aging, and Decay}
+Priority values can be assigned from \verb|0| to \verb|4|, inclusive.
+Lower numbers indicate higher priority.
+Each thread is allocated runtime based on priority:
+% $$\mathrm{runtime} = 2^{\mathrm{priority}}$$
+% For instance, a thread with priority \verb|3| will run for 8 continuous scheduling cycles.
+$$\mathtt{runtime} = {\mathtt{priority}} + 1$$
+For instance, a thread with priority \verb|3| will run for 4 continuous scheduling cycles.
+
+Every thread starts with priority \verb|0|. 
+Whenever \verb|schedule| is called within a thread's context, it ages according to the following algorithm:
+\begin{itemize}
+\item If \verb|schedule| is called via \verb|yield|, the priority does not change.
+\item If the thread has run for its entire time slice, the priority is incremented by 1, up to \verb|MAX|.
+\end{itemize}
+
+A maintenance cycle is requested every second. We scan through the queues and reassign priority based formula
+\begin{gather*}
+\mathtt{new\_prio} = \left\lfloor (\mathtt{old\_prio}+1) \cdot e^{-x/g(\mathtt{old\_prio+1})} \right\rfloor\\
+g(y) = \frac{\mathtt{CYCLES\_SINCE\_LAST}}{\ln y}
+\end{gather*}
+$\mathtt{old\_prio} \in [1,\mathtt{MAX}]$ is the old priority of the thread. It makes no sense to decay threads with priority \verb|0| so we don't bother. $x \in [1,\infty)$ is the number of scheduling cycles since the thread was last run. \verb|CYCLES_SINCE_LAST| is the number of scheduling cycles since the last maintenance cycle.
+This is an efficient way of ensuring older threads are not starved out of resources. Decay is faster for the lowest priority threads than higher priority threads. The parameters are set up so that threads which have run recently are not decayed, regardless of priority, but every thread is guaranteed to enjoy the highest priority if it has not been run since the last maintenance cycle.
+
+\subsection{Swapping}
+We maintain an array of linkedlist queues and a hashmap.
+The hashmap is indexed by thread \verb|id| and contains information about all threads created in the process, alive or dead.
+We implement multilevel priority queuing with the queue array.
+Upon thread creation, we generate a \verb|tcb| for it containing a unique thread \verb|id|, context, and metadata for priority and joining threads.
+We put the \verb|tcb| onto the back of the highest priority queue and into the hashmap.
+We insert new threads onto the back of the queue to prevent starvation.
+If we were to insert to the front, an adversary could starve old threads by continually creating new threads that run for only one sheduling cycle.
+
+When the scheduler is invoked, it first checks the priority of the currently running thread.
+If the thread has run for fewer continguous cycles than its priority specifies, the scheduler exits, allowing the thread to run for longer.
+If instead the thread indicates it intends to \verb|yield|, we move to the next step.
+The currently running thread is placed at the back of the appropriate queue determined by the aging algorithm.
+If a maintainence cycle is deemed necessary, it runs at this point.
+Finally, we pick the highest priority ready thread to run.
+
+\subsection{Design Parameters}
+
 \section{Results}
 \section{Further Work}
 
