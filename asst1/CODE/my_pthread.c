@@ -43,9 +43,6 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   return new_thread;
 }
 
-/* MEMORY LEAK:
- * Mallocs struct sigevent, struct sigaction without freeing.
- */
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
   ucontext_t* curr_context = malloc(sizeof(ucontext_t));
@@ -81,7 +78,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, sig_timer);
 
     // register signal handler for alarms
-    struct sigaction* act = malloc(sizeof(struct sigaction));
+    act = malloc(sizeof(struct sigaction));
     act->sa_sigaction = schedule;
     act->sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&act->sa_mask);

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "datastructs_t.h"
 
 /** linked list functions **/ 
@@ -93,6 +94,11 @@ int isEmpty(linked_list_t *list) {
   return list->head == NULL;
 }
 
+void free_list(linked_list_t* list) {
+  assert(list->head == NULL); // list should be empty to be destroyed
+  free(list);
+}
+
 /** hashmap functions **/
 unsigned int hash(size_t num_buckets, unsigned int x) {
   //  printf("id: %d\n", x);
@@ -170,6 +176,7 @@ void free_map(hashmap* h) {
     hash_node* node = h->buckets[i];
     while (node) {
       hash_node* next = node->next;
+      // TODO: free tcb, context, linkedlists
       free(node);
       node = next;
     }

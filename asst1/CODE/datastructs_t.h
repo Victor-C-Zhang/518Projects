@@ -53,6 +53,7 @@ void insert_head(linked_list_t* head, void* thing);
 void insert_tail(linked_list_t* head, void* thing);
 void* delete_head(linked_list_t* list);
 int isEmpty(linked_list_t* list);
+void free_list(linked_list_t* list);
 
 hashmap* create_map();
 void free_map(hashmap* h);

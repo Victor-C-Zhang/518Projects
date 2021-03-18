@@ -31,6 +31,7 @@ typedef struct threadControlBlock {
   int cycles_left; // number from 0 to NUM_QUEUES-1, proxy for priority
   uint64_t last_run; // cycle during which the thread was last run
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
+  // TODO: remove this
   my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
 
@@ -45,6 +46,8 @@ static struct itimerspec timer_25ms = {
 };
 static struct itimerspec timer_stopper = {};
 struct itimerspec timer_pause_dump;
+
+struct sigaction* act;
 
 ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
 int curr_prio; // priority of the currently scheduled thread. should usually
