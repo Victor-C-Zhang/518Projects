@@ -29,6 +29,7 @@ typedef struct threadControlBlock {
   void* ret_val;
   thread_status status;
   int cycles_left; // number from 0 to NUM_QUEUES-1, proxy for priority
+  uint64_t last_run; // cycle during which the thread was last run
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
   my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
@@ -49,6 +50,9 @@ ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler cr
 int curr_prio; // priority of the currently scheduled thread. should usually
 // be 0.
 int in_scheduler; // if scheduler is running
+uint64_t cycles_run; // number of scheduling cycles run so far
+int should_maintain; // run a maintenance cycle once
+// value is <= 0
 hashmap* all_threads; //all threads accessed by ids
 
 /**
@@ -71,6 +75,11 @@ void exit_scheduler(struct itimerspec* ovalue);
  * Sets context to head of ready queue.
  */
 void schedule(int sig, siginfo_t* info, void* ucontext);
+
+/**
+ * Decay long-running procs.
+ */
+void run_maintenance();
 
 /**
  * Insert a thread to the back of a queue

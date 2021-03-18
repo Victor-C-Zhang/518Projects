@@ -7,7 +7,6 @@
 // iLab Server:
 
 #include "my_pthread_t.h"
-#include "my_scheduler.h"
 
 static uint32_t tid = 0;
 static int mid = 0;
@@ -36,6 +35,7 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   new_thread->waited_on = create_list();
   new_thread->waiting_on = NULL;
   new_thread->status= READY;
+  new_thread->last_run = cycles_run;
   return new_thread;
 }
 
@@ -53,6 +53,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
       ready_q[i] = create_list();
     }
     all_threads = create_map();
+    should_maintain = ONE_SECOND/QUANTUM;
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = ++tid; //no thread has 0 tid
