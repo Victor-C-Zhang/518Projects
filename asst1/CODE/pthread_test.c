@@ -10,7 +10,7 @@
 #include "my_pthread_t.h"
 typedef struct params {
 	my_pthread_mutex_t* lock;
-	int* id; 
+	uint32_t* id; 
 } params;
 void printInt(void* data){
   printf("%d ", *(int *)data); 
@@ -129,7 +129,7 @@ void test_thread_create_join() {
   my_pthread_create(&other[2], NULL, thread_func, (void*) &other[2]);
   printf("test: thread id %d created\n", other[2]);
   for (int i=0; i<3; i++) {
-	printf("test: thread %d join\n", other[i]);
+	  printf("test: thread %d join\n", other[i]);
   	my_pthread_join(other[i], &ret_val[i]);
   	printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
   }
@@ -139,7 +139,7 @@ void* thread_func_mutex(void* args) {
   long long n = 1000000000;
   params* vals = (params*)args;
   my_pthread_mutex_t* lock  = (my_pthread_mutex_t*)vals->lock;
-  int id = *( (int*)vals->id );
+  uint32_t id = *( (uint32_t*)vals->id );
   printf("Thread %d about to lock\n", id);
   my_pthread_mutex_lock(lock);
   while (n--) {
@@ -159,6 +159,7 @@ void testMutex(){
 		args[i] -> lock = &lock;
 		args[i] -> id = &threads[i];
 		my_pthread_create(&threads[i], NULL, thread_func_mutex, (void*)args[i]);
+		printf("id: %d created\n", threads[i]);
 	}
 	
 	for (int i = 0; i <5; i++) {
@@ -169,7 +170,7 @@ void testMutex(){
 		free(args[i]);
 	}
 
-//	my_pthread_mutex_destroy(&lock);
+	my_pthread_mutex_destroy(&lock);
 }
 
 void* yield_thread_func(void* ignored) {

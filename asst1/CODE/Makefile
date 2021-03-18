@@ -13,10 +13,12 @@ my_pthread.a: my_pthread.o
 	$(RANLIB) libmy_pthread.a
 
 my_pthread.o: my_pthread_t.h
-	$(CC) -pthread $(CFLAGS) my_pthread.c -lrt
+	$(CC) -pthread $(CFLAGS) my_pthread.c -lrt -lm
 
 test: datastructs.c my_pthread.c pthread_test.c my_scheduler.c
-	$(CC) -g -o test pthread_test.c datastructs.c my_pthread.c my_scheduler.c -lrt
+	$(CC) -g -o test pthread_test.c datastructs.c my_pthread.c my_scheduler.c -lrt -lm
 
+data: datastructs.c my_pthread.c data.c my_scheduler.c
+	$(CC) -g -pthread -o data data.c datastructs.c my_pthread.c my_scheduler.c -lrt
 clean:
 	rm -rf testfile *.o *.a

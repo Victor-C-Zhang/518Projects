@@ -40,11 +40,6 @@ typedef uint my_pthread_t;
  */
 tcb* get_active_thread();
 
-/**
-* Insert function for ready queue
-* update based on queue type, intially FIFO, update later to priority
-*/
-void insert_ready_q();
 
 /* create a new thread */
 /**
