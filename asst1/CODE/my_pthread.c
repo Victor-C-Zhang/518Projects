@@ -9,7 +9,6 @@
 #include "my_pthread_t.h"
 
 static uint32_t tid = 0;
-static int mid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
 
 typedef struct mut_wait_list {

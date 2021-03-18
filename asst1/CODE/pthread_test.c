@@ -163,6 +163,7 @@ void testMutex(){
 	}
 	
 	for (int i = 0; i <5; i++) {
+		printf("id: %d join\n", threads[i]);
 		my_pthread_join(threads[i], NULL);
 	}
 	
@@ -201,10 +202,10 @@ int main(int argc, char** argv){
 /*  testLinkedList();
   testHashMap();
   test_alarm();
-*/  
-//  test_thread_create();
+*/  	
+  test_thread_create();
   testMutex();
-//  test_thread_create_join();
- // test_thread_yield();
+  test_thread_create_join();
+  test_thread_yield();
   return 0;
 }
