@@ -19,6 +19,6 @@ test: datastructs.c my_pthread.c pthread_test.c my_scheduler.c
 	$(CC) -g -o test pthread_test.c datastructs.c my_pthread.c my_scheduler.c -lrt -lm
 
 data: datastructs.c my_pthread.c data.c my_scheduler.c
-	$(CC) -g -pthread -o data data.c datastructs.c my_pthread.c my_scheduler.c -lrt
+	$(CC) -g -pthread -o data data.c datastructs.c my_pthread.c my_scheduler.c -lrt -lm
 clean:
 	rm -rf testfile *.o *.a
