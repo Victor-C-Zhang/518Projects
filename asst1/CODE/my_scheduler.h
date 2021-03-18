@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <time.h>
 #include "datastructs_t.h"
+#include "my_pthread_t.h"
 
 #define STACKSIZE 32768
 #define QUANTUM 25000000
@@ -13,14 +14,7 @@
 typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
 
 typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
-/* mutex struct definition */
-typedef struct my_pthread_mutex_t {
-  int locked; //0 FREE, 1 LOCKED
-  uint32_t owner;
-  int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
-  int leftover_cycles; //priority of the thread which acquired lock
-  linked_list_t* waiting_on; // linked-list of threads waiting on this lock
-} my_pthread_mutex_t;
+
 
 /* tcb struct definition */
 typedef struct threadControlBlock {

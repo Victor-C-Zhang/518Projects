@@ -7,6 +7,7 @@
 // iLab Server:
 
 #include "my_pthread_t.h"
+#include "my_scheduler.h"
 
 static uint32_t tid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
