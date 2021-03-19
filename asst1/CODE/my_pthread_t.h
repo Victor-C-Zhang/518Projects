@@ -20,26 +20,25 @@
 #include <stdint.h>
 #include <signal.h>
 #include <time.h>
-#include "my_scheduler.h"
 #include "datastructs_t.h"
-// so it will compile
-#include <pthread.h>
 
 /***********************************
 * STRUCT DEFINITIONS 
 ***********************************/
 typedef uint my_pthread_t;
 
+/* mutex struct definition */
+typedef struct my_pthread_mutex_t {
+  int locked; //0 FREE, 1 LOCKED
+  uint32_t owner;
+  int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
+  int holding_thread_priority; //priority of the thread which acquired lock
+//  linked_list_t* waiting_on; // linked-list of threads waiting on this lock
+} my_pthread_mutex_t;
 
 /**********************************
  * FUNCTION DEFINITIONS 
 ***********************************/
-
-/**
- * Returns currently running thread
- */
-tcb* get_active_thread();
-
 
 /* create a new thread */
 /**
@@ -47,7 +46,7 @@ tcb* get_active_thread();
  * Set tcb struct values, ucontext values.
  * Getcontext to save the current context.
  * Makecontext for new thread to run the (function).
- * Add to ready queue // TODO: with priority... (number).
+ * Add to ready queue
  */
 // Bharti
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);

@@ -7,6 +7,7 @@
 // iLab Server:
 
 #include "my_pthread_t.h"
+#include "my_scheduler.h"
 
 static uint32_t tid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
@@ -36,22 +37,21 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   new_thread->id = id;
   new_thread->context = new_context;
   new_thread->ret_val = NULL;
-  new_thread->waited_on = create_list();
-  new_thread->waiting_on = NULL;
   new_thread->status= READY;
+  new_thread->priority = 0;
+  new_thread->cycles_left = 0;
+  new_thread->acq_locks = 0;
   new_thread->last_run = cycles_run;
+  new_thread->waited_on = create_list();
   return new_thread;
 }
 
-/* MEMORY LEAK:
- * Mallocs struct sigevent, struct sigaction without freeing.
- */
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
   ucontext_t* curr_context = malloc(sizeof(ucontext_t));
   getcontext(curr_context);
   tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
-  	//no thread has 0 tid
+  //no thread has 0 tid
   if (initScheduler == 1) {
     for (int i = 0; i < NUM_QUEUES; ++i) {
       ready_q[i] = create_list();
@@ -61,11 +61,13 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = ++tid; //no thread has 0 tid
-    curr_thread->ret_val = NULL;
-    curr_thread->waited_on = create_list();
-    curr_thread->waiting_on = NULL;
     curr_thread->context = curr_context;
+    curr_thread->ret_val = NULL;
     curr_thread->status = READY;
+    curr_thread->priority = 0;
+    curr_thread->cycles_left = 0;
+    curr_thread->acq_locks = 0;
+    curr_thread->waited_on = create_list();
     put(all_threads, curr_thread->id, curr_thread);
     put(all_threads, new_thread->id, new_thread);
 
@@ -81,7 +83,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, sig_timer);
 
     // register signal handler for alarms
-    struct sigaction* act = malloc(sizeof(struct sigaction));
+    act = malloc(sizeof(struct sigaction));
     act->sa_sigaction = schedule;
     act->sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&act->sa_mask);
@@ -110,7 +112,7 @@ int my_pthread_yield() {
   // by yield
   raise(SIGALRM);
   return 0;
-};
+}
 
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
@@ -120,7 +122,7 @@ void my_pthread_exit(void *value_ptr) {
   while (curr_thread->waited_on->head != NULL){
 	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
 	  signal_thread->status = READY; 
-	  insert_head(ready_q[signal_thread->cycles_left], signal_thread);
+	  insert_ready_q(signal_thread, signal_thread->priority);
   }
   curr_thread->status = DONE;
   raise(SIGALRM);
@@ -156,89 +158,92 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
   mutex->locked = 0;
   mutex->owner = 0;
   mutex->hoisted_priority = INT8_MAX;
-  mutex->leftover_cycles = 0;
-  mutex->waiting_on = create_list();
+  mutex->holding_thread_priority = 0;
+//  mutex->waiting_on = create_list();
   return 0;
-};
-
-void mutex_lock(my_pthread_mutex_t* mutex, tcb* thread, int cycles){
-  mutex->locked = 1;
-  mutex->owner = thread->id; 
-  mutex->leftover_cycles = cycles;
-  thread -> waiting_on = NULL;
-  thread -> status = READY;
-//  printf("thread %d got lock \n", mutex->owner);
-
 }
 
 /* aquire the mutex lock */
-int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) { 
-  if (mutex->waiting_on == NULL) { //mutex been destroyed
-  	return -1;
+int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
+  enter_scheduler(&timer_pause_dump);
+  while (__atomic_exchange_n(&mutex->locked, 1, __ATOMIC_ACQ_REL)) {
+    // hoist priority of mutex
+    tcb* curr_thread = (tcb*)get_head(ready_q[curr_prio]);
+    if ( mutex->hoisted_priority > curr_thread->priority) { // change the
+      // priority of the thread holding the mutex
+      mutex->hoisted_priority = curr_thread->priority;
+      tcb* holding_thread = (tcb*) get(all_threads, mutex->owner);
+      if (holding_thread->status == DONE) continue; // auto-assign locks from
+      // dead threads
+      if (holding_thread->priority > curr_thread->priority) {
+        int prio = holding_thread->priority;
+        holding_thread->priority = curr_thread->priority;
+        if (holding_thread->status == READY) { // remove thread from queue
+          // and add to faster queue
+          node_t* ptr = ready_q[prio]->head;
+          node_t* prev_ptr = NULL;
+          while (ptr != NULL) {
+            tcb *thread = (tcb *) ptr->data;
+            if (thread == holding_thread) {
+              insert_ready_q(thread, curr_thread->priority);
+              if (ptr == ready_q[prio]->head) {
+                ready_q[prio]->head = ptr->next;
+              } else {
+                prev_ptr->next = ptr->next;
+              }
+              if (ptr == ready_q[prio]->tail) {
+                ready_q[prio]->tail = NULL;
+              }
+              break;
+            }
+            prev_ptr = ptr;
+            ptr = ptr->next;
+          }
+        }
+      }
+    }
+    my_pthread_yield();
   }
-  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
-
-  if (mutex->locked == 1){
-      enter_scheduler(&timer_pause_dump);
-  //    printf("locked\n");
-      if ( mutex->hoisted_priority > curr_prio) mutex->hoisted_priority = curr_prio;
-      curr_thread->waiting_on = mutex;
-      mut_wait_list* pairT = malloc(sizeof(pairT));
-      pairT -> thread = curr_thread;
-      pairT -> priority = curr_prio;
-      insert_tail(mutex->waiting_on, pairT);
-      curr_thread->status = BLOCKED;
-      raise(SIGALRM);
+  tcb* curr_thread = (tcb*)get_head(ready_q[curr_prio]);
+  mutex->owner = curr_thread->id;
+  if (mutex->hoisted_priority > curr_thread->priority) {
+    mutex->hoisted_priority = curr_thread->priority;
   }
-  else {
-	//when here, hoisted_prio will be INT8_MAX, aka not set, so don't need to subtract
-	mutex_lock(mutex,  curr_thread, curr_prio);
-//	printf("thread %d got lock \n", mutex->owner);
-	//update hoisted priority ??? 
+  if (mutex->hoisted_priority == curr_prio) { // no need to keep hoisting
+    mutex->hoisted_priority = INT8_MAX;
+    mutex->holding_thread_priority = curr_prio;
+  } else if (mutex->hoisted_priority < curr_thread->priority) { // hoist priority
+    curr_thread->cycles_left += mutex->hoisted_priority - curr_thread->priority;
+    mutex->holding_thread_priority = curr_thread->priority;
+    curr_thread->priority = mutex->hoisted_priority;
+    // temporary mismatch between curr_prio and thread prio is ok. will be
+    // fixed before any other thread runs
   }
-
+  ++curr_thread->acq_locks;
+  exit_scheduler(&timer_pause_dump);
   return 0;
 };
 
 /* release the mutex lock */
-/*what if hoisted priority thread isn't waiting anymore, 
- * should hoisted priority update to next highest value? 
- */
-int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) { 
-  if (mutex->waiting_on == NULL) { //mutex been destroyed
-  	return -1;
+int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
+  enter_scheduler(&timer_pause_dump);
+  mutex->locked = 0;
+  tcb* curr_thread = (tcb*)get_head(ready_q[curr_prio]);
+  --curr_thread->acq_locks;
+  if (mutex->hoisted_priority < mutex->holding_thread_priority) {
+    curr_thread->cycles_left -= mutex->holding_thread_priority -
+          mutex->hoisted_priority;
+    curr_thread->priority = mutex->holding_thread_priority;
+    if (curr_thread->cycles_left < 0) curr_thread->cycles_left = 0;
   }
-  tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
-  if ( (mutex -> locked) && (mutex->owner == curr_thread->id)) {
-
-  	curr_thread->cycles_left = curr_thread->cycles_left + mutex->leftover_cycles;
-
-	if ( get_head(mutex->waiting_on) != NULL) {
-		mut_wait_list* signal_pair = (mut_wait_list*) delete_head( mutex -> waiting_on);
-		mutex_lock(mutex, signal_pair->thread, (signal_pair->priority-mutex->hoisted_priority) );
-		insert_head(ready_q[mutex->hoisted_priority], signal_pair->thread); 
-		free(signal_pair);
-	}
-	else {
-  		mutex->locked = 0;
-		mutex->owner = 0;
-  		mutex->hoisted_priority = INT8_MAX;
-	}
-  }
- return 0;
+  exit_scheduler(&timer_pause_dump);
+  return 0;
 };
 
 /* destroy the mutex */
-//seg faults ???
-//edge case: calling thread does not join and destroys before the called threads are done using it
-//need to wait for all threads w/ access to mutex to be done?
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 	if (mutex == NULL) return -1;
-	if (mutex->locked == 1 || mutex->waiting_on == NULL) return -1;
-	while ( get_head(mutex->waiting_on) != NULL) {
-		free(delete_head(mutex->waiting_on));
-	}
-	free(mutex->waiting_on);
+	if (__atomic_exchange_n(&mutex->locked, 1, __ATOMIC_ACQ_REL)) return -1;
 	return 0;
 };
 

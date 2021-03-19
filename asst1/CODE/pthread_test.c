@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "my_pthread_t.h"
+#include "my_scheduler.h"
 typedef struct params {
 	my_pthread_mutex_t* lock;
 	uint32_t* id; 
@@ -203,9 +204,9 @@ int main(int argc, char** argv){
   testHashMap();
   test_alarm();
 */  	
-  test_thread_create();
+//  test_thread_create();
   testMutex();
-  test_thread_create_join();
-  test_thread_yield();
+//  test_thread_create_join();
+//  test_thread_yield();
   return 0;
 }

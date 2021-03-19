@@ -4,23 +4,17 @@
 #include <signal.h>
 #include <time.h>
 #include "datastructs_t.h"
+#include "my_pthread_t.h"
 
 #define STACKSIZE 32768
 #define QUANTUM 25000000
 #define ONE_SECOND 1000000000
 #define NUM_QUEUES 5
 
-typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
+typedef linked_list_t ready_q_t;
 
 typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
-/* mutex struct definition */
-typedef struct my_pthread_mutex_t {
-  int locked; //0 FREE, 1 LOCKED
-  uint32_t owner;
-  int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
-  int leftover_cycles; //priority of the thread which acquired lock
-  linked_list_t* waiting_on; // linked-list of threads waiting on this lock
-} my_pthread_mutex_t;
+
 
 /* tcb struct definition */
 typedef struct threadControlBlock {
@@ -28,10 +22,12 @@ typedef struct threadControlBlock {
   ucontext_t* context;
   void* ret_val;
   thread_status status;
-  int cycles_left; // number from 0 to NUM_QUEUES-1, proxy for priority
+  int priority; // number from 0 to NUM_QUEUES-1
+  int cycles_left; // how many cycles the thread has left to run in its
+  // timeslice
+  int acq_locks; // how many locks the thread currently has
   uint64_t last_run; // cycle during which the thread was last run
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
-  my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
 
 timer_t* sig_timer;
@@ -45,6 +41,8 @@ static struct itimerspec timer_25ms = {
 };
 static struct itimerspec timer_stopper = {};
 struct itimerspec timer_pause_dump;
+
+struct sigaction* act;
 
 ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
 int curr_prio; // priority of the currently scheduled thread. should usually
