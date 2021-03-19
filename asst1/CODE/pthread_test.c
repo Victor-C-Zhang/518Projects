@@ -205,8 +205,8 @@ int main(int argc, char** argv){
   test_alarm();
 */  	
 //  test_thread_create();
-//  testMutex();
-  test_thread_create_join();
+  testMutex();
+//  test_thread_create_join();
 //  test_thread_yield();
   return 0;
 }

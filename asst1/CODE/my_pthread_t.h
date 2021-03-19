@@ -32,8 +32,8 @@ typedef struct my_pthread_mutex_t {
   int locked; //0 FREE, 1 LOCKED
   uint32_t owner;
   int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
-  int leftover_cycles; //priority of the thread which acquired lock
-  linked_list_t* waiting_on; // linked-list of threads waiting on this lock
+  int holding_thread_priority; //priority of the thread which acquired lock
+//  linked_list_t* waiting_on; // linked-list of threads waiting on this lock
 } my_pthread_mutex_t;
 
 /**********************************

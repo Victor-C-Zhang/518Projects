@@ -34,19 +34,19 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
       insert_head(ready_q[curr_prio], old_thread);
       return;
     }
-    if (old_thread->cycles_left == -1) { // yield() doesn't impact priority
-      old_thread->cycles_left = curr_prio;
-      insert_ready_q(old_thread, curr_prio);
-    } // TODO: check for hoisted prio
-    else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
+    if (old_thread->cycles_left == -1 || old_thread->acq_locks > 0) { // yield()
+      // prio shouldn't change; hoisted prio shouldn't change
+      old_thread->cycles_left = old_thread->priority;
+      insert_ready_q(old_thread, old_thread->priority);
+    } else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
       old_thread->priority = NUM_QUEUES - 1;
       old_thread->cycles_left = NUM_QUEUES - 1;
-      insert_ready_q(old_thread,curr_prio);
+      insert_ready_q(old_thread,old_thread->priority);
     } 
     else {
-      old_thread->priority = curr_prio + 1;
-      old_thread->cycles_left = curr_prio + 1;
-      insert_ready_q(old_thread,curr_prio+1);
+      old_thread->priority = old_thread->priority + 1;
+      old_thread->cycles_left = old_thread->priority + 1;
+      insert_ready_q(old_thread,old_thread->priority);
     }
   }
 
@@ -97,11 +97,12 @@ void run_maintenance() {
       int cycles_since_last = ONE_SECOND/QUANTUM - should_maintain;
       int x = (int)(cycles_run-thread->last_run);
       double gy = (cycles_since_last)/log(i+1) - 1;
-      int new_prio = (int)((thread->cycles_left + 1)*exp(-(double)x/gy));
-      if (new_prio == thread->cycles_left) { // do nothing
+      int new_prio = (int)((thread->priority + 1)*exp(-(double)x/gy));
+      if (new_prio == thread->priority) { // do nothing
         prev_ptr = ptr;
         ptr = ptr->next;
       } else { // remove thread from current queue and add it to lower queue
+        thread->priority = new_prio;
         insert_ready_q(thread, new_prio);
         if (ptr == ready_q[i]->head) {
           ready_q[i]->head = ptr->next;
