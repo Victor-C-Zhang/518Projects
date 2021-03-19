@@ -46,7 +46,7 @@ typedef struct my_pthread_mutex_t {
  * Set tcb struct values, ucontext values.
  * Getcontext to save the current context.
  * Makecontext for new thread to run the (function).
- * Add to ready queue // TODO: with priority... (number).
+ * Add to ready queue
  */
 // Bharti
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);

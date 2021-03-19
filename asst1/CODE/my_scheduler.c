@@ -21,7 +21,6 @@ void exit_scheduler(struct itimerspec* ovalue) {
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
-  // TODO: if the status is BLOCKED, how do we maintain access to the tcb?
   ucontext_t* old_context = old_thread->context;
   old_thread->last_run = cycles_run;
   ++cycles_run;

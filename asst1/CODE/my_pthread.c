@@ -43,7 +43,6 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   new_thread->acq_locks = 0;
   new_thread->last_run = cycles_run;
   new_thread->waited_on = create_list();
-  new_thread->waiting_on = NULL;
   return new_thread;
 }
 
@@ -69,7 +68,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     curr_thread->cycles_left = 0;
     curr_thread->acq_locks = 0;
     curr_thread->waited_on = create_list();
-    curr_thread->waiting_on = NULL;
     put(all_threads, curr_thread->id, curr_thread);
     put(all_threads, new_thread->id, new_thread);
 
@@ -178,8 +176,30 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
       if (holding_thread->status == DONE) continue; // auto-assign locks from
       // dead threads
       if (holding_thread->priority > curr_thread->priority) {
+        int prio = holding_thread->priority;
         holding_thread->priority = curr_thread->priority;
-        // TODO: remove thread from queue and add to faster queue
+        if (holding_thread->status == READY) { // remove thread from queue
+          // and add to faster queue
+          node_t* ptr = ready_q[prio]->head;
+          node_t* prev_ptr = NULL;
+          while (ptr != NULL) {
+            tcb *thread = (tcb *) ptr->data;
+            if (thread == holding_thread) {
+              insert_ready_q(thread, curr_thread->priority);
+              if (ptr == ready_q[prio]->head) {
+                ready_q[prio]->head = ptr->next;
+              } else {
+                prev_ptr->next = ptr->next;
+              }
+              if (ptr == ready_q[prio]->tail) {
+                ready_q[prio]->tail = NULL;
+              }
+              break;
+            }
+            prev_ptr = ptr;
+            ptr = ptr->next;
+          }
+        }
       }
     }
     my_pthread_yield();
@@ -196,6 +216,8 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
     curr_thread->cycles_left += mutex->hoisted_priority - curr_thread->priority;
     mutex->holding_thread_priority = curr_thread->priority;
     curr_thread->priority = mutex->hoisted_priority;
+    // temporary mismatch between curr_prio and thread prio is ok. will be
+    // fixed before any other thread runs
   }
   ++curr_thread->acq_locks;
   exit_scheduler(&timer_pause_dump);

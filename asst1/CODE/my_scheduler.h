@@ -11,7 +11,7 @@
 #define ONE_SECOND 1000000000
 #define NUM_QUEUES 5
 
-typedef linked_list_t ready_q_t; // TODO: adapt to priority queue
+typedef linked_list_t ready_q_t;
 
 typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
 
@@ -28,8 +28,6 @@ typedef struct threadControlBlock {
   int acq_locks; // how many locks the thread currently has
   uint64_t last_run; // cycle during which the thread was last run
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
-  // TODO: remove this
-  my_pthread_mutex_t* waiting_on; // lock it's waiting on right now
 } tcb;
 
 timer_t* sig_timer;
