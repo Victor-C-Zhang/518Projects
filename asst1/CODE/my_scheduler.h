@@ -47,6 +47,7 @@ struct sigaction* act;
 ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
 int curr_prio; // priority of the currently scheduled thread. should usually
 // be 0.
+ucontext_t* prev_done;
 int in_scheduler; // if scheduler is running
 uint64_t cycles_run; // number of scheduling cycles run so far
 int should_maintain; // run a maintenance cycle once

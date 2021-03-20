@@ -176,7 +176,8 @@ void free_map(hashmap* h) {
     hash_node* node = h->buckets[i];
     while (node) {
       hash_node* next = node->next;
-      // TODO: free tcb, context, linkedlists
+      // context, linkedlists free'd earlier
+      free(node->value); //free tcb
       free(node);
       node = next;
     }

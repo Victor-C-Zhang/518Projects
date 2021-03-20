@@ -27,13 +27,13 @@ FILE *fp;
 clock_t start;
 clock_t stop;
 int totalTime = 10;
-int multMin = 1;
-int multTot = 1;
-int lockMin = 0;
-int lockTot = 0;
+int multMin = 2;
+int multTot = 2;
+int lockMin = 1;
+int lockTot = 1;
 int threadMin = 1;
 int threadTot = 15;
-char* fName = "data.csv";
+char* fName = "data3.csv";
 
 void startTime(){ 
 	start = clock();	
@@ -160,13 +160,13 @@ int main(int argc, char** argv){
 				float reg_time = 0; 
 				for (int numTimes = 1; numTimes <= totalTime; numTimes++) {
 					printf("%f, %d, %d, %d\n", .5f*mult, isLock, threadNum, numTimes);	
-//					reg_time += pthread_data(mult, isLock, threadNum);
+					reg_time += pthread_data(mult, isLock, threadNum);
 					my_time += my_pthread_data(mult, isLock, threadNum);
 				}
 				my_time = my_time / (float)totalTime;
-//				reg_time = reg_time / (float)totalTime;
+				reg_time = reg_time / (float)totalTime;
 				printf("%f, %d, %d, %f, %f\n", 1000000000*.5f*mult, isLock, threadNum,my_time, reg_time);
-//				fprintf(fp,"%f, %d, %d, %f, %f\n", 1000000000*.5f*mult, isLock, threadNum,my_time, reg_time);
+				fprintf(fp,"%f, %d, %d, %f, %f\n", 1000000000*.5f*mult, isLock, threadNum,my_time, reg_time);
 			}
 		}
 	}

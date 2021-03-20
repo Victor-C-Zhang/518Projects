@@ -58,6 +58,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     }
     all_threads = create_map();
     should_maintain = ONE_SECOND/QUANTUM;
+    prev_done = NULL;
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = ++tid; //no thread has 0 tid
@@ -124,7 +125,9 @@ void my_pthread_exit(void *value_ptr) {
 	  signal_thread->status = READY; 
 	  insert_ready_q(signal_thread, signal_thread->priority);
   }
+  free_list(curr_thread->waited_on);
   curr_thread->status = DONE;
+//  printf("curr thread: %d done\n", curr_thread->id);
   raise(SIGALRM);
 };
 
