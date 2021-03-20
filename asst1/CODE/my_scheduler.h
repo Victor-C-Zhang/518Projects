@@ -15,11 +15,10 @@ typedef linked_list_t ready_q_t;
 
 typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
 
-
 /* tcb struct definition */
 typedef struct threadControlBlock {
   uint32_t id;
-  ucontext_t* context;
+  ucontext_t context;
   void* ret_val;
   thread_status status;
   int priority; // number from 0 to NUM_QUEUES-1

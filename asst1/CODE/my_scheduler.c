@@ -22,12 +22,12 @@ void exit_scheduler(struct itimerspec* ovalue) {
 void schedule(int sig, siginfo_t* info, void* ucontext) {
   if (prev_done != NULL) {
   	free(prev_done->uc_stack.ss_sp);
-	free(prev_done);
+//	free(prev_done);
 	prev_done = NULL;
   }
 //	printf("schedule!\n");
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
-  ucontext_t* old_context = old_thread->context;
+  ucontext_t* old_context = &old_thread->context;
   old_thread->last_run = cycles_run;
   ++cycles_run;
   --should_maintain;
@@ -57,7 +57,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     }
   }
   else if (old_thread->status == DONE){ 
-  	prev_done = old_thread->context;
+  	prev_done = old_context;
   }
 
   if (should_maintain <= 0) {
@@ -70,7 +70,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   for (int i = 0; i < NUM_QUEUES; ++i) {
     if (!isEmpty(ready_q[i])) {
       curr_prio = i;
-      new_context = ((tcb*)get_head(ready_q[i]))->context;
+      new_context = &((tcb*)get_head(ready_q[i]))->context;
       break;
     }
   }

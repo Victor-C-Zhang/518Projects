@@ -23,19 +23,10 @@ void thread_func_wrapper(void* (*function)(void*), void* arg){
   my_pthread_exit(NULL);
 }
 
-tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
+tcb* create_tcb(void* (*function)(void*), void* arg,
                 my_pthread_t id) {
-  ucontext_t* new_context = malloc(sizeof(ucontext_t));
-  getcontext(new_context);
-  new_context->uc_stack.ss_size = STACKSIZE;
-  new_context->uc_stack.ss_sp = malloc(STACKSIZE);
-  new_context->uc_link = uc_link;
-  sigemptyset(&new_context->uc_sigmask);
-  makecontext(new_context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
-
   tcb* new_thread = (tcb*) malloc(sizeof(tcb));
   new_thread->id = id;
-  new_thread->context = new_context;
   new_thread->ret_val = NULL;
   new_thread->status= READY;
   new_thread->priority = 0;
@@ -43,17 +34,25 @@ tcb* create_tcb(void* (*function)(void*), void* arg, ucontext_t* uc_link,
   new_thread->acq_locks = 0;
   new_thread->last_run = cycles_run;
   new_thread->waited_on = create_list();
+
+  getcontext(&new_thread->context);
+//  getcontext(new_thread->context.uc_link);
+  new_thread->context.uc_stack.ss_size = STACKSIZE;
+  new_thread->context.uc_stack.ss_sp = malloc(STACKSIZE);
+  sigemptyset(&new_thread->context.uc_sigmask);
+  makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
+
   return new_thread;
 }
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
-  ucontext_t* curr_context = malloc(sizeof(ucontext_t));
-  getcontext(curr_context);
-  tcb* new_thread = create_tcb(function,arg,curr_context,++tid);
+//  ucontext_t* curr_context = malloc(sizeof(ucontext_t));
+//  getcontext(curr_context);
+  tcb* new_thread = create_tcb(function,arg,++tid);
   //no thread has 0 tid
   if (initScheduler == 1) {
-    for (int i = 0; i < NUM_QUEUES; ++i) {
+     for (int i = 0; i < NUM_QUEUES; ++i) {
       ready_q[i] = create_list();
     }
     all_threads = create_map();
@@ -62,7 +61,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = ++tid; //no thread has 0 tid
-    curr_thread->context = curr_context;
+//    curr_thread->context = malloc(sizeof(ucontext_t));
+    getcontext(&curr_thread->context);
     curr_thread->ret_val = NULL;
     curr_thread->status = READY;
     curr_thread->priority = 0;
