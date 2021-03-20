@@ -15,7 +15,7 @@
 #include <ucontext.h>
 #include <stdint.h>
 
-#define HASHSIZE 256 //must be a power of 2!
+#define HASHSIZE 100
 
 /* linked list structs */
 typedef struct _node_t {
@@ -38,7 +38,7 @@ typedef struct _hash_node {
 typedef struct _hashmap {
   size_t num_buckets;
   size_t entries; /* Total number of entries in the table. */
-  hash_node** buckets;
+  void** buckets;
 } hashmap;
 
 /* Function Declarations: */
@@ -58,6 +58,6 @@ void free_list(linked_list_t* list);
 hashmap* create_map();
 void free_map(hashmap* h);
 void* put(hashmap* h, uint32_t key, void* value);
-void* get(hashmap* h, uint32_t key);
+void* get(hashmap* h, uint32_t value);
 
 #endif

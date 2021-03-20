@@ -3,13 +3,15 @@
 
 #include <signal.h>
 #include <time.h>
-#include "datastructs_t.h"
 #include "my_pthread_t.h"
+#include "datastructs_t.h"
+
 
 #define STACKSIZE 32768
 #define QUANTUM 25000000
 #define ONE_SECOND 1000000000
 #define NUM_QUEUES 5
+#define NUM_THREADS 100;
 
 typedef linked_list_t ready_q_t;
 

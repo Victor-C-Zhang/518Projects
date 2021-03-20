@@ -29,11 +29,11 @@ clock_t stop;
 int totalTime = 10;
 int multMin = 1;
 int multTot = 1;
-int lockMin = 0;
-int lockTot = 0;
-int threadMin = 13;
+int lockMin = 1;
+int lockTot = 1;
+int threadMin = 1;
 int threadTot = 15;
-char* fName = "data.csv";
+char* fName = "data1.csv";
 
 void startTime(){ 
 	start = clock();	

@@ -10,6 +10,7 @@
 #include <string.h>
 #include <assert.h>
 #include "datastructs_t.h"
+#include "my_scheduler.h"
 
 /** linked list functions **/ 
 void print_list(linked_list_t* list, void (*fptr)(void *)){
@@ -133,24 +134,8 @@ static unsigned int hash_size(unsigned int s) {
 }
 
 int rehash(hashmap* h) {
-  size_t new_size, i;
-  hash_node** new_buckets = NULL;
-  new_size = hash_size(h->entries * 2);
-  new_buckets = calloc(new_size, sizeof(hash_node*));
-  for (i = 0; i < h->num_buckets; i++) {
-    hash_node* node = h->buckets[i];
-    while (node) {
-      hash_node* next = node->next;
-      unsigned int index = hash(new_size, node->key);
-      node->next = new_buckets[index];
-      new_buckets[index] = node;
-      node = next;
-    }
-  }
-
-  h->num_buckets = new_size;
-  free(h->buckets);
-  h->buckets = new_buckets;
+  h->buckets = realloc(h->buckets, (h->num_buckets)*2*sizeof(tcb*) );
+  h->num_buckets = h->num_buckets * 2;
   return 1;
 }
 
@@ -164,23 +149,17 @@ hash_node* create_hash_node(uint32_t key, void* value) {
 
 hashmap* create_map() {
   hashmap* hm = (hashmap*) malloc(sizeof(hashmap));
-  memset(hm, '\000', sizeof(hashmap));
   hm->num_buckets = HASHSIZE;
   hm->entries = 0;
-  hm->buckets = calloc(HASHSIZE, sizeof(hash_node*));
+  hm->buckets = malloc(sizeof(tcb*) * HASHSIZE);
   return hm;
 }
 
 void free_map(hashmap* h) {
+  tcb** buckets = (tcb**) h->buckets;
   for (size_t i = 0; i < h->num_buckets; i++) {
-    hash_node* node = h->buckets[i];
-    while (node) {
-      hash_node* next = node->next;
-      // context, linkedlists free'd earlier
-      free(node->value); //free tcb
-      free(node);
-      node = next;
-    }
+    tcb* node = (tcb*) buckets[i];
+    free(node);
   }
   
   free(h->buckets);
@@ -190,38 +169,16 @@ void free_map(hashmap* h) {
 
 void* put(hashmap* h, uint32_t key, void* value){
   if (h == NULL) {return NULL;}
-  unsigned int index = hash(h->num_buckets, key);
-  hash_node* node = NULL;
-
-  for (node = h->buckets[index]; node; node = node->next) {
-    if (key == node->key) break;
-  }
-
-  if (node) {
-    void* temp = node->value;
-    node->value = value;
-    return temp;
-  }
-  
-  node = create_hash_node(key, value);
-  node->next = h->buckets[index];
-  h->buckets[index] = node;
+  tcb** buckets = (tcb**) h->buckets;
+  buckets[key] = (tcb*) value;
   h->entries++;
-  if ( (float)h->entries/(float)h->num_buckets > .75 ) rehash(h);
-  return node->value;
+  if ( (float)h->entries/(float)h->num_buckets > .85 ) rehash(h);
+  return value;
 }
 
-void* get(hashmap* h, uint32_t key){
+void* get(hashmap* h, uint32_t value){
   if (h == NULL) {return NULL;}
-  unsigned int index = hash(h->num_buckets, key);
-  hash_node* node;
-  for (node = h->buckets[index]; node; node = node->next) {
-    if (key == node->key) break;
-  }
-
-  if (node) {
-    return node->value;
-  }
-
-  return NULL;
+  if (value-1 > h->entries) { return NULL; }
+  tcb** buckets = (tcb**) h->buckets;
+  return buckets[value];
 }

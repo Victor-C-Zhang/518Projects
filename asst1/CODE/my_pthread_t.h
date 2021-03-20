@@ -8,8 +8,6 @@
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
 
-#define _GNU_SOURCE
-
 /* include lib header files that you need here: */
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -21,11 +19,24 @@
 #include <signal.h>
 #include <time.h>
 #include "datastructs_t.h"
+#include "my_scheduler.h"
+
+typedef uint my_pthread_t;
+
+#define _GNU_SOURCE
+#define pthread_create(a,b,c,d) my_pthread_create((my_pthread_t*)a,b,c,d)
+#define pthread_yield() my_pthread_yield()
+#define pthread_exit(x) my_pthread_exit(x)
+#define pthread_join(x,y) my_pthread_join(x,y)
+#define pthread_mutex_init(x,y) my_pthread_mutex_init(x,y)
+#define pthread_mutex_lock(x) my_pthread_mutex_lock(x)
+#define pthread_mutex_unlock(x) my_pthread_mutex_unlock(x)
+#define pthread_mutex_destroy(x) my_pthread_mutex_destroy(x)
+
 
 /***********************************
 * STRUCT DEFINITIONS 
 ***********************************/
-typedef uint my_pthread_t;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {

@@ -1,4 +1,4 @@
-// File:  my_pthread.c
+// File:  pthread.c
 // Author:  Yujie REN
 // Date:  09/23/2017
 
@@ -9,8 +9,9 @@
 #include <stdlib.h>
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
+
 typedef struct params {
-	my_pthread_mutex_t* lock;
+	pthread_mutex_t* lock;
 	uint32_t* id; 
 } params;
 void printInt(void* data){
@@ -44,19 +45,22 @@ void testLinkedList() {
 void testHashMap() {
   hashmap* map = create_map();
   tcb* t1 = (tcb*) malloc(sizeof(tcb));
+  t1->id = 1;
   tcb* t2 = (tcb*) malloc(sizeof(tcb));
+  t2->id=2;
   tcb* t3 = (tcb*) malloc(sizeof(tcb));
-  tcb* t1p = put(map, 123, t1);
-  tcb* t2p = put(map, 333, t2);
-  tcb* t3p = put(map, 123, t3);
+  t3->id = 3; 
+  tcb* t1p = put(map, 1, t1);
+  tcb* t2p = put(map, 2, t2);
+  tcb* t3p = put(map, 1, t3);
   printf("%d\n", t1p == t1);
   printf("%d\n", t2p == t2);
-  printf("%d\n", t3p == t1);
-  printf("%d\n", t2 == get(map, 333));
-  printf("%d\n", t3 == get(map, 123));
-  free(t1);
-  free(t2);
-  free(t3);
+//  printf("%d\n", t3p == t1);
+  printf("%d\n", t2 == get(map, 2));
+  printf("%d\n", t3 == get(map, 1));
+//  free(t1);
+//  free(t2);
+//  free(t3);
   free_map(map);
   return;
 }
@@ -108,12 +112,12 @@ void* thread_func(void* ignored) {
     if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
   printf("thread %d done\n", id);
-  return (void*)30;
+  pthread_exit(0);
 }
 
 void test_thread_create() {
-  my_pthread_t other;
-  my_pthread_create(&other, NULL, thread_func, (void*)&other);
+  pthread_t other;
+  pthread_create(&other, NULL, thread_func, (void*)&other);
   long long n = 1000000000;
   while (n--) {
     if (!(n%5000000)) printf("Main: %lld\n",n);
@@ -121,17 +125,17 @@ void test_thread_create() {
 }
 
 void test_thread_create_join() {
-  my_pthread_t other[3];
+  pthread_t other[3];
   void* ret_val[3]; 
-  my_pthread_create(&other[0], NULL, thread_func, (void*) &other[0]);
+  pthread_create(&other[0], NULL, thread_func, (void*) &other[0]);
   printf("test: thread id %d created\n", other[0]);
-  my_pthread_create(&other[1], NULL, thread_func, (void*) &other[1]);
+  pthread_create(&other[1], NULL, thread_func, (void*) &other[1]);
   printf("test: thread id %d created\n", other[1]);
-  my_pthread_create(&other[2], NULL, thread_func, (void*) &other[2]);
+  pthread_create(&other[2], NULL, thread_func, (void*) &other[2]);
   printf("test: thread id %d created\n", other[2]);
   for (int i=0; i<3; i++) {
 	  printf("test: thread %d join\n", other[i]);
-  	my_pthread_join(other[i], &ret_val[i]);
+  	pthread_join(other[i], &ret_val[i]);
   	printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
   }
 }
@@ -139,46 +143,46 @@ void test_thread_create_join() {
 void* thread_func_mutex(void* args) {
   long long n = 1000000000;
   params* vals = (params*)args;
-  my_pthread_mutex_t* lock  = (my_pthread_mutex_t*)vals->lock;
+  pthread_mutex_t* lock  = (pthread_mutex_t*)vals->lock;
   uint32_t id = *( (uint32_t*)vals->id );
   printf("Thread %d about to lock\n", id);
-  my_pthread_mutex_lock(lock);
+  pthread_mutex_lock(lock);
   while (n--) {
     if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
-  my_pthread_mutex_unlock(lock);
+  pthread_mutex_unlock(lock);
   return (void*)30;
 }
 
 void testMutex(){
-	my_pthread_mutex_t lock;
-	my_pthread_mutex_init(&lock, NULL);
-	my_pthread_t threads[5];	
+	pthread_mutex_t lock;
+	pthread_mutex_init(&lock, NULL);
+	pthread_t threads[5];	
 	params* args[5];
 	for (int i = 0; i <5; i++) {
 		args[i] = (params*) malloc(sizeof(params));
 		args[i] -> lock = &lock;
 		args[i] -> id = &threads[i];
-		my_pthread_create(&threads[i], NULL, thread_func_mutex, (void*)args[i]);
+		pthread_create(&threads[i], NULL, thread_func_mutex, (void*)args[i]);
 		printf("id: %d created\n", threads[i]);
 	}
 	
 	for (int i = 0; i <5; i++) {
 		printf("id: %d join\n", threads[i]);
-		my_pthread_join(threads[i], NULL);
+		pthread_join(threads[i], NULL);
 	}
 	
 	for (int i = 0; i <5; i++) {
 		free(args[i]);
 	}
 
-	my_pthread_mutex_destroy(&lock);
+	pthread_mutex_destroy(&lock);
 }
 
 void* yield_thread_func(void* ignored) {
   long long n = 1000000000;
   printf("Before yield\n");
-  while (1) my_pthread_yield();
+  while (1) pthread_yield();
   // should be inaccessible
   printf("After yield\n");
   while (n--) {
@@ -188,10 +192,10 @@ void* yield_thread_func(void* ignored) {
 }
 
 void test_thread_yield() {
-  my_pthread_t other1;
-  my_pthread_t other2;
-  my_pthread_create(&other1, NULL, yield_thread_func, NULL);
-  my_pthread_create(&other2, NULL, yield_thread_func, NULL);
+  pthread_t other1;
+  pthread_t other2;
+  pthread_create(&other1, NULL, yield_thread_func, NULL);
+  pthread_create(&other2, NULL, yield_thread_func, NULL);
   long long n = 1000000000;
   while (n--) {
     if (!(n%5000000)) printf("Main: %lld\n",n);
@@ -200,13 +204,13 @@ void test_thread_yield() {
 
 
 int main(int argc, char** argv){
-/*  testLinkedList();
+//  testLinkedList();
   testHashMap();
   test_alarm();
-*/  	
-//  test_thread_create();
+  	
+  test_thread_create();
   testMutex();
-//  test_thread_create_join();
-//  test_thread_yield();
+  test_thread_create_join();
+  test_thread_yield();
   return 0;
 }
