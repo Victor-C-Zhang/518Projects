@@ -121,7 +121,9 @@ void run_maintenance() {
 
 	
 void free_data() {
-	free(prev_done->uc_stack.ss_sp);
+  if (prev_done != NULL) {
+  	free(prev_done->uc_stack.ss_sp);
+  }
     free_map(all_threads);
     for (int i = 0; i < NUM_QUEUES; ++i) {
       free_list(ready_q[i]);
