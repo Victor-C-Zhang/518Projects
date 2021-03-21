@@ -2,9 +2,12 @@
 #include <math.h>
 #include "my_scheduler.h"
 
+static int mCount = 2;
+static int fCount = 0;
 void insert_ready_q(tcb* thread, int queue_num){
   assert(queue_num < NUM_QUEUES);
   insert_tail(ready_q[queue_num], thread);
+  mCount++;
 }
 
 void enter_scheduler(struct itimerspec* ovalue) {
@@ -27,6 +30,12 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   }
 //	printf("schedule!\n");
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
+  fCount++;
+//  printf("old context %d, status %d\n", old_thread->id, old_thread->status);
+  printf("fCount %d, mCount %d\n", fCount, mCount);
+/*  if (fCount != mCount) {
+  	printf("MISMATCH!\n");
+  } */
   ucontext_t* old_context = &old_thread->context;
   old_thread->last_run = cycles_run;
   ++cycles_run;
@@ -38,23 +47,21 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
       // multiple interrupt cycles
       --(old_thread->cycles_left);
       insert_head(ready_q[curr_prio], old_thread);
-    //  printf("rerun\n");
+  	mCount++;
       return;
     }
     if (old_thread->cycles_left == -1 || old_thread->acq_locks > 0) { // yield()
       // prio shouldn't change; hoisted prio shouldn't change
       old_thread->cycles_left = old_thread->priority;
-      insert_ready_q(old_thread, old_thread->priority);
     } else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
       old_thread->priority = NUM_QUEUES - 1;
       old_thread->cycles_left = NUM_QUEUES - 1;
-      insert_ready_q(old_thread,old_thread->priority);
     } 
     else {
       old_thread->priority = old_thread->priority + 1;
       old_thread->cycles_left = old_thread->priority + 1;
-      insert_ready_q(old_thread,old_thread->priority);
     }
+    insert_ready_q(old_thread, old_thread->priority);
   }
   else if (old_thread->status == DONE){ 
   	prev_done = old_context;
@@ -79,14 +86,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     exit_scheduler(&timer_25ms);
   }
   if (new_context == NULL) { // teardown and cleanup
-    // TODO: free tcb contents: context, linkedlist
-    free_map(all_threads);
-    for (int i = 0; i < NUM_QUEUES; ++i) {
-      free_list(ready_q[i]);
-    }
-    free(sig_timer);
-    free(act);
-    exit(0);
+	  exit(0);
   }
   swapcontext(old_context, new_context);
 }
@@ -111,19 +111,40 @@ void run_maintenance() {
       if (new_prio == thread->priority) { // do nothing
         prev_ptr = ptr;
         ptr = ptr->next;
-      } else { // remove thread from current queue and add it to lower queue
+      } 
+      else { // remove thread from current queue and add it to lower queue
         thread->priority = new_prio;
         insert_ready_q(thread, new_prio);
         if (ptr == ready_q[i]->head) {
           ready_q[i]->head = ptr->next;
-        } else {
+        } 
+	else {
           prev_ptr->next = ptr->next;
         }
         if (ptr == ready_q[i]->tail) {
-          ready_q[i]->tail = NULL;
+          ready_q[i]->tail = prev_ptr;
         }
+	node_t* temp = ptr;
         ptr = ptr->next;
+	free(temp);
+	fCount++;
       }
     }
   }
+}
+
+	
+void free_data() {
+  //  printf("here\n");
+    tcb* thread = get(all_threads, 2);
+    free_list(thread->waited_on);
+    free(thread->context.uc_stack.ss_sp);
+    free_map(all_threads);
+    for (int i = 0; i < NUM_QUEUES; ++i) {
+      free_list(ready_q[i]);
+    }
+    timer_delete(sig_timer);
+    free(sig_timer);
+    free(act);
+//	printf("here\n");
 }

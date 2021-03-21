@@ -52,7 +52,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
   tcb* new_thread = create_tcb(function,arg,++tid);
   //no thread has 0 tid
   if (initScheduler == 1) {
-     for (int i = 0; i < NUM_QUEUES; ++i) {
+    atexit(free_data);
+    for (int i = 0; i < NUM_QUEUES; ++i) {
       ready_q[i] = create_list();
     }
     all_threads = create_map();

@@ -18,26 +18,36 @@ void printInt(void* data){
 }
 
 void freeList(linked_list_t* list) {
-  while (list->head != NULL) {
-    delete_head(list);
-  }
-  free(list);
 }
 
 void testLinkedList() {
-  linked_list_t* list = create_list();
-  int i = 2;
-  int i2 = 3;
-  int i3 = 1;
-  int i4 = 4;
-  insert_head(list, (void*) &i);
-  insert_tail(list, (void*) &i2);
-  insert_head(list, (void*) &i3);
-  insert_tail(list, (void*) &i4);
-  print_list(list, printInt);
-  printf("head: %d \n", *(int *)get_head(list)); 
-  printf("tail: %d \n", *(int *)get_tail(list)); 
-  freeList(list);
+  linked_list_t* list[5];
+  for (int i = 0; i < 5; i++){
+  	list[i] = create_list();
+  }
+  printf("size of one ll %d\n", sizeof(linked_list_t));
+  printf("size of node %d\n", sizeof(node_t));
+  tcb* t1 = (tcb*) malloc(sizeof(tcb));
+  tcb* t2 = (tcb*) malloc(sizeof(tcb));
+  tcb* t3 = (tcb*) malloc(sizeof(tcb));
+  tcb* t4 = (tcb*) malloc(sizeof(tcb));
+  tcb* t5 = (tcb*) malloc(sizeof(tcb));
+  tcb* t6 = (tcb*) malloc(sizeof(tcb));
+  insert_tail(list[0], (void*) t1);
+  insert_tail(list[1], (void*) t2);
+  insert_tail(list[2], (void*) t3);
+  insert_tail(list[0], (void*) t4);
+  insert_tail(list[1], (void*) t5);
+  insert_tail(list[2], (void*) t6);
+  //print_list(list, printInt);
+  //printf("head: %d \n", *(int *)get_head(list)); 
+  //printf("tail: %d \n", *(int *)get_tail(list)); 
+  for (int i = 0; i < 5; i++) {
+	  while (list[i]->head != NULL) {
+	    free(delete_head(list[i]));
+	  }
+  	free_list(list[i]);
+  }
   return;
 }
 
@@ -200,13 +210,12 @@ void test_thread_yield() {
 
 
 int main(int argc, char** argv){
-/*  testLinkedList();
-  testHashMap();
-  test_alarm();
-*/  	
+//  testLinkedList();
+//  testHashMap();
+//  test_alarm();
   test_thread_create();
-  testMutex();
-  test_thread_create_join();
-  test_thread_yield();
+//  testMutex();
+ test_thread_create_join();
+//  test_thread_yield(); 
   return 0;
 }

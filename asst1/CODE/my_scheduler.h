@@ -85,5 +85,5 @@ void run_maintenance();
  * @param queue_num the queue to insert to. 0 is highest priority.
  */
 void insert_ready_q(tcb* thread, int queue_num);
-
+void free_data();
 #endif
