@@ -25,12 +25,12 @@ typedef struct my_params {
 FILE *fp;
 clock_t start;
 clock_t stop;
-int totalTime = 5;
+int totalTime = 10;
 int multMin = 1;
 int multTot = 1;
 int lockMin = 0;
 int lockTot = 0;
-int threadMin = 1;
+int threadMin = 13;
 int threadTot = 15;
 char* fName = "my_library_data.csv";
 

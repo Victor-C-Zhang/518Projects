@@ -2,12 +2,9 @@
 #include <math.h>
 #include "my_scheduler.h"
 
-static int mCount = 2;
-static int fCount = 0;
 void insert_ready_q(tcb* thread, int queue_num){
   assert(queue_num < NUM_QUEUES);
   insert_tail(ready_q[queue_num], thread);
-  mCount++;
 }
 
 void enter_scheduler(struct itimerspec* ovalue) {
@@ -25,29 +22,19 @@ void exit_scheduler(struct itimerspec* ovalue) {
 void schedule(int sig, siginfo_t* info, void* ucontext) {
   if (prev_done != NULL) {
   	free(prev_done->uc_stack.ss_sp);
-//	free(prev_done);
 	prev_done = NULL;
   }
-//	printf("schedule!\n");
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
-  fCount++;
-//  printf("old context %d, status %d\n", old_thread->id, old_thread->status);
-  printf("fCount %d, mCount %d\n", fCount, mCount);
-/*  if (fCount != mCount) {
-  	printf("MISMATCH!\n");
-  } */
   ucontext_t* old_context = &old_thread->context;
   old_thread->last_run = cycles_run;
   ++cycles_run;
   --should_maintain;
 
-  //printf("old context %d\n", old_thread->id);
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
     if (old_thread->cycles_left > 0) { // allow threads to run for
       // multiple interrupt cycles
       --(old_thread->cycles_left);
       insert_head(ready_q[curr_prio], old_thread);
-  	mCount++;
       return;
     }
     if (old_thread->cycles_left == -1 || old_thread->acq_locks > 0) { // yield()
@@ -127,7 +114,6 @@ void run_maintenance() {
 	node_t* temp = ptr;
         ptr = ptr->next;
 	free(temp);
-	fCount++;
       }
     }
   }
@@ -135,10 +121,6 @@ void run_maintenance() {
 
 	
 void free_data() {
-  //  printf("here\n");
-    tcb* thread = get(all_threads, 2);
-    free_list(thread->waited_on);
-    free(thread->context.uc_stack.ss_sp);
     free_map(all_threads);
     for (int i = 0; i < NUM_QUEUES; ++i) {
       free_list(ready_q[i]);
