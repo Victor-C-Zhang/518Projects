@@ -95,7 +95,7 @@ int isEmpty(linked_list_t *list) {
 }
 
 void free_list(linked_list_t* list) {
-  if (list->head != 0 || list->head!=NULL) {return;}
+//  if (list->head != 0 || list->head!=NULL) {return;}
   assert(list->head == NULL); // list should be empty to be destroyed
   free(list);
 }
