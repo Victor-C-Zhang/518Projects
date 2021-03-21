@@ -36,6 +36,16 @@ typedef struct my_pthread_mutex_t {
 //  linked_list_t* waiting_on; // linked-list of threads waiting on this lock
 } my_pthread_mutex_t;
 
+#define pthread_mutex_t my_pthread_mutex_t
+#define pthread_create(a,b,c,d) my_pthread_create((my_pthread_t*)a,b,c,d)
+#define pthread_yield() my_pthread_yield()
+#define pthread_exit(x) my_pthread_exit(x)
+#define pthread_join(x,y) my_pthread_join(x,y)
+#define pthread_mutex_init(x,y) my_pthread_mutex_init(x,y)
+#define pthread_mutex_lock(x) my_pthread_mutex_lock(x)
+#define pthread_mutex_unlock(x) my_pthread_mutex_unlock(x)
+#define pthread_mutex_destroy(x) my_pthread_mutex_destroy(x)
+
 /**********************************
  * FUNCTION DEFINITIONS 
 ***********************************/

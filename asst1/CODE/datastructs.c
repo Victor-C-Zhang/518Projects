@@ -78,7 +78,7 @@ void insert_tail(linked_list_t* list, void* thing){
 
 void* delete_head(linked_list_t* list) {
   if (list == NULL) {return NULL;}
-  if (list-> head == NULL) {return NULL;}
+  if (list-> head == NULL || list->head==0) {return NULL;}
 
   node_t* temp = list->head;   
   list -> head = list -> head -> next; 
@@ -95,6 +95,7 @@ int isEmpty(linked_list_t *list) {
 }
 
 void free_list(linked_list_t* list) {
+//  if (list->head != 0 || list->head!=NULL) {return;}
   assert(list->head == NULL); // list should be empty to be destroyed
   free(list);
 }
