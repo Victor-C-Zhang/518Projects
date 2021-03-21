@@ -122,14 +122,15 @@ void run_maintenance() {
 	
 void free_data() {
   if (prev_done != NULL) {
-  	free(prev_done->uc_stack.ss_sp);
+    free(prev_done->uc_stack.ss_sp);
   }
-    free_map(all_threads);
-    for (int i = 0; i < NUM_QUEUES; ++i) {
-      free_list(ready_q[i]);
-    }
-    timer_delete(sig_timer);
-    free(sig_timer);
-    free(act);
-//	printf("here\n");
+  free_map(all_threads);
+  delete_head(ready_q[curr_prio]);
+  for (int i = 0; i < NUM_QUEUES; ++i) {
+    free_list(ready_q[i]);
+  }
+  timer_delete(sig_timer);
+  free(sig_timer);
+  free(act);
+//  printf("here\n");
 }
