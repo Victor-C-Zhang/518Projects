@@ -151,11 +151,25 @@ Before the start of each timed run, certain parameters were set to ensure scalab
     \end{subfigure}
 \end{figure}
 
-Comparing the libraries when threads were run asynchronously (\ref{async_long} and \ref{async_short}), we see that when the number of threads spawned is smaller the two libraries take the same amount of time, however as the number of threads increases, the POSIX library takes more time than our library. This trend is the same whether we ran the threads for a shorter duration or a longer duration. On the other hand, the libraries are quite comparable in terms of efficiency with synchronous thread execution (\ref{sync_short} and \ref{sync_long}). This is true for both threads that ran for a longer duration or a shorter duration. 
-%% 
+Comparing the libraries when threads were run asynchronously (\ref{async_long} and \ref{async_short}), we see that when the number of threads spawned is smaller the two libraries take the same amount of time, however as the number of threads increases, the POSIX library takes more time than our library. This trend is the same whether we ran the threads for a shorter duration or a longer duration. On the other hand, the libraries are quite comparable in terms of efficiency with synchronous thread execution (\ref{sync_short} and \ref{sync_long}). This is true for both threads that ran for a longer duration or a shorter duration.
+
+We speculate that the difference in performance for async threads is attributable to our improved data locality compared to \verb|pthread|.
+In both implementations, a scheduling event requires two context switches.
+But since we regularly access our TCBs, we are able to keep the swapping contexts in cache for longer than \verb|pthread|.
+Because we schedule user threads one right after another, we enjoy temporal locality over kernel threads, which may be run at any time and, in particular, may be run after another process, forcing a cold cache miss.
+
+This may explain why our implementation only sees a noticeable performance boost when there are more than a handful of concurrent threads.
+This may represent the threshhold at which \verb|pthread| cannot keep all the relevant TCBs in L2 or L3 cache, or when there are too many threads to maintain temporal locality.
+This also explains the parity in performance for synchronous threads.
+Since we only have one thread schedulable at a time, both our implementation and \verb|pthread| need only keep track of one context, which puts us well in the regime where our caching benefits are negligible.
 
 \section{Further Work}
-In terms of further work, we could further optimize the scheduling mechanism. For example, each thread runs for 25 ms or a multiple of it before being swapped. We could play around with this value in an effort to ensure we find a sweet spot between first come first serve scheduling system and high overhead of too many context switches. Additionally, we decided to schedule a maintenance every second, however we might have been able to wait longer between maintaining our priority queue without starving any long running processes. By playing with how often we schedule maintenances, we could find a better balance of reducing the time spent maintaining the priority queue without starving long running threads. Likewise, other scheduling parameters such as number of queues, how much to decay and age a queue by could all be further fine tuned.
+In terms of further work, we could further optimize the scheduling mechanism.
+For instance, each thread runs for 25 ms or a multiple of it before being swapped.
+We could play around with this value in an effort to ensure we find a sweet spot between first come first serve scheduling system and high overhead of too many context switches.
+Additionally, we decided to schedule a maintenance every second, however we might have been able to wait longer between maintaining our priority queue without starving any long running processes.
+By playing with how often we schedule maintenances, we could find a better balance of reducing the time spent maintaining the priority queue without starving long running threads.
+Likewise, other scheduling parameters such as number of queues, how much to decay and age a queue by could all be further fine tuned.
 \end{document}
 
 % List of tex snippets:
