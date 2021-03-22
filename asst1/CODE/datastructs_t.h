@@ -1,10 +1,3 @@
-// File:  my_pthread_t.h
-// Author:  Yujie REN
-// Date:  09/23/2017
-
-// name:
-// username of iLab:
-// iLab Server: 
 #ifndef DATASTRUCTS_T_H
 #define DATASTRUCTS_T_H
 #include <unistd.h>

@@ -1,14 +1,6 @@
-// File:  my_pthread.c
-// Author:  Yujie REN
-// Date:  09/23/2017
-
-// name:
-// username of iLab:
-// iLab Server:
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-//#include "my_pthread_t.h"
 #include <pthread.h>
 
 typedef struct params {
@@ -48,10 +40,7 @@ void* thread_func(void* args) {
   int isLock = vals->isLock;
   pthread_mutex_t* lock  = (pthread_mutex_t*)vals->lock;
   if (isLock)  pthread_mutex_lock(lock);
-//  printf("while\n");
-  while (n--) {
-// 	if (!(n%5000000)) printf("Thread: %lld\n", n);
-  }
+  while (n--) {} // spin
   if (isLock)  pthread_mutex_unlock(lock);
   return (void*)30;
 }
@@ -101,11 +90,5 @@ int main(int argc, char** argv){
 	}
 	
 	fclose(fp);
-/*	mult = 4;
-	isLock = 0;
-	threadNum = 10;
-	pthread_data();
-	my_pthread_data();
-	test();	*/
 	return 0;
 }

@@ -1,10 +1,3 @@
-// File:  my_pthread.c
-// Author:  Yujie REN
-// Date:  09/23/2017
-
-// name:
-// username of iLab:
-// iLab Server:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,14 +5,13 @@
 #include "datastructs_t.h"
 
 /** linked list functions **/ 
-void print_list(linked_list_t* list, void (*fptr)(void *)){
+void print_list(linked_list_t* list, void (*fptr)(void *)) {
   if (list == NULL) {return;}
   node_t* ptr = list->head;
-  while (ptr != NULL) 
-  { 
-          (*fptr)(ptr ->data); 
-          ptr = ptr->next; 
-  } 
+  while (ptr != NULL) {
+    (*fptr)(ptr ->data);
+    ptr = ptr->next;
+  }
   printf("\n");
 }
 
@@ -29,36 +21,34 @@ void* get_head(linked_list_t* list) {
   return list->head->data;
 }
 
-void* get_tail(linked_list_t* list){
+void* get_tail(linked_list_t* list) {
   if (list == NULL) {return NULL;}
   if (list-> tail == NULL) {return NULL;}
-        return list->tail->data;
+  return list->tail->data;
 }
 
-node_t* create_node(void* data){
+node_t* create_node(void* data) {
   node_t* node = (node_t*) malloc(sizeof(node_t));
   node->data = data;
   node->next = NULL;
   return node;
 }
 
-linked_list_t* create_list() 
-{ 
-    linked_list_t* list = (linked_list_t*)malloc(sizeof(linked_list_t)); 
-    list->head = list->tail = NULL; 
-    return list; 
+linked_list_t* create_list() {
+  linked_list_t* list = (linked_list_t*)malloc(sizeof(linked_list_t));
+  list->head = list->tail = NULL;
+  return list;
 }
 
-void insert_head(linked_list_t* list, void* thing){
+void insert_head(linked_list_t* list, void* thing) {
   if (list == NULL) {return;}
   node_t* node = create_node(thing);
   if (list-> head == NULL) { 
-    list -> head = node;
-    list -> tail = node;
-  }
-  else {
-    node -> next = list -> head;
-    list -> head = node;
+    list->head = node;
+    list->tail = node;
+  } else {
+    node->next = list->head;
+    list->head = node;
   }
 }
 
@@ -66,13 +56,12 @@ void insert_head(linked_list_t* list, void* thing){
 void insert_tail(linked_list_t* list, void* thing){
   if (list == NULL) {return;}
   node_t* node = create_node(thing);
-  if (list-> tail == NULL) { 
-    list -> head = node;
-    list -> tail = node;
-  }
-  else {
-    list -> tail -> next = node;
-    list -> tail = node;
+  if (list->tail == NULL) {
+    list->head = node;
+    list->tail = node;
+  } else {
+    list->tail->next = node;
+    list->tail = node;
   }
 }
 
@@ -82,11 +71,11 @@ void* delete_head(linked_list_t* list) {
 
   node_t* temp = list->head;   
   list -> head = list -> head -> next; 
-  if (list->head == NULL){ 
+  if (list->head == NULL) {
     list->tail = NULL;
   }
   void* d = temp->data;
-      free(temp);
+  free(temp);
   return d;
 }
 
@@ -95,16 +84,13 @@ int isEmpty(linked_list_t *list) {
 }
 
 void free_list(linked_list_t* list) {
-//  if (list->head != 0 || list->head!=NULL) {return;}
   assert(list->head == NULL); // list should be empty to be destroyed
   free(list);
 }
 
 /** hashmap functions **/
 unsigned int hash(size_t num_buckets, unsigned int x) {
-  //  printf("id: %d\n", x);
-    
-    register size_t i = sizeof(x);
+  register size_t i = sizeof(x);
 	register unsigned int hv = 0; /* could put a seed here instead of zero */
 	register const unsigned char *s = (const unsigned char *) &x;
 	while (i--) {
@@ -116,15 +102,8 @@ unsigned int hash(size_t num_buckets, unsigned int x) {
 	hv ^= (hv >> 11);
 	hv += (hv << 15);
 
-    	unsigned int hashval = hv & (num_buckets-1);
-//    printf("hashval: %d\n", x);
+	unsigned int hashval = hv & (num_buckets-1);
 	return hashval;
-    
-    
-/*    x = ((x >> 16) ^ x) * 0x45d9f3b;
-    x = ((x >> 16) ^ x) * 0x45d9f3b;
-    x = (x >> 16) ^ x;
-    return hashval; */
 }
 
 static unsigned int hash_size(unsigned int s) {

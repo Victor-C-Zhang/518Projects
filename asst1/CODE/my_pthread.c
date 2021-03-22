@@ -1,10 +1,10 @@
-// File:  my_pthread_block.c
+// File:  my_pthread.c
 // Author:  Yujie REN
 // Date:  09/23/2017
 
-// name:
-// username of iLab:
-// iLab Server:
+// name: Bharti Mehta, Victor Zhang
+// username of iLab: bam270
+// iLab Server: pwd
 
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
@@ -12,19 +12,14 @@
 static uint32_t tid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
 
-typedef struct mut_wait_list {
-	tcb* thread;
-	int priority;
-} mut_wait_list;
-
-void thread_func_wrapper(void* (*function)(void*), void* arg){
+// wraps user-provided func to ensure pthread_exit is called
+void thread_func_wrapper(void* (*function)(void*), void* arg) {
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->ret_val = function(arg);
   my_pthread_exit(NULL);
 }
 
-tcb* create_tcb(void* (*function)(void*), void* arg,
-                my_pthread_t id) {
+tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   tcb* new_thread = (tcb*) malloc(sizeof(tcb));
   new_thread->id = id;
   new_thread->ret_val = NULL;
@@ -36,7 +31,6 @@ tcb* create_tcb(void* (*function)(void*), void* arg,
   new_thread->waited_on = create_list();
 
   getcontext(&new_thread->context);
-//  getcontext(new_thread->context.uc_link);
   new_thread->context.uc_stack.ss_size = STACKSIZE;
   new_thread->context.uc_stack.ss_sp = malloc(STACKSIZE);
   sigemptyset(&new_thread->context.uc_sigmask);
@@ -47,11 +41,8 @@ tcb* create_tcb(void* (*function)(void*), void* arg,
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
-//  ucontext_t* curr_context = malloc(sizeof(ucontext_t));
-//  getcontext(curr_context);
-  tcb* new_thread = create_tcb(function,arg,++tid);
-  //no thread has 0 tid
-  if (initScheduler == 1) {
+  tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
+  if (initScheduler) { // spin up a new scheduler
     atexit(free_data);
     for (int i = 0; i < NUM_QUEUES; ++i) {
       ready_q[i] = create_list();
@@ -62,7 +53,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     // create tcb for current thread
     tcb* curr_thread = malloc(sizeof(tcb));
     curr_thread->id = ++tid; //no thread has 0 tid
-//    curr_thread->context = malloc(sizeof(ucontext_t));
     getcontext(&curr_thread->context);
     curr_thread->ret_val = NULL;
     curr_thread->status = READY;
@@ -74,7 +64,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     put(all_threads, new_thread->id, new_thread);
 
     *thread = new_thread->id;
-//    printf("sched thread %d\n", curr_thread->id);
     // add new thread to ready queue
     insert_head(ready_q[0], new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
@@ -94,16 +83,15 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     // set timer
     timer_settime(*sig_timer, 0, &timer_25ms, NULL);
     initScheduler = 0;
-  } else {
+  } else { // no need to init scheduler, can just add thread normally
     enter_scheduler(&timer_pause_dump);
     insert_ready_q(new_thread,0);
     *thread = new_thread->id;
     put(all_threads, new_thread->id, new_thread);
     exit_scheduler(&timer_pause_dump);
   }
-//  printf("new thread %d\n", new_thread->id);
   return 0;
-};
+}
 
 
 /* give CPU pocession to other user level thread_blocks voluntarily */
@@ -121,6 +109,7 @@ void my_pthread_exit(void *value_ptr) {
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
+  // notify waiting threads
   while (curr_thread->waited_on->head != NULL){
 	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
 	  signal_thread->status = READY; 
@@ -128,9 +117,8 @@ void my_pthread_exit(void *value_ptr) {
   }
   free_list(curr_thread->waited_on);
   curr_thread->status = DONE;
-//  printf("curr thread: %d done\n", curr_thread->id);
   raise(SIGALRM);
-};
+}
 
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
@@ -140,22 +128,20 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   tcb* t_block = get(all_threads, thread);
-//  printf("curr thread: %d join w %d\n", curr_thread->id, thread);
   if (t_block == NULL) {
-  //	printf("block NULL\n");
-	return -1;
+    return -1; // cannot wait on nonexistent thread
   }
-  if (t_block->status != DONE) {
+  if (t_block->status != DONE) { // block and wait
 	  insert_head(t_block -> waited_on, curr_thread);
 	  curr_thread->status = BLOCKED;
+    raise(SIGALRM);
   }
-
-  raise(SIGALRM);
+  // by this point, t_block will be done
   if (value_ptr != NULL){
     *value_ptr = t_block->ret_val;
   }
   return 0;
-};
+}
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
@@ -163,7 +149,6 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
   mutex->owner = 0;
   mutex->hoisted_priority = INT8_MAX;
   mutex->holding_thread_priority = 0;
-//  mutex->waiting_on = create_list();
   return 0;
 }
 
@@ -208,6 +193,7 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
     }
     my_pthread_yield();
   }
+  // got the mutex
   tcb* curr_thread = (tcb*)get_head(ready_q[curr_prio]);
   mutex->owner = curr_thread->id;
   if (mutex->hoisted_priority > curr_thread->priority) {
@@ -226,7 +212,7 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
   ++curr_thread->acq_locks;
   exit_scheduler(&timer_pause_dump);
   return 0;
-};
+}
 
 /* release the mutex lock */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
@@ -234,6 +220,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
   mutex->locked = 0;
   tcb* curr_thread = (tcb*)get_head(ready_q[curr_prio]);
   --curr_thread->acq_locks;
+  // revoke hoisted prio if necessary
   if (mutex->hoisted_priority < mutex->holding_thread_priority) {
     curr_thread->cycles_left -= mutex->holding_thread_priority -
           mutex->hoisted_priority;
@@ -242,12 +229,11 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
   }
   exit_scheduler(&timer_pause_dump);
   return 0;
-};
+}
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 	if (mutex == NULL) return -1;
 	if (__atomic_exchange_n(&mutex->locked, 1, __ATOMIC_ACQ_REL)) return -1;
 	return 0;
-};
-
+}

@@ -1,18 +1,13 @@
-// File:  pthread.c
-// Author:  Yujie REN
-// Date:  09/23/2017
-
-// name:
-// username of iLab:
-// iLab Server:
 #include <stdio.h>
 #include <stdlib.h>
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
+
 typedef struct params {
 	pthread_mutex_t* lock;
 	uint32_t* id; 
 } params;
+
 void printInt(void* data){
   printf("%d ", *(int *)data); 
 }
@@ -25,8 +20,8 @@ void testLinkedList() {
   for (int i = 0; i < 5; i++){
   	list[i] = create_list();
   }
-  printf("size of one ll %d\n", sizeof(linked_list_t));
-  printf("size of node %d\n", sizeof(node_t));
+  printf("size of one ll %lu\n", sizeof(linked_list_t));
+  printf("size of node %lu\n", sizeof(node_t));
   tcb* t1 = (tcb*) malloc(sizeof(tcb));
   tcb* t2 = (tcb*) malloc(sizeof(tcb));
   tcb* t3 = (tcb*) malloc(sizeof(tcb));
@@ -39,16 +34,12 @@ void testLinkedList() {
   insert_tail(list[0], (void*) t4);
   insert_tail(list[1], (void*) t5);
   insert_tail(list[2], (void*) t6);
-  //print_list(list, printInt);
-  //printf("head: %d \n", *(int *)get_head(list)); 
-  //printf("tail: %d \n", *(int *)get_tail(list)); 
   for (int i = 0; i < 5; i++) {
 	  while (list[i]->head != NULL) {
 	    free(delete_head(list[i]));
 	  }
   	free_list(list[i]);
   }
-  return;
 }
 
 void testHashMap() {
@@ -68,7 +59,6 @@ void testHashMap() {
   free(t2);
   free(t3);
   free_map(map);
-  return;
 }
 
 void sig_handler(int sig, siginfo_t* info, void* ucontext) {
@@ -112,8 +102,6 @@ void test_alarm() {
 void* thread_func(void* ignored) {
   long long n = 1000000000;
   int id = *((int*)ignored);
- // ucontext_t* new_context = malloc(sizeof(ucontext_t));
- // getcontext(new_context);
   while (n--) {
     if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
@@ -210,12 +198,12 @@ void test_thread_yield() {
 
 
 int main(int argc, char** argv){
-//  testLinkedList();
-//  testHashMap();
-//  test_alarm();
+  testLinkedList();
+  testHashMap();
+  test_alarm();
   test_thread_create();
-//  testMutex();
- test_thread_create_join();
-//  test_thread_yield(); 
+  testMutex();
+  test_thread_create_join();
+  test_thread_yield();
   return 0;
 }

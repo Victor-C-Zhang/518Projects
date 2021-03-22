@@ -85,5 +85,10 @@ void run_maintenance();
  * @param queue_num the queue to insert to. 0 is highest priority.
  */
 void insert_ready_q(tcb* thread, int queue_num);
+
+/**
+ * Utility function to free data structures used by the scheduler. Called during
+ * final teardown of the process.
+ */
 void free_data();
 #endif

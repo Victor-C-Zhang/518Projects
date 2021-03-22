@@ -1,10 +1,3 @@
-// File:  pthread.c
-// Author:  Yujie REN
-// Date:  09/23/2017
-
-// name:
-// username of iLab:
-// iLab Server:
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -15,12 +8,6 @@ typedef struct my_params {
 	int isLock; //1 is yes
 	pthread_mutex_t* lock;
 } my_params;
-
-/*typedef struct my_params {
-	float multiple;
-	int isLock; //1 is yes
-	pthread_mutex_t* lock;
-} my_params; */
 
 FILE *fp;
 clock_t start;
@@ -44,7 +31,6 @@ void endTime(){
 
 float durTime(){
 	float dur = ( (float) (stop - start) )/CLOCKS_PER_SEC;
-//	float dur = ( (float) (stop - start) );
 	return dur;
 }
 
@@ -55,18 +41,13 @@ void* my_thread_func(void* args) {
   int isLock = vals->isLock;
   pthread_mutex_t* lock  = (pthread_mutex_t*)vals->lock;
   if (isLock)  pthread_mutex_lock(lock);
-//  printf("while\n");
-  while (n--) { 
- //	if (!(n%5000000)) printf("Thread: %lld\n", n);
-  }
+  while (n--) {} // spin
   if (isLock)  pthread_mutex_unlock(lock);
   return (void*)30;
 }
 
 
 float pthread_data(int mult, int isLock, int threadNum) {
-//	printf(".5f*mult, isLock, threadNum\n");	
-//	printf("%f, %d, %d\n", .5f*mult, isLock, threadNum);	
 	startTime();
 	pthread_t threads[threadNum];
 	my_params* args[threadNum];
@@ -110,11 +91,5 @@ int main(int argc, char** argv){
 	}
 	
 	fclose(fp);
-/*	mult = 4;
-	isLock = 0;
-	threadNum = 10;
-	pthread_data();
-	pthread_data();
-	test();	*/
 	return 0;
 }

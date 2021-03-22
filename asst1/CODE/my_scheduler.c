@@ -2,7 +2,7 @@
 #include <math.h>
 #include "my_scheduler.h"
 
-void insert_ready_q(tcb* thread, int queue_num){
+void insert_ready_q(tcb* thread, int queue_num) {
   assert(queue_num < NUM_QUEUES);
   insert_tail(ready_q[queue_num], thread);
 }
@@ -16,13 +16,10 @@ void exit_scheduler(struct itimerspec* ovalue) {
   timer_settime(sig_timer,0,ovalue,NULL);
 }
 
-// TODO test: is it faster to reset the quantum for each thread or allow
-//  threads to run for multiple interrupt cycles?
-
 void schedule(int sig, siginfo_t* info, void* ucontext) {
   if (prev_done != NULL) {
   	free(prev_done->uc_stack.ss_sp);
-	prev_done = NULL;
+	  prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
   ucontext_t* old_context = &old_thread->context;
@@ -40,17 +37,16 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     if (old_thread->cycles_left == -1 || old_thread->acq_locks > 0) { // yield()
       // prio shouldn't change; hoisted prio shouldn't change
       old_thread->cycles_left = old_thread->priority;
-    } else if (curr_prio == NUM_QUEUES - 1) { // cannot increase
+    } else if (curr_prio == NUM_QUEUES - 1) { // cannot increase past max
       old_thread->priority = NUM_QUEUES - 1;
       old_thread->cycles_left = NUM_QUEUES - 1;
-    } 
-    else {
+    } else { // age
       old_thread->priority = old_thread->priority + 1;
       old_thread->cycles_left = old_thread->priority + 1;
     }
     insert_ready_q(old_thread, old_thread->priority);
-  }
-  else if (old_thread->status == DONE){ 
+
+  } else if (old_thread->status == DONE){
   	prev_done = old_context;
   }
 
@@ -98,28 +94,25 @@ void run_maintenance() {
       if (new_prio == thread->priority) { // do nothing
         prev_ptr = ptr;
         ptr = ptr->next;
-      } 
-      else { // remove thread from current queue and add it to lower queue
+      } else { // remove thread from current queue and add it to lower queue
         thread->priority = new_prio;
         insert_ready_q(thread, new_prio);
         if (ptr == ready_q[i]->head) {
           ready_q[i]->head = ptr->next;
-        } 
-	else {
+        } else {
           prev_ptr->next = ptr->next;
         }
         if (ptr == ready_q[i]->tail) {
           ready_q[i]->tail = prev_ptr;
         }
-	node_t* temp = ptr;
+        node_t* temp = ptr;
         ptr = ptr->next;
-	free(temp);
+        free(temp);
       }
     }
   }
 }
 
-	
 void free_data() {
   if (prev_done != NULL) {
     free(prev_done->uc_stack.ss_sp);
@@ -132,5 +125,4 @@ void free_data() {
   timer_delete(sig_timer);
   free(sig_timer);
   free(act);
-//  printf("here\n");
 }
