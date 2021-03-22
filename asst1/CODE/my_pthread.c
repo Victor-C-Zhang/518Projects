@@ -111,9 +111,9 @@ void my_pthread_exit(void *value_ptr) {
   if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
   // notify waiting threads
   while (curr_thread->waited_on->head != NULL){
-	  tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
-	  signal_thread->status = READY; 
-	  insert_ready_q(signal_thread, signal_thread->priority);
+    tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
+    signal_thread->status = READY; 
+    insert_ready_q(signal_thread, signal_thread->priority);
   }
   free_list(curr_thread->waited_on);
   curr_thread->status = DONE;
@@ -123,7 +123,7 @@ void my_pthread_exit(void *value_ptr) {
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   if (tid < thread) {
-	  return -1;
+    return -1;
   }
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
@@ -132,8 +132,8 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
     return -1; // cannot wait on nonexistent thread
   }
   if (t_block->status != DONE) { // block and wait
-	  insert_head(t_block -> waited_on, curr_thread);
-	  curr_thread->status = BLOCKED;
+    insert_head(t_block -> waited_on, curr_thread);
+    curr_thread->status = BLOCKED;
     raise(SIGALRM);
   }
   // by this point, t_block will be done
@@ -233,7 +233,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	if (mutex == NULL) return -1;
-	if (__atomic_exchange_n(&mutex->locked, 1, __ATOMIC_ACQ_REL)) return -1;
-	return 0;
+  if (mutex == NULL) return -1;
+  if (__atomic_exchange_n(&mutex->locked, 1, __ATOMIC_ACQ_REL)) return -1;
+  return 0;
 }

@@ -4,8 +4,8 @@
 #include "my_scheduler.h"
 
 typedef struct params {
-	pthread_mutex_t* lock;
-	uint32_t* id; 
+  pthread_mutex_t* lock;
+  uint32_t* id; 
 } params;
 
 void printInt(void* data){
@@ -18,7 +18,7 @@ void freeList(linked_list_t* list) {
 void testLinkedList() {
   linked_list_t* list[5];
   for (int i = 0; i < 5; i++){
-  	list[i] = create_list();
+    list[i] = create_list();
   }
   printf("size of one ll %lu\n", sizeof(linked_list_t));
   printf("size of node %lu\n", sizeof(node_t));
@@ -35,10 +35,10 @@ void testLinkedList() {
   insert_tail(list[1], (void*) t5);
   insert_tail(list[2], (void*) t6);
   for (int i = 0; i < 5; i++) {
-	  while (list[i]->head != NULL) {
-	    free(delete_head(list[i]));
-	  }
-  	free_list(list[i]);
+    while (list[i]->head != NULL) {
+      free(delete_head(list[i]));
+    }
+    free_list(list[i]);
   }
 }
 
@@ -128,9 +128,9 @@ void test_thread_create_join() {
   pthread_create(&other[2], NULL, thread_func, (void*) &other[2]);
   printf("test: thread id %d created\n", other[2]);
   for (int i=0; i<3; i++) {
-	  printf("test: thread %d join\n", other[i]);
-  	pthread_join(other[i], &ret_val[i]);
-  	printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
+    printf("test: thread %d join\n", other[i]);
+    pthread_join(other[i], &ret_val[i]);
+    printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
   }
 }
 
@@ -149,28 +149,28 @@ void* thread_func_mutex(void* args) {
 }
 
 void testMutex(){
-	pthread_mutex_t lock;
-	pthread_mutex_init(&lock, NULL);
-	pthread_t threads[5];	
-	params* args[5];
-	for (int i = 0; i <5; i++) {
-		args[i] = (params*) malloc(sizeof(params));
-		args[i] -> lock = &lock;
-		args[i] -> id = &threads[i];
-		pthread_create(&threads[i], NULL, thread_func_mutex, (void*)args[i]);
-		printf("id: %d created\n", threads[i]);
-	}
-	
-	for (int i = 0; i <5; i++) {
-		printf("id: %d join\n", threads[i]);
-		pthread_join(threads[i], NULL);
-	}
-	
-	for (int i = 0; i <5; i++) {
-		free(args[i]);
-	}
+  pthread_mutex_t lock;
+  pthread_mutex_init(&lock, NULL);
+  pthread_t threads[5]; 
+  params* args[5];
+  for (int i = 0; i <5; i++) {
+    args[i] = (params*) malloc(sizeof(params));
+    args[i] -> lock = &lock;
+    args[i] -> id = &threads[i];
+    pthread_create(&threads[i], NULL, thread_func_mutex, (void*)args[i]);
+    printf("id: %d created\n", threads[i]);
+  }
+  
+  for (int i = 0; i <5; i++) {
+    printf("id: %d join\n", threads[i]);
+    pthread_join(threads[i], NULL);
+  }
+  
+  for (int i = 0; i <5; i++) {
+    free(args[i]);
+  }
 
-	pthread_mutex_destroy(&lock);
+  pthread_mutex_destroy(&lock);
 }
 
 void* yield_thread_func(void* ignored) {

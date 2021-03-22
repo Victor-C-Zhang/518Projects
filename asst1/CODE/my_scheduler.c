@@ -18,8 +18,8 @@ void exit_scheduler(struct itimerspec* ovalue) {
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
   if (prev_done != NULL) {
-  	free(prev_done->uc_stack.ss_sp);
-	  prev_done = NULL;
+    free(prev_done->uc_stack.ss_sp);
+    prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
   ucontext_t* old_context = &old_thread->context;
@@ -47,7 +47,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     insert_ready_q(old_thread, old_thread->priority);
 
   } else if (old_thread->status == DONE){
-  	prev_done = old_context;
+    prev_done = old_context;
   }
 
   if (should_maintain <= 0) {
@@ -69,7 +69,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     exit_scheduler(&timer_25ms);
   }
   if (new_context == NULL) { // teardown and cleanup
-	  exit(0);
+    exit(0);
   }
   swapcontext(old_context, new_context);
 }
