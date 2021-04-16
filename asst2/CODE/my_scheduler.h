@@ -5,6 +5,7 @@
 #include <time.h>
 #include "datastructs_t.h"
 #include "my_pthread_t.h"
+#include "my_malloc.h" 
 
 #define STACKSIZE 32768
 #define QUANTUM 25000000
