@@ -18,6 +18,9 @@ my_pthread.o: my_pthread_t.h
 test: datastructs.c my_pthread.c pthread_test.c my_scheduler.c
 	$(CC) -g -o test pthread_test.c datastructs.c my_pthread.c my_scheduler.c -lrt -lm
 
+malloc: my_malloc.c datastructs.c my_pthread.c malloc_test.c my_scheduler.c
+	$(CC) -g -o malloc my_malloc.c malloc_test.c datastructs.c my_pthread.c my_scheduler.c -lrt -lm
+
 data: datastructs.c my_pthread.c data.c my_scheduler.c
 	$(CC) -g -pthread -o data data.c datastructs.c my_pthread.c my_scheduler.c -lrt -lm
 data1: datastructs.c my_pthread.c data1.c my_scheduler.c
