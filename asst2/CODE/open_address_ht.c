@@ -16,16 +16,28 @@ void deleteTable(OpenAddrHashtable* table) {
 
 ht_val put(OpenAddrHashtable* table, ht_key key, ht_val val) {
   int hash = (key % table->_size);
-  while (table->_table[hash] != HT_NULL_KEY && table->_table[hash].key != key)
+  while (table->_table[hash].val != HT_NULL_VAL && table->_table[hash].key !=
+  key)
     hash = (hash + 1) % table->_size;
   ht_val oldval = table->_table[hash].val;
   table->_table[hash] = {key,val};
   return oldval;
 }
 
-ht_val get(OpenAddrHashtable* table, ht_key key);
+ht_val get(OpenAddrHashtable* table, ht_key key) {
   int hash = (key % table->_size);
-  while (table->_table[hash] != HT_NULL_KEY && table->_table[hash]key != key)
+  while (table->_table[hash].val != HT_NULL_VAL && table->_table[hash].key !=
+  key)
     hash = (hash + 1) % table->_size;
   return table->_table[hash].val;
+}
+
+ht_val delete(OpenAddrHashtable* table, ht_key key) {
+  int hash = (key % table->_size);
+  while (table->_table[hash].val != HT_NULL_VAL && table->_table[hash].key !=
+                                                   key)
+    hash = (hash + 1) % table->_size;
+  ht_val retval = table->_table[hash].val;
+  table->_table[hash].val = HT_NULL_VAL;
+  return retval;
 }

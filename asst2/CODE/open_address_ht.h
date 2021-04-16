@@ -48,4 +48,12 @@ ht_val put(OpenAddrHashtable* table, ht_key key, ht_val val);
  */
 ht_val get(OpenAddrHashtable* table, ht_key key);
 
+/**
+ * Remove the value associated with a key, if there is one.
+ * @param table
+ * @param key
+ * @return the value deleted, if there is one, or HT_NULL_VAL otherwise.
+ */
+ht_val delete(OpenAddrHashtable* table, ht_key key);
+
 #endif //ASST1_OPEN_ADDRESS_HT_H
