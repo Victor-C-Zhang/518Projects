@@ -21,7 +21,6 @@ void* thread_func(void* ignored) {
     ptrs[i] = "help";
    printf("thread malloc %d\n", i);
   }
-  printMemory();
   for (int i = 0 ; i < 50; i++) { 
     free(ptrs[i]);
     printf("thread free %d\n", i);

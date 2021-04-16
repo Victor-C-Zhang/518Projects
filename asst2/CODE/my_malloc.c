@@ -48,15 +48,16 @@ void printMemory() {
 	printf("-----------------------MEMORY-----------------------\n");
 	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
-		metadata* mdata = (metadata*) ((char*)mem_space + i*segment_size);
+		metadata* start = (metadata*) ((char*)mem_space + i*segment_size);
 		printf("--------------------PAGE--------------------\n");
-		for (int j = 0; j < NUMSEGMENTS; j++) {
+		int j = 0;
+		while (j < NUMSEGMENTS) {
+			metadata* mdata = start + j;
 			char currSize = blockSize(mdata);
 			int isOcc = isOccupied(mdata);
 			printf("page[%d][%d] pid %d: %d  %hu\n", i, j, pdata->pid, isOcc, currSize);
-			mdata+=currSize;	
+			j+=currSize;	
 		}
-		printf("--------------------PAGE--------------------\n");
 	}
 	printf("-----------------------MEMORY-----------------------\n");
 }
@@ -83,7 +84,7 @@ void writeOccupiedSize(metadata* curr, unsigned char currSize, size_t newSize) {
 	//need to split the block into a first block which is malloc'd
 	//and second block which is still free but has a smaller size 
 	if (newSize < currSize) {
-		writeFreeSize(curr+newSize, (currSize - newSize - sizeof(metadata)));
+		writeFreeSize(curr+newSize, (currSize - newSize));
 	}
 	
 	curr -> size = (newSize & 0x7f) | 0x80;
@@ -98,6 +99,8 @@ void initialize_pages() {
 		metadata* mdata = (metadata*) ((char*)mem_space + i*segment_size);
 		writeFreeSize(mdata, NUMSEGMENTS);
 	}
+
+	printMemory();
 }
 
 
@@ -125,9 +128,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		act->sa_sigaction = handler;
 		act->sa_flags = SA_SIGINFO;
 		sigemptyset(&act->sa_mask);
-		sigaddset(&act->sa_mask,SIGALRM); // block scheduling attempts while
-		// resolving memory issues
-		sigaction(SIGSEGV, act, NULL);	
+		sigaddset(&act->sa_mask,SIGALRM); // block scheduling attempts while resolving memory issues
+		sigaction(SIGSEGV, act, NULL);
 	}
 
 	//find page for process...
@@ -162,6 +164,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 						writeOccupiedSize(curr, currSize, segments_alloc);
 						//segment memory space = start + NUMSEGMENTS
 						//free segment = segment memory space + seg_index * segment_size; 
+						printMemory();
 						return (void*)( start+NUMSEGMENTS + seg_index * segment_size);
 					}
 				}
@@ -173,12 +176,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	
 	//if index is more than or equal to num_pages, we did not find page for current process
 	//so allocate page, then return pointer within page chunk
-	if (index >= num_pages) {
-		//if free_page == -1, there are not free pages available
-		if (free_page == -1) {
-			errorMessage("Not enough memory", file, line);
-			return NULL;
-		}
+	if (index >= num_pages && (page_exist == -1 || curr_id == 0) && free_page != -1) {
 		pagedata* pdata = (pagedata*)myblock+free_page;
 		pdata->pid = curr_id;
 		pdata->p_ind = free_page; //change when we do phase b 
@@ -188,10 +186,14 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 			writeOccupiedSize(curr, currSize, segments_alloc);
 			//segment memory space = start + NUMSEGMENTS
 			//free segment = segment memory space + seg_index * segment_size; 
+			printMemory();
 			return (void*)( curr+NUMSEGMENTS);
 		}
-		return NULL; 
 	}
+
+	printMemory();
+	errorMessage("Not enough memory", file, line);
+	return NULL;
 }
 
 //frees up any memory malloc'd with this pointer for future use
