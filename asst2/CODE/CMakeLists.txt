@@ -6,8 +6,8 @@ set(CMAKE_C_STANDARD 99)
 #add_library(my_pthread SHARED library.c library.h)
 
 set(CMAKE_C_FLAGS "-g")
-add_executable(tests datastructs.c my_scheduler.c my_pthread.c pthread_test.c my_malloc.c)
+add_executable(tests datastructs.c my_scheduler.c my_pthread.c pthread_test.c my_malloc.c open_address_ht.c open_address_ht.h)
 target_link_libraries(tests -lrt -lm)
 
-add_executable(bchmk datastructs.c my_scheduler.c my_pthread.c data1.c my_malloc.c)
+add_executable(bchmk datastructs.c my_scheduler.c my_pthread.c data1.c my_malloc.c open_address_ht.c open_address_ht.h)
 target_link_libraries(bchmk -lrt -lm)
