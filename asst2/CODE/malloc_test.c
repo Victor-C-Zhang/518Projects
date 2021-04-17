@@ -19,7 +19,7 @@ void* thread_func(void* ignored) {
   long long n = 10000;
   int id = *((int*)ignored);
   while (n--) {
-    if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
+//    if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
   printf("thread %d done\n", id);
   
