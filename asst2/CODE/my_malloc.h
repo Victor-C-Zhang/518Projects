@@ -6,8 +6,8 @@
 
 #define THREADREQ 1
 #define LIBRARYREQ 0
-#define malloc(x) myallocate(x, __FILE__, __LINE__, THREADREQ)
-#define free(x) mydeallocate(x, __FILE__, __LINE__, THREADREQ)
+//#define malloc(x) myallocate(x, __FILE__, __LINE__, THREADREQ)
+//#define free(x) mydeallocate(x, __FILE__, __LINE__, THREADREQ)
 #define MEMSIZE 8388608
 #define NUMSEGMENTS 64
 

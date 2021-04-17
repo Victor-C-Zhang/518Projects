@@ -48,14 +48,15 @@ void printMemory() {
 	printf("-----------------------MEMORY-----------------------\n");
 	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
-		metadata* start = (metadata*) ((char*)mem_space + i*segment_size);
+		if (pdata -> pid == -1) {continue;}
+		metadata* start = (metadata*) ((char*)mem_space + i*page_size);
 		printf("--------------------PAGE--------------------\n");
 		int j = 0;
 		while (j < NUMSEGMENTS) {
 			metadata* mdata = start + j;
 			char currSize = blockSize(mdata);
 			int isOcc = isOccupied(mdata);
-			printf("page[%d][%d] pid %d: %d  %hu\n", i, j, pdata->pid, isOcc, currSize);
+			printf("page[%d][%d] pid %d %p: %d  %hu\n", i, j, pdata->pid, mdata, isOcc, currSize);
 			j+=currSize;	
 		}
 	}
@@ -65,7 +66,6 @@ void printMemory() {
 //prints any error messages followed by memory 
 void errorMessage(char* error, char* file, int line) {
 	printf("%s:%d: %s\n", file, line, error);
-	printMemory();
 }
 
 //takes the number of segments within page to be free and writes that into metadata
@@ -96,11 +96,10 @@ void initialize_pages() {
 		pdata->pid = -1;
 		pdata->p_ind = i;
 		pdata->swapped_to = -1;
-		metadata* mdata = (metadata*) ((char*)mem_space + i*segment_size);
+		metadata* mdata = (metadata*) ((char*)mem_space + i*page_size);
 		writeFreeSize(mdata, NUMSEGMENTS);
 	}
-
-	printMemory();
+//	printMemory();
 }
 
 
@@ -111,8 +110,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		errorMessage("Cannot malloc 0 or negative bytes", file, line);
 		return NULL;
 	}
-	
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
+//	printf("mymalloc id %d\n", curr_id);	
 	if (firstMalloc == 1) { // first time using malloc
 		myblock = memalign(sysconf(_SC_PAGE_SIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGE_SIZE);
@@ -133,24 +132,24 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	}
 
 	//find page for process...
-	size_t segments_alloc = size / segment_size + 1; 
+	size_t total_segments = size / segment_size + 1;
+	size_t segments_alloc = (total_segments >= NUMSEGMENTS) ? NUMSEGMENTS : total_segments; 
+	size_t pages_alloc = segments_alloc / NUMSEGMENTS + 1;
 	int free_page = -1;
 	int page_exist = -1; 
 	int index;
 	//if exists, find first fit free space
 	for (index = 0; index < num_pages; index++) {
-		pagedata* pdata = (pagedata*)myblock + index;	
+		pagedata* pdata =( (pagedata*)myblock) + index;	
 		if (pdata->pid == -1 && free_page == -1) {
 			free_page = index;
 		}
-
 		if (pdata->pid == curr_id) {
 			if (page_exist == -1) {
-				page_exist = index; //for swapping later... 
+				page_exist = index; //for swapping later... 		
 			}
-			
 			//traverse memory to find the first free block that can fit the size requested
-			metadata* start = (metadata*) ((char*)mem_space + index*segment_size);
+			metadata* start = (metadata*) ((char*)mem_space + index*page_size);
 			int seg_index = 0;
 			while (seg_index < NUMSEGMENTS) {
 				metadata* curr = start + seg_index;
@@ -164,38 +163,40 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 						writeOccupiedSize(curr, currSize, segments_alloc);
 						//segment memory space = start + NUMSEGMENTS
 						//free segment = segment memory space + seg_index * segment_size; 
-						printMemory();
-						return (void*)( start+NUMSEGMENTS + seg_index * segment_size);
+//						printMemory();
+						void* ret = (void*) ( (char*)(start+NUMSEGMENTS) + seg_index*segment_size);
+						printf("malloc ptr %p\n", ret );
+						return (void*)ret;
 					}
 				}
 				seg_index+=currSize;
 			}
+		}
 			// otherwise we don't have enough space, and need to keep searching
-		}		
 	}
 	
 	//if index is more than or equal to num_pages, we did not find page for current process
 	//so allocate page, then return pointer within page chunk
 	if (index >= num_pages && (page_exist == -1 || curr_id == 0) && free_page != -1) {
-		pagedata* pdata = (pagedata*)myblock+free_page;
+		pagedata* pdata = ((pagedata*)myblock)+free_page;
 		pdata->pid = curr_id;
 		pdata->p_ind = free_page; //change when we do phase b 
-		metadata* curr = (metadata*) ((char*)mem_space + free_page*segment_size);
+		metadata* curr = (metadata*) ((char*)mem_space + free_page*page_size);
 		unsigned char currSize = blockSize(curr);
 		if (segments_alloc == currSize || (segments_alloc < currSize) ) { 
 			writeOccupiedSize(curr, currSize, segments_alloc);
 			//segment memory space = start + NUMSEGMENTS
 			//free segment = segment memory space + seg_index * segment_size; 
-			printMemory();
-			return (void*)( curr+NUMSEGMENTS);
+//			printMemory();
+			void* ret = (void*) (curr+NUMSEGMENTS) ;
+			printf("malloc ptr %p\n", ret );
+			return (void*)(ret);
 		}
 	}
 
-	printMemory();
 	errorMessage("Not enough memory", file, line);
 	return NULL;
 }
-
 //frees up any memory malloc'd with this pointer for future use
 void mydeallocate(void* p, char* file, int line, int threadreq) {
 	//if the pointer is NULL, there is nothing we can free
@@ -209,9 +210,9 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 	if (firstMalloc == 1) { // first time using malloc
 		seg_index = NUMSEGMENTS;
 	}
-	
-	int index = ( (unsigned long) p - (unsigned long) mem_space) / segment_size;
-	metadata* start = (metadata*) ((char*)mem_space + index*segment_size);
+	printf("free ptr %p\n", p);
+	int index = ( (unsigned long) p - (unsigned long) mem_space) / page_size ;
+	metadata* start = (metadata*) ((char*)mem_space + index*page_size);
 	metadata* prev;
 	int prevFree = 0;
 	unsigned char prevSize = 0;
@@ -242,6 +243,12 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 				if (prevFree) {
 					writeFreeSize(prev, prevSize+blockSize(curr));
 				}
+				if ( !isOccupied(start) && blockSize(start) == NUMSEGMENTS) {
+					pagedata* pdata = (pagedata*)myblock + index;
+					pdata->pid = -1;
+					pdata->p_ind = index;
+				}
+//				printMemory();
 				return;
 			}		
 		}
@@ -256,11 +263,6 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		seg_index = seg_index+currSize;
 	}
 
-	if ( !isOccupied(start) && blockSize(start) == NUMSEGMENTS) {
-		pagedata* pdata = (pagedata*)myblock + index;
-		pdata->pid = -1;
-		pdata->p_ind = -1;
-	}
 
 	//if we did not return within the while loop, the pointer was not found and thus was not malloc'd
 	errorMessage("This pointer was not malloc'd!", file, line);

@@ -17,7 +17,9 @@ void exit_scheduler(struct itimerspec* ovalue) {
 }
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-  if (prev_done != NULL) {
+	printf("schedule!\n");
+   if (prev_done != NULL) {
+//    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
     free(prev_done->uc_stack.ss_sp);
     prev_done = NULL;
   }
@@ -107,7 +109,7 @@ void run_maintenance() {
         }
         node_t* temp = ptr;
         ptr = ptr->next;
-        free(temp);
+        mydeallocate(temp, __FILE__, __LINE__, LIBRARYREQ);
       }
     }
   }
@@ -115,6 +117,7 @@ void run_maintenance() {
 
 void free_data() {
   if (prev_done != NULL) {
+//    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
     free(prev_done->uc_stack.ss_sp);
   }
   free_map(all_threads);
@@ -123,6 +126,6 @@ void free_data() {
     free_list(ready_q[i]);
   }
   timer_delete(sig_timer);
-  free(sig_timer);
-  free(act);
+  mydeallocate(sig_timer, __FILE__, __LINE__, LIBRARYREQ);
+  mydeallocate(act, __FILE__, __LINE__, LIBRARYREQ);
 }
