@@ -165,7 +165,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 						//free segment = segment memory space + seg_index * segment_size; 
 //						printMemory();
 						void* ret = (void*) ( (char*)(start+NUMSEGMENTS) + seg_index*segment_size);
-						printf("malloc ptr %p\n", ret );
+//						printf("malloc ptr %p\n", ret );
 						return (void*)ret;
 					}
 				}
@@ -189,7 +189,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 			//free segment = segment memory space + seg_index * segment_size; 
 //			printMemory();
 			void* ret = (void*) (curr+NUMSEGMENTS) ;
-			printf("malloc ptr %p\n", ret );
+//			printf("malloc ptr %p\n", ret );
 			return (void*)(ret);
 		}
 	}
@@ -210,7 +210,7 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 	if (firstMalloc == 1) { // first time using malloc
 		seg_index = NUMSEGMENTS;
 	}
-	printf("free ptr %p\n", p);
+//	printf("free ptr %p\n", p);
 	int index = ( (unsigned long) p - (unsigned long) mem_space) / page_size ;
 	metadata* start = (metadata*) ((char*)mem_space + index*page_size);
 	metadata* prev;
