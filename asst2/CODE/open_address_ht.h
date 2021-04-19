@@ -5,55 +5,45 @@
 #ifndef ASST1_OPEN_ADDRESS_HT_H
 #define ASST1_OPEN_ADDRESS_HT_H
 
+#include <stddef.h>
+#include <stdint.h>
 #include "types.h"
 
-typedef struct _ht_entry {
-  ht_key key;
-  ht_val val;
-} HashEntry;
 
-typedef struct _linear_probe {
-  size_t _size;
-  HashEntry* _table;
-} OpenAddrHashtable;
+typedef ht_entry* OpenAddrHashtable;
 
 /**
- * Create new open-addressed hashtable.
- * @param size the initial capacity.
- * @return a pointer representing the table.
+ * Create new open-addressed hashtable of size HT_SIZE at the given address.
+ * @param ptr a pointer to the beginning of the table.
  */
-OpenAddrHashtable* createTable(size_t size = 128);
-
-/**
- * Delete the provided table.
- * @param table
- */
-void deleteTable(OpenAddrHashtable* table);
+void createTable(void* ptr);
 
 /**
  * Put the key value pair into the hashtable. If there is already a value for
  * that key, replace it.
  * @param table
- * @param key
- * @param val
+ * @param entry
  * @return the old value, if there is one, or HT_NULL_VAL otherwise.
  */
-ht_val put(OpenAddrHashtable* table, ht_key key, ht_val val);
+
+ht_val put(OpenAddrHashtable table, ht_entry entry);
 
 /**
  * Get the value associated with a key.
  * @param table
- * @param key
+ * @param getkey
  * @return the value, if there is one, or HT_NULL_VAL otherwise.
  */
-ht_val get(OpenAddrHashtable* table, ht_key key);
+ht_val get(OpenAddrHashtable table, ht_key getkey);
 
 /**
- * Remove the value associated with a key, if there is one.
+ * Remove the value associated with a key, if there is one. Raises an error
+ * if there is no entry corresponding to the key.
  * @param table
- * @param key
+ * @param delkey
+ * @throw error if the key does not correspond with a value.
  * @return the value deleted, if there is one, or HT_NULL_VAL otherwise.
  */
-ht_val delete(OpenAddrHashtable* table, ht_key key);
+ht_val delete(OpenAddrHashtable table, ht_key delkey);
 
 #endif //ASST1_OPEN_ADDRESS_HT_H
