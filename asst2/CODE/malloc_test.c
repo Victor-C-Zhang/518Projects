@@ -68,7 +68,7 @@ void mallocTesting() {
 }
 
 int main(int argc, char** argv){
-  test_thread_create_join();
-//  mallocTesting();
+//  test_thread_create_join();
+  mallocTesting();
   return 0;
 }
