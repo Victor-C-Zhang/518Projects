@@ -1,9 +1,9 @@
 CC      = gcc
-CFLAGS  = -std=c99
+CFLAGS  = -std=c99 -pthread
 
 CLEANEXTS   = o a
 
-OUTPUTFILE  = my_pthread.a
+OUTPUTFILE  = libmy_pthread.a
 INSTALLDIR  = ./build
 
 # Default target
@@ -28,7 +28,6 @@ tests: datastructs.o my_scheduler.o my_pthread.o pthread_test.o
 
 # include dependencies
 datastructs.o: datastructs_t.h
-my_scheduler.o:
-	gcc -std=c99 -c my_scheduler.c -o my_scheduler.o
+my_scheduler.o: my_scheduler.h my_pthread_t.h
 my_pthread.o: my_pthread_t.h my_scheduler.h
 pthread_test.o: my_pthread_t.h my_scheduler.h
