@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "types.h"
 
-
 typedef ht_entry* OpenAddrHashtable;
 
 /**
@@ -26,7 +25,7 @@ void createTable(void* ptr);
  * @return the old value, if there is one, or HT_NULL_VAL otherwise.
  */
 
-ht_val put(OpenAddrHashtable table, ht_entry entry);
+ht_val ht_put(OpenAddrHashtable table, ht_entry entry);
 
 /**
  * Get the value associated with a key.
@@ -34,7 +33,7 @@ ht_val put(OpenAddrHashtable table, ht_entry entry);
  * @param getkey
  * @return the value, if there is one, or HT_NULL_VAL otherwise.
  */
-ht_val get(OpenAddrHashtable table, ht_key getkey);
+ht_val ht_get(OpenAddrHashtable table, ht_key getkey);
 
 /**
  * Remove the value associated with a key, if there is one. Raises an error
@@ -44,6 +43,6 @@ ht_val get(OpenAddrHashtable table, ht_key getkey);
  * @throw error if the key does not correspond with a value.
  * @return the value deleted, if there is one, or HT_NULL_VAL otherwise.
  */
-ht_val delete(OpenAddrHashtable table, ht_key delkey);
+ht_val ht_delete(OpenAddrHashtable table, ht_key delkey);
 
 #endif //ASST1_OPEN_ADDRESS_HT_H
