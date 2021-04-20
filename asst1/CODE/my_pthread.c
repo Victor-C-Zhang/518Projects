@@ -177,12 +177,14 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
               insert_ready_q(thread, curr_thread->priority);
               if (ptr == ready_q[prio]->head) {
                 ready_q[prio]->head = ptr->next;
-              } else {
+              } 
+	      else {
                 prev_ptr->next = ptr->next;
               }
               if (ptr == ready_q[prio]->tail) {
-                ready_q[prio]->tail = NULL;
+                ready_q[prio]->tail = prev_ptr;
               }
+              free(ptr);
               break;
             }
             prev_ptr = ptr;

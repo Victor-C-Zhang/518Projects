@@ -3,7 +3,10 @@
 #include "my_scheduler.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
-  assert(queue_num < NUM_QUEUES);
+  if (queue_num >= NUM_QUEUES) {
+  	queue_num = NUM_QUEUES-1;
+  }
+//  assert(queue_num < NUM_QUEUES);
   insert_tail(ready_q[queue_num], thread);
 }
 
