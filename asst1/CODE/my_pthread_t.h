@@ -25,7 +25,7 @@
 /***********************************
 * STRUCT DEFINITIONS 
 ***********************************/
-typedef uint my_pthread_t;
+typedef uint32_t my_pthread_t;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
