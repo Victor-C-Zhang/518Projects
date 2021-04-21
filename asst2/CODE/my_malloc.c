@@ -40,28 +40,6 @@ unsigned char block_size(metadata* curr) {
 	return curr -> size & 0x7f;
 }
 
-//for debugging and error reporting purposes
-//prints memory as index of memory
-//followed by 0 for free or any other integer for occupied
-//followed by the size of user data
-void printMemory() {
-	printf("-----------------------MEMORY-----------------------\n");
-	for (int i = 0; i < num_pages; i++) {
-		pagedata* pdata = (pagedata*)myblock + i;	
-		if (pdata -> pid == -1) {continue;}
-		metadata* start = (metadata*) ((char*)mem_space + i*page_size);
-		printf("--------------------PAGE--------------------\n");
-		int j = 0;
-		while (j < num_segments) {
-			metadata* mdata = start + j;
-			char curr_seg = block_size(mdata);
-			int isOcc = is_occupied(mdata);
-			printf("page[%d][%d] pid %d %p: %d  %hu\n", i, j, pdata->pid, mdata, isOcc, curr_seg);
-			j+=curr_seg;	
-		}
-	}
-	printf("-----------------------MEMORY-----------------------\n");
-}
 
 //prints any error messages followed by memory 
 void error_message(char* error, char* file, int line) {
@@ -101,6 +79,28 @@ void write_occupied_page(pagedata* curr, uint32_t pid, unsigned short index) {
   curr->pid = pid;
   curr->p_ind = (index & 0x7fff) | 0x8000;
 }
+//for debugging and error reporting purposes
+//prints memory as index of memory
+//followed by 0 for free or any other integer for occupied
+//followed by the size of user data
+void printMemory() {
+	printf("-----------------------MEMORY-----------------------\n");
+	for (int i = 0; i < num_pages; i++) {
+		pagedata* pdata = (pagedata*)myblock + i;	
+		if (!is_occupied_page(pdata)) {continue;}
+		metadata* start = (metadata*) ((char*)mem_space + i*page_size);
+		printf("--------------------PAGE--------------------\n");
+		int j = 0;
+		while (j < num_segments) {
+			metadata* mdata = start + j;
+			char curr_seg = block_size(mdata);
+			int isOcc = is_occupied(mdata);
+			printf("page[%d][%d] pid %d %p: %d  %hu %p\n", i, j, pdata->pid, mdata, isOcc, curr_seg, (start+num_segments) + j*SEGMENTSIZE);
+			j+=curr_seg;	
+		}
+	}
+	printf("-----------------------MEMORY-----------------------\n");
+}
 
 void initialize_pages() {
 	for (unsigned short i = 0; i < num_pages; i++) {
@@ -109,7 +109,7 @@ void initialize_pages() {
 		metadata* mdata = (metadata*) ((char*)mem_space + i*page_size);
 		write_free_size(mdata, num_segments);
 	}
-//	printMemory();
+	printMemory();
 }
 
 
@@ -126,7 +126,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		myblock = memalign(sysconf(_SC_PAGE_SIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGE_SIZE);
 		num_segments = page_size / ( SEGMENTSIZE + sizeof(metadata) );
-		num_pages = MEMSIZE / ( page_size + sizeof(pagedata)); 
+		num_pages = MEMSIZE / ( page_size + sizeof(pagedata));
 		mem_space = (char*) ((pagedata*) myblock + num_pages);
 		initialize_pages();
 		firstMalloc = 0;
@@ -173,8 +173,11 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 					if ( segments_alloc <= curr_seg ) { 
 						write_occupied_size(curr, curr_seg, segments_alloc);
 						//segment memory space = start + num_segments
-						//free segment = segment memory space + seg_index * SEGMENTSIZE; 
+						//free segment = segment memory space + seg_index * SEGMENTSIZE;
 						void* ret = (void*) ( (start+num_segments) + seg_index*SEGMENTSIZE);
+						
+						printf("malloc %p\n", ret);
+//						printMemory();
 						return ret;
 					}
 				}
@@ -193,6 +196,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		if (segments_alloc <= curr_seg) { 
 			write_occupied_size(curr, curr_seg, segments_alloc);
 			void* ret = (void*) (curr+num_segments) ;
+			printf("malloc %p\n", ret);
+//			printMemory();
 			return ret;
 		}
 	}
@@ -203,6 +208,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 //frees up any memory malloc'd with this pointer for future use
 void mydeallocate(void* p, char* file, int line, int threadreq) {
 	//if the pointer is NULL, there is nothing we can free
+	printf("free %p\n", p);
 	if (p == NULL) {
 		error_message("Can't free null pointer!", file, line);
 		return;

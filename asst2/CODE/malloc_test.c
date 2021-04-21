@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
 #include "my_malloc.h"
@@ -40,14 +41,15 @@ void* thread_func(void* ignored) {
 }
 
 void test_thread_create_join() {
-  pthread_t other[3];
-  void* ret_val[3]; 
-  for (int i = 0; i < 3; i++) {
+  int len = 1;
+  pthread_t other[len];
+  void* ret_val[len]; 
+  for (int i = 0; i < len; i++) {
   	pthread_create(&other[i], NULL, thread_func, (void*)&i);
     	printf("thread create %d\n", i);
   }
   
-  for (int i=0; i<3; i++) {
+  for (int i=0; i < len; i++) {
     pthread_join(other[i], &ret_val[i]);
     printf("thread join %d\n", i);
   }
@@ -55,20 +57,22 @@ void test_thread_create_join() {
 }
 
 void mallocTesting() {
-  char* ptrs[50]; 
-  for (int i = 0 ; i < 50; i++) { 
-    char* p = (char*) myallocate(5, __FILE__, __LINE__, LIBRARYREQ);
+  char* ptrs[5]; 
+  for (int i = 0 ; i < 5; i++) { 
+    char* p = (char*) myallocate(5*sizeof(char), __FILE__, __LINE__, LIBRARYREQ);
+    strcpy(p,"help"); 
     ptrs[i] = p;
     printMemory();
   }
-  for (int i = 0 ; i < 50; i++) { 
+  for (int i = 0 ; i < 5; i++) { 
+//    printf("%s\n", ptrs[i]);
     mydeallocate(ptrs[i], __FILE__, __LINE__, LIBRARYREQ);
     printMemory();
   }
 }
 
 int main(int argc, char** argv){
-//  test_thread_create_join();
-  mallocTesting();
+  test_thread_create_join();
+//  mallocTesting();
   return 0;
 }

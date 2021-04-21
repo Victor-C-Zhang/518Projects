@@ -3,7 +3,8 @@
 #include "my_scheduler.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
-  assert(queue_num < NUM_QUEUES);
+
+	//  assert(queue_num < NUM_QUEUES);
   insert_tail(ready_q[queue_num], thread);
 }
 
@@ -17,7 +18,7 @@ void exit_scheduler(struct itimerspec* ovalue) {
 }
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-	printf("schedule!\n");
+   printf("schedule!\n");
    if (prev_done != NULL) {
 //    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
     free(prev_done->uc_stack.ss_sp);
