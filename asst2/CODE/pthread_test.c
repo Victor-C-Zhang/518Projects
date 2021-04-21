@@ -100,18 +100,22 @@ void test_alarm() {
   }
 }
 
+int ret_val[5] = {-1,-1,-1,-1,-1};
+
 void* thread_func(void* ignored) {
-  long long n = 1000000000;
+  long long n = 100000000;
   int id = *((int*)ignored);
   while (n--) {
     if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
   printf("thread %d done\n", id);
-  return (void*)30;
+  ret_val[id] = id;
+//  return &ret_val[id];
+  pthread_exit(&ret_val[id]);
 }
 
 void test_thread_create() {
-  pthread_t other;
+  my_pthread_t other;
   pthread_create(&other, NULL, thread_func, (void*)&other);
   long long n = 1000000000;
   while (n--) {
@@ -120,8 +124,8 @@ void test_thread_create() {
 }
 
 void test_thread_create_join() {
-  pthread_t other[3];
-  void* ret_val[3]; 
+  my_pthread_t other[3];
+  void* returns[3] = {NULL,NULL,NULL};
   pthread_create(&other[0], NULL, thread_func, (void*) &other[0]);
   printf("test: thread id %d created\n", other[0]);
   pthread_create(&other[1], NULL, thread_func, (void*) &other[1]);
@@ -129,10 +133,15 @@ void test_thread_create_join() {
   pthread_create(&other[2], NULL, thread_func, (void*) &other[2]);
   printf("test: thread id %d created\n", other[2]);
   for (int i=0; i<3; i++) {
-    printf("test: thread %d join\n", other[i]);
-    pthread_join(other[i], &ret_val[i]);
-    printf("test: thread %d returned %ld\n", other[i], (long int) ret_val[i]); 
+    printf("test: thread %u join\n", other[i]);
+    pthread_join(other[i], &returns[i]);
+    printf("test: thread %u returned %d, got %d from join\n",
+           other[i], ret_val[i], *(int*)returns[i]);
   }
+  for (int i = 0; i < 5; ++i) {
+    printf("%d ",ret_val[i]);
+  }
+  printf("\n");
 }
 
 void* thread_func_mutex(void* args) {
@@ -152,7 +161,7 @@ void* thread_func_mutex(void* args) {
 void testMutex(){
   pthread_mutex_t lock;
   pthread_mutex_init(&lock, NULL);
-  pthread_t threads[5]; 
+  my_pthread_t threads[5];
   params* args[5];
   for (int i = 0; i <5; i++) {
     args[i] = (params*) malloc(sizeof(params));
@@ -187,8 +196,8 @@ void* yield_thread_func(void* ignored) {
 }
 
 void test_thread_yield() {
-  pthread_t other1;
-  pthread_t other2;
+  my_pthread_t other1;
+  my_pthread_t other2;
   pthread_create(&other1, NULL, yield_thread_func, NULL);
   pthread_create(&other2, NULL, yield_thread_func, NULL);
   long long n = 1000000000;
