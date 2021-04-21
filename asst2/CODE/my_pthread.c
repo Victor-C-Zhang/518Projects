@@ -16,7 +16,7 @@ static int initScheduler = 1; //if 1, initialize scheduler
 void thread_func_wrapper(void* (*function)(void*), void* arg) {
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->ret_val = function(arg);
-  my_pthread_exit(NULL);
+  my_pthread_exit(curr_thread->ret_val);
 }
 
 tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
@@ -108,7 +108,7 @@ int my_pthread_yield() {
 void my_pthread_exit(void *value_ptr) {
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
-  if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
+  curr_thread->ret_val = value_ptr;
   // notify waiting threads
   while (curr_thread->waited_on->head != NULL){
     tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
@@ -181,8 +181,9 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
                 prev_ptr->next = ptr->next;
               }
               if (ptr == ready_q[prio]->tail) {
-                ready_q[prio]->tail = NULL;
+                ready_q[prio]->tail = prev_ptr;
               }
+              free(ptr);
               break;
             }
             prev_ptr = ptr;

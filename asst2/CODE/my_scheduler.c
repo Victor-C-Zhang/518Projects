@@ -91,6 +91,8 @@ void run_maintenance() {
       int x = (int)(cycles_run-thread->last_run);
       double gy = (cycles_since_last)/log(i+1) - 1;
       int new_prio = (int)((thread->priority + 1)*exp(-(double)x/gy));
+      new_prio = (new_prio > thread->priority) ?
+            thread->priority : new_prio; // handle rare floating point rounding error
       if (new_prio == thread->priority) { // do nothing
         prev_ptr = ptr;
         ptr = ptr->next;
