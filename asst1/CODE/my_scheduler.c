@@ -3,7 +3,10 @@
 #include "my_scheduler.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
-  assert(queue_num < NUM_QUEUES);
+  if (queue_num >= NUM_QUEUES) {
+  	queue_num = NUM_QUEUES-1;
+  }
+//  assert(queue_num < NUM_QUEUES);
   insert_tail(ready_q[queue_num], thread);
 }
 
@@ -91,6 +94,7 @@ void run_maintenance() {
       int x = (int)(cycles_run-thread->last_run);
       double gy = (cycles_since_last)/log(i+1) - 1;
       int new_prio = (int)((thread->priority + 1)*exp(-(double)x/gy));
+      new_prio = (thread->priority >= new_prio) ? new_prio : thread_priority;
       if (new_prio == thread->priority) { // do nothing
         prev_ptr = ptr;
         ptr = ptr->next;
