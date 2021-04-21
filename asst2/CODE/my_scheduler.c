@@ -3,8 +3,7 @@
 #include "my_scheduler.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
-
-	//  assert(queue_num < NUM_QUEUES);
+  assert(queue_num < NUM_QUEUES);
   insert_tail(ready_q[queue_num], thread);
 }
 
@@ -94,6 +93,8 @@ void run_maintenance() {
       int x = (int)(cycles_run-thread->last_run);
       double gy = (cycles_since_last)/log(i+1) - 1;
       int new_prio = (int)((thread->priority + 1)*exp(-(double)x/gy));
+      new_prio = (new_prio > thread->priority) ?
+            thread->priority : new_prio; // handle rare floating point rounding error
       if (new_prio == thread->priority) { // do nothing
         prev_ptr = ptr;
         ptr = ptr->next;

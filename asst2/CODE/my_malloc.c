@@ -61,11 +61,16 @@ void write_occupied_size(metadata* curr, unsigned char curr_seg, size_t newSize)
 	//if the size of the free block is more than the new size,
 	//need to split the block into a first block which is malloc'd
 	//and second block which is still free but has a smaller size 
+	if (newSize < curr_seg) write_free_size(curr+newSize, (curr_seg - newSize));
+	curr -> size = (newSize & 0x7f) | 0x80;
+/*
 	if (newSize < curr_seg) {
-		write_free_size(curr+newSize, (curr_seg - newSize));
+		metadata* next = (metadata*) ( curr + 1 + newSize);
+		write_free_size(next, (curr_seg - newSize - sizeof(metadata)));
 	}
 	
 	curr -> size = (newSize & 0x7f) | 0x80;
+*/
 }
 
 int is_occupied_page(pagedata* curr) {
@@ -91,6 +96,8 @@ void printMemory() {
 		metadata* start = (metadata*) ((char*)mem_space + i*page_size);
 		printf("--------------------PAGE--------------------\n");
 		int j = 0;
+//		metadata* curr = start;
+//		while (curr < start+page_size) {
 		while (j < num_segments) {
 			metadata* mdata = start + j;
 			char curr_seg = block_size(mdata);
@@ -109,7 +116,6 @@ void initialize_pages() {
 		metadata* mdata = (metadata*) ((char*)mem_space + i*page_size);
 		write_free_size(mdata, num_segments);
 	}
-	printMemory();
 }
 
 
@@ -142,18 +148,18 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 
 	//find page for process...
 	size_t segments_alloc = size / SEGMENTSIZE + 1;
-	size_t pages_alloc = segments_alloc / num_segments + 1;
 	int free_page = -1;
 	int page_exist = -1;
-	int num_free = 0; // allocating multiple pages 
+//	int num_free = 0; // allocating multiple pages 
+//	size_t pages_alloc = segments_alloc / num_segments + 1;
 	int index = (segments_alloc > num_segments) ? num_pages : 0;
 
 	//if exists, find first fit free space
-	for (index = 0; index < num_pages; index++) {
+	for (index; index < num_pages; index++) {
 		pagedata* pdata = (pagedata*)myblock + index;	
 		int is_occ = is_occupied_page(pdata);
                 if ( !is_occ ) {//free page 
-			num_free++;
+//			num_free++;
 			if (free_page == -1) {
 				free_page = index;
 			}
@@ -164,20 +170,22 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 			}
 
 			//traverse memory to find the first free block that can fit the size requested
-			metadata* start = (metadata*) ((char*)mem_space + index*page_size);
+			metadata* start = (metadata*) (mem_space + index*page_size);
 			int seg_index = 0;
-			while (seg_index < num_segments) {
+//			metadata* curr = start;
+//			while (curr < (start+page_size)) {
+			while ( seg_index < num_segments) {
 				metadata* curr = start + seg_index;
 				unsigned char curr_seg = block_size(curr);
 				if (!is_occupied(curr)) {
 					if ( segments_alloc <= curr_seg ) { 
+//					if (segments_alloc == curr_seg || (segments_alloc + sizeof(metadata) < curr_seg) ) { 
 						write_occupied_size(curr, curr_seg, segments_alloc);
 						//segment memory space = start + num_segments
 						//free segment = segment memory space + seg_index * SEGMENTSIZE;
 						void* ret = (void*) ( (start+num_segments) + seg_index*SEGMENTSIZE);
-						
+//						void* ret = ++curr; 	
 						printf("malloc %p\n", ret);
-//						printMemory();
 						return ret;
 					}
 				}
@@ -194,10 +202,11 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		metadata* curr = (metadata*) (mem_space + free_page*page_size);
 		unsigned char curr_seg = block_size(curr);
 		if (segments_alloc <= curr_seg) { 
+//		if (segments_alloc == curr_seg || (segments_alloc + sizeof(metadata) < curr_seg) ) { 
 			write_occupied_size(curr, curr_seg, segments_alloc);
 			void* ret = (void*) (curr+num_segments) ;
+//			void* ret = ++curr; 	
 			printf("malloc %p\n", ret);
-//			printMemory();
 			return ret;
 		}
 	}
@@ -222,10 +231,13 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 	unsigned char prevSize = 0;
 	int seg_index = (firstMalloc == 1) ? num_segments: 0;
 	//find the pointer to be free and keep track of the previous block incase it is free so we can combine them and avoid memory fragmentation
+//	metadata* curr = start;
+//	while (curr < start+page_size) {
 	while (seg_index < num_segments) { 
 		metadata* curr = start + seg_index;
 		unsigned char curr_seg = block_size(curr);
 		//if we find the pointer to be free'd
+//		if ( (curr+1) == p) {
 		if ( (start+num_segments + seg_index * SEGMENTSIZE) == p) {
 			//if it is already free, cannot free it -> error
 			if ( !is_occupied(curr) ) {
@@ -236,8 +248,10 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 				//free the current pointer
 				write_free_size(curr, curr_seg);
 				//if the next block is within segment and is free, combine if with my current pointer as a free block
+//				if ( seg_index+curr_seg+sizeof(metadata) < page_size) {
 				if (seg_index+curr_seg < num_segments){
 					metadata* next = start + seg_index + curr_seg;
+//					metadata* next = start + seg_index + curr_seg + sizeof(metadata);
 					if (!is_occupied(next)){
 						write_free_size(curr, curr_seg+block_size(next));
 					}
@@ -259,7 +273,7 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		else { 
 			prevFree = 0;
 		}
-		seg_index += curr_seg;
+		seg_index= seg_index + curr_seg;
 	}
 
 
