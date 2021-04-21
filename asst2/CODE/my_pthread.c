@@ -16,7 +16,7 @@ static int initScheduler = 1; //if 1, initialize scheduler
 void thread_func_wrapper(void* (*function)(void*), void* arg) {
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->ret_val = function(arg);
-  my_pthread_exit(NULL);
+  my_pthread_exit(curr_thread->ret_val);
 }
 
 tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
@@ -32,7 +32,7 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
 
   getcontext(&new_thread->context);
   new_thread->context.uc_stack.ss_size = STACKSIZE;
-  //new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
+//  new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
   new_thread->context.uc_stack.ss_sp = malloc(STACKSIZE);
   sigemptyset(&new_thread->context.uc_sigmask);
   makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
@@ -107,9 +107,10 @@ int my_pthread_yield() {
 
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
+  printf("thread exit start\n");
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
-  if (value_ptr != NULL) value_ptr = curr_thread->ret_val;
+  curr_thread->ret_val = value_ptr;
   // notify waiting threads
   while (curr_thread->waited_on->head != NULL){
     tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
@@ -118,11 +119,13 @@ void my_pthread_exit(void *value_ptr) {
   }
   free_list(curr_thread->waited_on);
   curr_thread->status = DONE;
+  printf("thread exit done\n");
   raise(SIGALRM);
 }
 
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
+  printf("thread join\n");
   if (tid < thread) {
     return -1;
   }
