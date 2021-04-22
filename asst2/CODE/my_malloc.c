@@ -140,7 +140,6 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		segh.sa_flags = SA_SIGINFO;
 		sigaddset(&segh.sa_mask,SIGALRM); // block scheduling attempts while resolving memory issues
 		sigaction(SIGSEGV, &segh, NULL);
-		raise(SIGSEGV);
 		firstMalloc = 0;
 	}
 
