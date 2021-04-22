@@ -8,17 +8,17 @@ void insert_ready_q(tcb* thread, int queue_num) {
 }
 
 void enter_scheduler(struct itimerspec* ovalue) {
-  timer_settime(sig_timer,0,&timer_stopper,ovalue);
+  timer_settime(&sig_timer,0,&timer_stopper,ovalue);
   in_scheduler = 1;
 }
 
 void exit_scheduler(struct itimerspec* ovalue) {
-  timer_settime(sig_timer,0,ovalue,NULL);
+  timer_settime(&sig_timer,0,ovalue,NULL);
 }
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-   printf("schedule!\n");
-   if (prev_done != NULL) {
+//   printf("schedule!\n");
+   if (prev_done != NULL && prev_done != 0) {
 //    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
     free(prev_done->uc_stack.ss_sp);
     prev_done = NULL;
@@ -127,7 +127,6 @@ void free_data() {
   for (int i = 0; i < NUM_QUEUES; ++i) {
     free_list(ready_q[i]);
   }
-  timer_delete(sig_timer);
-  mydeallocate(sig_timer, __FILE__, __LINE__, LIBRARYREQ);
-  mydeallocate(act, __FILE__, __LINE__, LIBRARYREQ);
+  timer_delete(&sig_timer);
+//  mydeallocate(act, __FILE__, __LINE__, LIBRARYREQ);
 }

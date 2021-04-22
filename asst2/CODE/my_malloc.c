@@ -5,22 +5,16 @@
 #include "my_malloc.h"
 
 static char* myblock;
+//static char myblock[MEMSIZE];	
 static int firstMalloc = 1;
-struct sigaction* act;
+struct sigaction segh;
 size_t page_size;  //size of page given to each process
 int num_pages;
 int num_segments;
 char* mem_space;
 
-static void handler(int sig, siginfo_t* si, void* unused) {
-  printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
-}
-
-/**
- * Frees data allocated by memory management system during process teardown.
- */
-void free_mem_metadata() {
-  mydeallocate(act, __FILE__, __LINE__, LIBRARYREQ);
+static void* handler(int sig, siginfo_t* si, void* unused) {
+	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
 }
 
 //user blocks are occupied (malloc'd) if the
@@ -44,6 +38,7 @@ unsigned char block_size(metadata* curr) {
 //prints any error messages followed by memory 
 void error_message(char* error, char* file, int line) {
 	printf("%s:%d: %s\n", file, line, error);
+	exit(0);
 }
 
 //takes the number of segments within page to be free and writes that into metadata
@@ -121,6 +116,7 @@ void initialize_pages() {
 
 //returns to the user a pointer to the amount of memory requested
 void* myallocate(size_t size, char* file, int line, int threadreq){
+  	enter_scheduler(&timer_pause_dump);
 	//if the user asks for 0 bytes, call error and return NULL
 	if (size <= 0){
 		error_message("Cannot malloc 0 or negative bytes", file, line);
@@ -132,26 +128,22 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		myblock = memalign(sysconf(_SC_PAGE_SIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGE_SIZE);
 		num_segments = page_size / ( SEGMENTSIZE + sizeof(metadata) );
-		num_pages = MEMSIZE / ( page_size + sizeof(pagedata));
-		mem_space = (char*) ((pagedata*) myblock + num_pages);
+		num_pages = MEMSIZE / ( page_size + sizeof(pagedata));		
+//		mem_space = (char*) ( (pagedata*) myblock + num_pages );
+		mem_space = ((char*)myblock + ( (num_pages*sizeof(pagedata))/page_size+1)*page_size );
 		initialize_pages();
+		segh.sa_flags = SA_SIGINFO;
+		sigemptyset(&segh.sa_mask);
+		segh.sa_sigaction = handler;
+		sigaddset(&segh.sa_mask,SIGALRM); // block scheduling attempts while resolving memory issues
+		sigaction(SIGSEGV, &segh, NULL);
 		firstMalloc = 0;
-
-		act = myallocate(sizeof(struct sigaction), __FILE__, __LINE__, LIBRARYREQ);
-		atexit(free_mem_metadata);
-		act->sa_sigaction = handler;
-		act->sa_flags = SA_SIGINFO;
-		sigemptyset(&act->sa_mask);
-		sigaddset(&act->sa_mask,SIGALRM); // block scheduling attempts while resolving memory issues
-		sigaction(SIGSEGV, act, NULL);
 	}
 
 	//find page for process...
 	size_t segments_alloc = size / SEGMENTSIZE + 1;
 	int free_page = -1;
 	int page_exist = -1;
-//	int num_free = 0; // allocating multiple pages 
-//	size_t pages_alloc = segments_alloc / num_segments + 1;
 	int index = (segments_alloc > num_segments) ? num_pages : 0;
 
 	//if exists, find first fit free space
@@ -185,7 +177,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 						//free segment = segment memory space + seg_index * SEGMENTSIZE;
 						void* ret = (void*) ( (start+num_segments) + seg_index*SEGMENTSIZE);
 //						void* ret = ++curr; 	
-						printf("malloc %p\n", ret);
+//						printf("malloc %p\n", ret);
+  						exit_scheduler(&timer_pause_dump);
 						return ret;
 					}
 				}
@@ -206,18 +199,20 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 			write_occupied_size(curr, curr_seg, segments_alloc);
 			void* ret = (void*) (curr+num_segments) ;
 //			void* ret = ++curr; 	
-			printf("malloc %p\n", ret);
+//			printf("malloc %p\n", ret);
+  			exit_scheduler(&timer_pause_dump);
 			return ret;
 		}
 	}
 
 	error_message("Not enough memory", file, line);
+  	exit_scheduler(&timer_pause_dump);
 	return NULL;
 }
 //frees up any memory malloc'd with this pointer for future use
 void mydeallocate(void* p, char* file, int line, int threadreq) {
+	enter_scheduler(&timer_pause_dump);
 	//if the pointer is NULL, there is nothing we can free
-	printf("free %p\n", p);
 	if (p == NULL) {
 		error_message("Can't free null pointer!", file, line);
 		return;
@@ -233,6 +228,7 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 	//find the pointer to be free and keep track of the previous block incase it is free so we can combine them and avoid memory fragmentation
 //	metadata* curr = start;
 //	while (curr < start+page_size) {
+//	printf("free %p\n", p);
 	while (seg_index < num_segments) { 
 		metadata* curr = start + seg_index;
 		unsigned char curr_seg = block_size(curr);
@@ -242,7 +238,6 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 			//if it is already free, cannot free it -> error
 			if ( !is_occupied(curr) ) {
 				error_message("Cannot free an already free pointer!", file, line);
-				return;
 			}
 			else {
 				//free the current pointer
@@ -262,8 +257,9 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 					write_free_page( (pagedata*)myblock + page_index, page_index );
 				}
 //				printMemory();
-				return;
 			}		
+  			exit_scheduler(&timer_pause_dump);
+			return;
 		}
 		prev = curr;
 		if (!is_occupied(curr)) {
@@ -279,4 +275,5 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 
 	//if we did not return within the while loop, the pointer was not found and thus was not malloc'd
 	error_message("This pointer was not malloc'd!", file, line);
+  	exit_scheduler(&timer_pause_dump);
 }

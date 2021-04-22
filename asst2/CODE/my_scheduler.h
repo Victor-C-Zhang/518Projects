@@ -31,7 +31,7 @@ typedef struct threadControlBlock {
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
 } tcb;
 
-timer_t* sig_timer;
+timer_t sig_timer;
 static struct itimerspec timer_25ms = {
       .it_interval = {
             .tv_nsec = QUANTUM,
@@ -43,7 +43,7 @@ static struct itimerspec timer_25ms = {
 static struct itimerspec timer_stopper = {};
 struct itimerspec timer_pause_dump;
 
-struct sigaction* act;
+struct sigaction act;
 
 ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
 int curr_prio; // priority of the currently scheduled thread. should usually

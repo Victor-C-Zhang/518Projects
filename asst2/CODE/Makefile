@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -std=c99 -pthread
+CFLAGS  = -std=c99 -pthread -g
 
 CLEANEXTS   = o a
 

@@ -50,8 +50,8 @@ void test_thread_create_join() {
   }
   
   for (int i=0; i < len; i++) {
-    pthread_join(other[i], &ret_val[i]);
     printf("thread join %d\n", i);
+    pthread_join(other[i], &ret_val[i]);
   }
 
 }
