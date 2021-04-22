@@ -161,7 +161,7 @@ void free_map(hashmap* h) {
       hash_node* next = node->next;
       // context, linkedlists free'd earlier
       mydeallocate(node->value, __FILE__, __LINE__, LIBRARYREQ); //free tcb
-      mydeallocate(node, __FILE__, __LINE__, LIBRARYREQ);
+//      mydeallocate(node, __FILE__, __LINE__, LIBRARYREQ);
       node = next;
     }
   }

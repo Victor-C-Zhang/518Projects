@@ -118,10 +118,10 @@ void run_maintenance() {
 }
 
 void free_data() {
-  if (prev_done != NULL) {
+//  if (prev_done != NULL) {
 //    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-    free(prev_done->uc_stack.ss_sp);
-  }
+//    free(prev_done->uc_stack.ss_sp);
+//  }
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);
   for (int i = 0; i < NUM_QUEUES; ++i) {
