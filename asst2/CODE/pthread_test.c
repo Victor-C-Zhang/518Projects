@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
+#include "test_runner.h"
 
 typedef struct params {
   pthread_mutex_t* lock;
@@ -203,16 +204,4 @@ void test_thread_yield() {
   while (n--) {
     if (!(n%5000000)) printf("Main: %lld\n",n);
   }
-}
-
-
-int main(int argc, char** argv){
-//  testLinkedList();
-//  testHashMap();
-//  test_alarm();
-  test_thread_create();
-//  testMutex();
-  test_thread_create_join();
-//  test_thread_yield();
-  return 0;
 }
