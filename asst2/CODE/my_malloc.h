@@ -2,6 +2,7 @@
 #define ASST1_MY_MALLOC_H
 
 #include <stddef.h>
+#include <string.h>
 #include "my_scheduler.h" 
 
 #define THREADREQ 1

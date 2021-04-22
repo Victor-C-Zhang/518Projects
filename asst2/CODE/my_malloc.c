@@ -13,8 +13,9 @@ int num_pages;
 int num_segments;
 char* mem_space;
 
-static void* handler(int sig, siginfo_t* si, void* unused) {
+static void handler(int sig, siginfo_t* si, void* unused) {
 	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
+	exit(0);
 }
 
 //user blocks are occupied (malloc'd) if the
@@ -132,11 +133,14 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 //		mem_space = (char*) ( (pagedata*) myblock + num_pages );
 		mem_space = ((char*)myblock + ( (num_pages*sizeof(pagedata))/page_size+1)*page_size );
 		initialize_pages();
-		segh.sa_flags = SA_SIGINFO;
+
+	        memset(&segh, 0, sizeof(struct sigaction));
 		sigemptyset(&segh.sa_mask);
 		segh.sa_sigaction = handler;
+		segh.sa_flags = SA_SIGINFO;
 		sigaddset(&segh.sa_mask,SIGALRM); // block scheduling attempts while resolving memory issues
 		sigaction(SIGSEGV, &segh, NULL);
+		raise(SIGSEGV);
 		firstMalloc = 0;
 	}
 
