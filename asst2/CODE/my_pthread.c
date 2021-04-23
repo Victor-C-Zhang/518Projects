@@ -141,7 +141,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   if (t_block->status != DONE) { // block and wait
     insert_head(t_block -> waited_on, curr_thread);
     curr_thread->status = BLOCKED;
-  printf("thread join schedule\n");
+    printf("thread join schedule\n");
     raise(SIGALRM);
   }
   // by this point, t_block will be done

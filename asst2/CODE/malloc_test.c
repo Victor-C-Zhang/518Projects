@@ -16,32 +16,33 @@ void printInt(void* data){
 
 
 void* thread_func(void* ignored) {
-//  long long n = 1000000000;
-  long long n = 10000;
+/*  long long n = 1000000000;
   int id = *((int*)ignored);
   while (n--) {
-//    if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
+    if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
-  printf("thread %d done\n", id);
-  
-/*  int len = 3;
+ 
+//  printf("thread %d done\n", id);
+ */ 
+  int len = 3;
   char* ptrs[len];
   for (int i = 0 ; i < len; i++) { 
-    char* p = (char*) malloc(5);
+//    char* p = (char*) malloc(5);
+    char* p = (char*) myallocate(5, __FILE__, __LINE__, THREADREQ);
     ptrs[i] = p;
    printf("id:%d, thread malloc %d\n", *((int*)ignored), i);
   }
-//    printMemory();
+    printMemory();
   for (int i = 0 ; i < len; i++) { 
-    free(ptrs[i]);
+    mydeallocate(ptrs[i], __FILE__, __LINE__, THREADREQ);
+    //free(ptrs[i]);
     printf("id:%d, thread free %d\n", *((int*)ignored), i);
   }
-//    printMemory();
-*/
+    printMemory();
 }
 
 void test_thread_create_join() {
-  int len = 1;
+  int len = 3;
   pthread_t other[len];
   void* ret_val[len]; 
   for (int i = 0; i < len; i++) {
@@ -50,7 +51,6 @@ void test_thread_create_join() {
   }
   
   for (int i=0; i < len; i++) {
-    printf("thread join %d\n", i);
     pthread_join(other[i], &ret_val[i]);
   }
 
@@ -74,5 +74,7 @@ void mallocTesting() {
 int main(int argc, char** argv){
   test_thread_create_join();
 //  mallocTesting();
+  printf("done\n");
   return 0;
+
 }

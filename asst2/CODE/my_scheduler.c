@@ -28,7 +28,6 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   old_thread->last_run = cycles_run;
   ++cycles_run;
   --should_maintain;
-
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
     if (old_thread->cycles_left > 0) { // allow threads to run for
       // multiple interrupt cycles
@@ -118,15 +117,14 @@ void run_maintenance() {
 }
 
 void free_data() {
-//  if (prev_done != NULL) {
-//    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-//    free(prev_done->uc_stack.ss_sp);
-//  }
+  if (prev_done != NULL || prev_done != 0) {
+  //  mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
+    free(prev_done->uc_stack.ss_sp);
+  }
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);
   for (int i = 0; i < NUM_QUEUES; ++i) {
     free_list(ready_q[i]);
   }
   timer_delete(&sig_timer);
-//  mydeallocate(act, __FILE__, __LINE__, LIBRARYREQ);
 }
