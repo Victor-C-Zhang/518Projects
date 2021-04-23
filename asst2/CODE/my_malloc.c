@@ -5,13 +5,12 @@
 #include "my_malloc.h"
 
 static char* myblock;
-//static char myblock[MEMSIZE];	
 static int firstMalloc = 1;
 struct sigaction segh;
 size_t page_size;  //size of page given to each process
-int num_pages;
-int num_segments;
-char* mem_space;
+int num_pages; //number of pages available for user
+int num_segments; //number of segments within a page available for allocation 
+char* mem_space; //user space, after page table
 
 static void handler(int sig, siginfo_t* si, void* unused) {
 	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
@@ -59,14 +58,6 @@ void write_occupied_size(metadata* curr, unsigned char curr_seg, size_t newSize)
 	//and second block which is still free but has a smaller size 
 	if (newSize < curr_seg) write_free_size(curr+newSize, (curr_seg - newSize));
 	curr -> size = (newSize & 0x7f) | 0x80;
-/*
-	if (newSize < curr_seg) {
-		metadata* next = (metadata*) ( curr + 1 + newSize);
-		write_free_size(next, (curr_seg - newSize - sizeof(metadata)));
-	}
-	
-	curr -> size = (newSize & 0x7f) | 0x80;
-*/
 }
 
 int is_occupied_page(pagedata* curr) {
@@ -92,8 +83,6 @@ void printMemory() {
 		metadata* start = (metadata*) ((char*)mem_space + i*page_size);
 		printf("--------------------PAGE--------------------\n");
 		int j = 0;
-//		metadata* curr = start;
-//		while (curr < start+page_size) {
 		while (j < num_segments) {
 			metadata* mdata = start + j;
 			char curr_seg = block_size(mdata);
@@ -124,14 +113,13 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		return NULL;
 	}
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
-//	printf("mymalloc id %d\n", curr_id);	
 	if (firstMalloc == 1) { // first time using malloc
 		myblock = memalign(sysconf(_SC_PAGE_SIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGE_SIZE);
 		num_segments = page_size / ( SEGMENTSIZE + sizeof(metadata) );
 		num_pages = MEMSIZE / ( page_size + sizeof(pagedata));		
-//		mem_space = (char*) ( (pagedata*) myblock + num_pages );
-		mem_space = ((char*)myblock + ( (num_pages*sizeof(pagedata))/page_size+1)*page_size );
+		mem_space = (char*) ( (pagedata*) myblock + num_pages );
+//		mem_space = ((char*)myblock + ( (num_pages*sizeof(pagedata))/page_size+1)*page_size );
 		initialize_pages();
 
 	        memset(&segh, 0, sizeof(struct sigaction));
@@ -154,7 +142,6 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		pagedata* pdata = (pagedata*)myblock + index;	
 		int is_occ = is_occupied_page(pdata);
                 if ( !is_occ ) {//free page 
-//			num_free++;
 			if (free_page == -1) {
 				free_page = index;
 			}
@@ -167,20 +154,15 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 			//traverse memory to find the first free block that can fit the size requested
 			metadata* start = (metadata*) (mem_space + index*page_size);
 			int seg_index = 0;
-//			metadata* curr = start;
-//			while (curr < (start+page_size)) {
 			while ( seg_index < num_segments) {
 				metadata* curr = start + seg_index;
 				unsigned char curr_seg = block_size(curr);
 				if (!is_occupied(curr)) {
 					if ( segments_alloc <= curr_seg ) { 
-//					if (segments_alloc == curr_seg || (segments_alloc + sizeof(metadata) < curr_seg) ) { 
 						write_occupied_size(curr, curr_seg, segments_alloc);
 						//segment memory space = start + num_segments
 						//free segment = segment memory space + seg_index * SEGMENTSIZE;
 						void* ret = (void*) ( (start+num_segments) + seg_index*SEGMENTSIZE);
-//						void* ret = ++curr; 	
-//						printf("malloc %p\n", ret);
   						exit_scheduler(&timer_pause_dump);
 						return ret;
 					}
@@ -198,11 +180,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		metadata* curr = (metadata*) (mem_space + free_page*page_size);
 		unsigned char curr_seg = block_size(curr);
 		if (segments_alloc <= curr_seg) { 
-//		if (segments_alloc == curr_seg || (segments_alloc + sizeof(metadata) < curr_seg) ) { 
 			write_occupied_size(curr, curr_seg, segments_alloc);
 			void* ret = (void*) (curr+num_segments) ;
-//			void* ret = ++curr; 	
-//			printf("malloc %p\n", ret);
   			exit_scheduler(&timer_pause_dump);
 			return ret;
 		}
@@ -221,22 +200,18 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		return;
 	}
 	
-	//if nothing has been malloc'd yet, cannot free!
 	int page_index = ( (unsigned long) p - (unsigned long) mem_space) / page_size ;
 	metadata* start = (metadata*) (mem_space + page_index*page_size);
 	metadata* prev;
 	int prevFree = 0;
 	unsigned char prevSize = 0;
+	//if nothing has been malloc'd yet, cannot free!
 	int seg_index = (firstMalloc == 1) ? num_segments: 0;
 	//find the pointer to be free and keep track of the previous block incase it is free so we can combine them and avoid memory fragmentation
-//	metadata* curr = start;
-//	while (curr < start+page_size) {
-//	printf("free %p\n", p);
 	while (seg_index < num_segments) { 
 		metadata* curr = start + seg_index;
 		unsigned char curr_seg = block_size(curr);
 		//if we find the pointer to be free'd
-//		if ( (curr+1) == p) {
 		if ( (start+num_segments + seg_index * SEGMENTSIZE) == p) {
 			//if it is already free, cannot free it -> error
 			if ( !is_occupied(curr) ) {
@@ -246,10 +221,8 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 				//free the current pointer
 				write_free_size(curr, curr_seg);
 				//if the next block is within segment and is free, combine if with my current pointer as a free block
-//				if ( seg_index+curr_seg+sizeof(metadata) < page_size) {
 				if (seg_index+curr_seg < num_segments){
 					metadata* next = start + seg_index + curr_seg;
-//					metadata* next = start + seg_index + curr_seg + sizeof(metadata);
 					if (!is_occupied(next)){
 						write_free_size(curr, curr_seg+block_size(next));
 					}
@@ -259,7 +232,6 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 				if ( !is_occupied(start) && block_size(start) == num_segments) {
 					write_free_page( (pagedata*)myblock + page_index, page_index );
 				}
-//				printMemory();
 			}		
   			exit_scheduler(&timer_pause_dump);
 			return;

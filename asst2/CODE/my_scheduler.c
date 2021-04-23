@@ -17,7 +17,6 @@ void exit_scheduler(struct itimerspec* ovalue) {
 }
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-   printf("schedule!\n");
    if (prev_done != NULL && prev_done != 0) {
 //    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
     free(prev_done->uc_stack.ss_sp);

@@ -67,7 +67,6 @@ void insert_tail(linked_list_t* list, void* thing){
 }
 
 void* delete_head(linked_list_t* list) {
-//  printf("del head start\n");
   if (list == NULL) {return NULL;}
   if (list-> head == NULL || list->head==0) {return NULL;}
 
@@ -77,7 +76,6 @@ void* delete_head(linked_list_t* list) {
     list->tail = NULL;
   }
   void* d = temp->data;
-//  printf("del head free %p\n", temp);
   mydeallocate(temp, __FILE__, __LINE__, LIBRARYREQ);
   return d;
 }
@@ -161,7 +159,7 @@ void free_map(hashmap* h) {
       hash_node* next = node->next;
       // context, linkedlists free'd earlier
       mydeallocate(node->value, __FILE__, __LINE__, LIBRARYREQ); //free tcb
-//      mydeallocate(node, __FILE__, __LINE__, LIBRARYREQ);
+      free(node); //calloc'd
       node = next;
     }
   }

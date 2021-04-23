@@ -20,7 +20,6 @@ void thread_func_wrapper(void* (*function)(void*), void* arg) {
 }
 
 tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
-//  tcb* new_thread = (tcb*) malloc(sizeof(tcb));
   tcb* new_thread = (tcb*) myallocate(sizeof(tcb), __FILE__, __LINE__, LIBRARYREQ);
   new_thread->id = id;
   new_thread->ret_val = NULL;
@@ -53,7 +52,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     should_maintain = ONE_SECOND/QUANTUM;
     prev_done = NULL;
     // create tcb for current thread
-//    tcb* curr_thread = malloc(sizeof(tcb));
     tcb* curr_thread = myallocate(sizeof(tcb), __FILE__, __LINE__, LIBRARYREQ);
 
     curr_thread->id = ++tid; //no thread has 0 tid
@@ -77,8 +75,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, &sig_timer);
 
     // register signal handler for alarms
-
-//    act = myallocate(sizeof(struct sigaction), __FILE__, __LINE__, LIBRARYREQ);
     act.sa_sigaction = schedule;
     act.sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&act.sa_mask);
@@ -110,7 +106,6 @@ int my_pthread_yield() {
 
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
-  printf("thread exit start\n");
   enter_scheduler(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->ret_val = value_ptr;
@@ -122,13 +117,11 @@ void my_pthread_exit(void *value_ptr) {
   }
   free_list(curr_thread->waited_on);
   curr_thread->status = DONE;
-  printf("thread exit done\n");
   raise(SIGALRM);
 }
 
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
-  printf("thread join\n");
   if (tid < thread) {
     return -1;
   }
@@ -141,7 +134,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   if (t_block->status != DONE) { // block and wait
     insert_head(t_block -> waited_on, curr_thread);
     curr_thread->status = BLOCKED;
-    printf("thread join schedule\n");
     raise(SIGALRM);
   }
   // by this point, t_block will be done
@@ -149,7 +141,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
     *value_ptr = t_block->ret_val;
   }
   
-  printf("thread join done\n");
   return 0;
 }
 
