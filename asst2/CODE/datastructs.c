@@ -84,7 +84,17 @@ int isEmpty(linked_list_t *list) {
 }
 
 void free_list(linked_list_t* list) {
-  assert(list->head == NULL); // list should be empty to be destroyed
+  if (list->head) { // list is not empty
+    node_t* curr;
+    node_t* next;
+    curr = list->head;
+    while (curr) {
+      next = curr->next;
+      // no need to free tcb, since already freed during hashmap free
+      free(curr);
+      curr = next;
+    }
+  }
   free(list);
 }
 

@@ -211,8 +211,8 @@ int main(int argc, char** argv){
 //  testHashMap();
 //  test_alarm();
   test_thread_create();
-//  testMutex();
+  testMutex();
   test_thread_create_join();
-//  test_thread_yield();
+  test_thread_yield();
   return 0;
 }
