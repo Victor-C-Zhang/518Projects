@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "datastructs_t.h"
@@ -117,7 +116,8 @@ int rehash(hashmap* h) {
   size_t new_size, i;
   hash_node** new_buckets = NULL;
   new_size = hash_size(h->entries * 2);
-  new_buckets = calloc(new_size, sizeof(hash_node*));
+  new_buckets = myallocate(new_size*sizeof(hash_node*), __FILE__, __LINE__,
+                           LIBRARYREQ);
   for (i = 0; i < h->num_buckets; i++) {
     hash_node* node = h->buckets[i];
     while (node) {
@@ -130,13 +130,14 @@ int rehash(hashmap* h) {
   }
 
   h->num_buckets = new_size;
-  free(h->buckets);
+  mydeallocate(h->buckets, __FILE__, __LINE__, LIBRARYREQ);
   h->buckets = new_buckets;
   return 1;
 }
 
 hash_node* create_hash_node(uint32_t key, void* value) {  
-  hash_node* node = (hash_node*) calloc(1, sizeof(hash_node));
+  hash_node* node = (hash_node*) myallocate(sizeof(hash_node), __FILE__,
+                                            __LINE__, LIBRARYREQ);
   node->key = key;
   node->value = value;
   node->next = NULL;
@@ -148,7 +149,7 @@ hashmap* create_map() {
   memset(hm, '\000', sizeof(hashmap));
   hm->num_buckets = HASHSIZE;
   hm->entries = 0;
-  hm->buckets = calloc(HASHSIZE, sizeof(hash_node*));
+  hm->buckets = myallocate(HASHSIZE*sizeof(hash_node*), __FILE__, __LINE__, LIBRARYREQ);
   return hm;
 }
 
@@ -159,12 +160,12 @@ void free_map(hashmap* h) {
       hash_node* next = node->next;
       // context, linkedlists free'd earlier
       mydeallocate(node->value, __FILE__, __LINE__, LIBRARYREQ); //free tcb
-      free(node); //calloc'd
+      mydeallocate(node, __FILE__, __LINE__, LIBRARYREQ);
       node = next;
     }
   }
   
-  free(h->buckets);
+  mydeallocate(h->buckets, __FILE__, __LINE__, LIBRARYREQ);
   mydeallocate(h, __FILE__, __LINE__, LIBRARYREQ);
   return;
 }
