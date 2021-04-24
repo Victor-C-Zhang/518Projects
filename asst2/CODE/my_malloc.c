@@ -103,6 +103,59 @@ void initialize_pages() {
 	}
 }
 
+void* find_free_page(size_t size, uint32_t curr_id) {
+	//find page for process...
+	size_t segments_alloc = size / SEGMENTSIZE + 1;
+	int free_page = -1;
+	int page_exist = -1;
+	int index = (segments_alloc > num_segments) ? num_pages : 0;
+
+	//if exists, find first fit free space
+	for (index; index < num_pages; index++) {
+		pagedata* pdata = (pagedata*)myblock + index;	
+                if ( !is_occupied_page(pdata) ) { //free page
+			if (free_page == -1) {
+				free_page = index;
+			}
+		}
+		else if (pdata->pid == curr_id) { //occupied page
+			if (page_exist == -1) {
+				page_exist = index; //for swapping later...
+			}
+			//traverse memory to find the first free block that can fit the size requested
+			metadata* start = (metadata*) (mem_space + index*page_size);
+			int seg_index = 0;
+			while ( seg_index < num_segments) {
+				metadata* curr = start + seg_index;
+				unsigned char curr_seg = block_size(curr);
+				if (!is_occupied(curr) && (segments_alloc <= curr_seg ) ) { 
+					write_occupied_size(curr, curr_seg, segments_alloc);
+					//segment memory space = start + num_segments
+					//free segment = segment memory space + seg_index * SEGMENTSIZE;
+					void* ret = (void*) ( (start+num_segments) + seg_index*SEGMENTSIZE);
+					return ret;
+				}
+				seg_index+=curr_seg;
+			}
+		}
+		//else not enough space, find any other pages allocated to pid
+	}
+
+	//we did not find page for current process
+	//so allocate page, then return pointer within page chunk
+	if ( (page_exist == -1 || curr_id == 0) && free_page != -1 ) {
+		write_occupied_page((pagedata*)myblock+free_page, curr_id, free_page);
+		metadata* curr = (metadata*) (mem_space + free_page*page_size);
+		unsigned char curr_seg = block_size(curr);
+		if (segments_alloc <= curr_seg) { 
+			write_occupied_size(curr, curr_seg, segments_alloc);
+			void* ret = (void*) (curr+num_segments) ;
+			return ret;
+		}
+	}
+
+	return NULL;
+}
 
 //returns to the user a pointer to the amount of memory requested
 void* myallocate(size_t size, char* file, int line, int threadreq){
@@ -119,7 +172,6 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		num_segments = page_size / ( SEGMENTSIZE + sizeof(metadata) );
 		num_pages = MEMSIZE / ( page_size + sizeof(pagedata));		
 		mem_space = (char*) ( (pagedata*) myblock + num_pages );
-//		mem_space = ((char*)myblock + ( (num_pages*sizeof(pagedata))/page_size+1)*page_size );
 		initialize_pages();
 
 	        memset(&segh, 0, sizeof(struct sigaction));
@@ -131,75 +183,15 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		firstMalloc = 0;
 	}
 
-	//find page for process...
-	size_t segments_alloc = size / SEGMENTSIZE + 1;
-	int free_page = -1;
-	int page_exist = -1;
-	int index = (segments_alloc > num_segments) ? num_pages : 0;
-
-	//if exists, find first fit free space
-	for (index; index < num_pages; index++) {
-		pagedata* pdata = (pagedata*)myblock + index;	
-		int is_occ = is_occupied_page(pdata);
-                if ( !is_occ ) {//free page 
-			if (free_page == -1) {
-				free_page = index;
-			}
-		}
-		else if (pdata->pid == curr_id) { //occupied page
-			if (page_exist == -1) {
-				page_exist = index; //for swapping later...
-			}
-
-			//traverse memory to find the first free block that can fit the size requested
-			metadata* start = (metadata*) (mem_space + index*page_size);
-			int seg_index = 0;
-			while ( seg_index < num_segments) {
-				metadata* curr = start + seg_index;
-				unsigned char curr_seg = block_size(curr);
-				if (!is_occupied(curr)) {
-					if ( segments_alloc <= curr_seg ) { 
-						write_occupied_size(curr, curr_seg, segments_alloc);
-						//segment memory space = start + num_segments
-						//free segment = segment memory space + seg_index * SEGMENTSIZE;
-						void* ret = (void*) ( (start+num_segments) + seg_index*SEGMENTSIZE);
-  						exit_scheduler(&timer_pause_dump);
-						return ret;
-					}
-				}
-				seg_index+=curr_seg;
-			}
-		}
-		//else not enough space, find any other pages allocated to pid
-	}
-
-	//we did not find page for current process
-	//so allocate page, then return pointer within page chunk
-	if ( (page_exist == -1 || curr_id == 0) && free_page != -1) {
-		write_occupied_page((pagedata*)myblock+free_page, curr_id, free_page);
-		metadata* curr = (metadata*) (mem_space + free_page*page_size);
-		unsigned char curr_seg = block_size(curr);
-		if (segments_alloc <= curr_seg) { 
-			write_occupied_size(curr, curr_seg, segments_alloc);
-			void* ret = (void*) (curr+num_segments) ;
-  			exit_scheduler(&timer_pause_dump);
-			return ret;
-		}
-	}
-
-	error_message("Not enough memory", file, line);
-  	exit_scheduler(&timer_pause_dump);
-	return NULL;
-}
-//frees up any memory malloc'd with this pointer for future use
-void mydeallocate(void* p, char* file, int line, int threadreq) {
-	enter_scheduler(&timer_pause_dump);
-	//if the pointer is NULL, there is nothing we can free
+	void* p = find_free_page(size, curr_id); 
 	if (p == NULL) {
-		error_message("Can't free null pointer!", file, line);
-		return;
+		error_message("Not enough memory", file, line);
 	}
-	
+  	exit_scheduler(&timer_pause_dump);
+	return p; 
+}
+
+int free_ptr(void* p) {	
 	int page_index = ( (unsigned long) p - (unsigned long) mem_space) / page_size ;
 	metadata* start = (metadata*) (mem_space + page_index*page_size);
 	metadata* prev;
@@ -215,11 +207,10 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		if ( (start+num_segments + seg_index * SEGMENTSIZE) == p) {
 			//if it is already free, cannot free it -> error
 			if ( !is_occupied(curr) ) {
-				error_message("Cannot free an already free pointer!", file, line);
+				return 1; 
 			}
 			else {
-				//free the current pointer
-				write_free_size(curr, curr_seg);
+				write_free_size(curr, curr_seg); //free the current pointer
 				//if the next block is within segment and is free, combine if with my current pointer as a free block
 				if (seg_index+curr_seg < num_segments){
 					metadata* next = start + seg_index + curr_seg;
@@ -234,7 +225,7 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 				}
 			}		
   			exit_scheduler(&timer_pause_dump);
-			return;
+			return 0;
 		}
 		prev = curr;
 		if (!is_occupied(curr)) {
@@ -247,8 +238,25 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		seg_index= seg_index + curr_seg;
 	}
 
-
 	//if we did not return within the while loop, the pointer was not found and thus was not malloc'd
-	error_message("This pointer was not malloc'd!", file, line);
+	return 2; 
+}
+
+//frees up any memory malloc'd with this pointer for future use
+void mydeallocate(void* p, char* file, int line, int threadreq) {
+	enter_scheduler(&timer_pause_dump);
+	//if the pointer is NULL, there is nothing we can free
+	if (p == NULL) {
+		error_message("Can't free null pointer!", file, line);
+		return;
+	}
+	
+	int d = free_ptr(p);
+	if (d == 1) {
+		error_message("Cannot free an already free pointer!", file, line);
+	}
+	else if (d==2) {
+		error_message("This pointer was not malloc'd!", file, line);
+	}
   	exit_scheduler(&timer_pause_dump);
 }
