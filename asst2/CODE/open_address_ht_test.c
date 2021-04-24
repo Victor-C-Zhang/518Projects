@@ -4,14 +4,16 @@
 #include "global_vals.h"
 #include "test_runner.h"
 
+// hacky fix to ensure tests run separately
+uint64_t arr[2048];
+
 void TEST_create() {
-  OpenAddrHashtable ht = malloc(HT_SIZE*sizeof(ht_entry));
+  OpenAddrHashtable ht = (ht_entry*) arr;
   createTable(ht);
   for (int i = 0; i < HT_SIZE; ++i) {
     assert((ht[i].val) == HT_NULL_VAL);
     assert((ht[i].key) == HT_NULL_KEY);
   }
-  free(ht);
 }
 
 void swap(ht_entry* first, ht_entry* second) {
@@ -29,7 +31,7 @@ void swap(ht_entry* first, ht_entry* second) {
 }
 
 void TEST_get_put_delete() {
-  OpenAddrHashtable ht = malloc(HT_SIZE*sizeof(ht_entry));
+  OpenAddrHashtable ht = (ht_entry*) arr;
   createTable(ht);
   ht_entry inserts[HT_SIZE/2];
   // insert in order

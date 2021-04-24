@@ -9,8 +9,6 @@
 #define LIBRARYREQ 0
 //#define malloc(x) myallocate(x, __FILE__, __LINE__, THREADREQ)
 //#define free(x) mydeallocate(x, __FILE__, __LINE__, THREADREQ)
-#define MEMSIZE 8388608
-#define SEGMENTSIZE 64
 
 //metadata is represented as an unsigned char
 //it tells us the number of 64 byte segments

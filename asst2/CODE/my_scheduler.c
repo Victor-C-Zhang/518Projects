@@ -17,9 +17,9 @@ void exit_scheduler(struct itimerspec* ovalue) {
 }
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-   if (prev_done != NULL && prev_done != 0) {
+   if (prev_done != NULL) {
 //    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-    free(prev_done->uc_stack.ss_sp);
+    free(prev_done);
     prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
@@ -46,8 +46,8 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     }
     insert_ready_q(old_thread, old_thread->priority);
 
-  } else if (old_thread->status == DONE){
-    prev_done = old_context;
+  } else if (old_thread->status == DONE && old_thread->id != 2) {
+    prev_done = old_context->uc_stack.ss_sp;
   }
 
   if (should_maintain <= 0) {
@@ -116,9 +116,9 @@ void run_maintenance() {
 }
 
 void free_data() {
-  if (prev_done != NULL || prev_done != 0) {
+  if (prev_done != NULL) {
   //  mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-    free(prev_done->uc_stack.ss_sp);
+    free(prev_done);
   }
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);

@@ -1,6 +1,9 @@
 #ifndef ASST1_TYPES_H
 #define ASST1_TYPES_H
 
+#define MEMSIZE 8388608
+#define SEGMENTSIZE 64
+
 int MEM_LIMIT;
 int VIRT_LIMIT;
 int HT_SIZE;

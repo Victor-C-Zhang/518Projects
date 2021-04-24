@@ -9,8 +9,8 @@ int lin_hash(pid_t pid, ht_key key) {
 }
 
 void createTable(void* ptr) {
-  MEM_LIMIT = 8388608/sysconf(_SC_PAGESIZE);
-  VIRT_LIMIT = 25165824/sysconf(_SC_PAGESIZE);
+  MEM_LIMIT = MEMSIZE/sysconf(_SC_PAGESIZE);
+  VIRT_LIMIT = MEMSIZE*3/sysconf(_SC_PAGESIZE);
   HT_SIZE = MEM_LIMIT;
   ht_entry* table = ptr;
   for (int i = 0; i < HT_SIZE; ++i) {

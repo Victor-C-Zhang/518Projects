@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "my_malloc.h"
+#include "global_vals.h"
 
 static char* myblock;
 static int firstMalloc = 1;
@@ -167,14 +168,13 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	}
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	if (firstMalloc == 1) { // first time using malloc
-		myblock = memalign(sysconf(_SC_PAGE_SIZE), MEMSIZE);
-		page_size = sysconf( _SC_PAGE_SIZE);
+		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
+		page_size = sysconf( _SC_PAGESIZE);
 		num_segments = page_size / ( SEGMENTSIZE + sizeof(metadata) );
 		num_pages = MEMSIZE / ( page_size + sizeof(pagedata));		
 		mem_space = (char*) ( (pagedata*) myblock + num_pages );
 		initialize_pages();
-
-	        memset(&segh, 0, sizeof(struct sigaction));
+		memset(&segh, 0, sizeof(struct sigaction));
 		sigemptyset(&segh.sa_mask);
 		segh.sa_sigaction = handler;
 		segh.sa_flags = SA_SIGINFO;
