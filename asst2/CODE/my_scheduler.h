@@ -5,8 +5,10 @@
 #include <time.h>
 #include "datastructs_t.h"
 #include "my_pthread_t.h"
+#include "my_malloc.h" 
 
 #define STACKSIZE 32768
+//#define STACKSIZE 1024
 #define QUANTUM 25000000
 #define ONE_SECOND 1000000000
 #define NUM_QUEUES 5
@@ -29,7 +31,7 @@ typedef struct threadControlBlock {
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
 } tcb;
 
-timer_t* sig_timer;
+timer_t sig_timer;
 static struct itimerspec timer_25ms = {
       .it_interval = {
             .tv_nsec = QUANTUM,
@@ -41,12 +43,12 @@ static struct itimerspec timer_25ms = {
 static struct itimerspec timer_stopper = {};
 struct itimerspec timer_pause_dump;
 
-struct sigaction* act;
+struct sigaction act;
 
 ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
 int curr_prio; // priority of the currently scheduled thread. should usually
 // be 0.
-ucontext_t* prev_done;
+void* prev_done; // stack pointer of previously done context
 int in_scheduler; // if scheduler is running
 uint64_t cycles_run; // number of scheduling cycles run so far
 int should_maintain; // run a maintenance cycle once

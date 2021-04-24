@@ -8,17 +8,18 @@ void insert_ready_q(tcb* thread, int queue_num) {
 }
 
 void enter_scheduler(struct itimerspec* ovalue) {
-  timer_settime(sig_timer,0,&timer_stopper,ovalue);
+  timer_settime(&sig_timer,0,&timer_stopper,ovalue);
   in_scheduler = 1;
 }
 
 void exit_scheduler(struct itimerspec* ovalue) {
-  timer_settime(sig_timer,0,ovalue,NULL);
+  timer_settime(&sig_timer,0,ovalue,NULL);
 }
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-  if (prev_done != NULL) {
-    free(prev_done->uc_stack.ss_sp);
+   if (prev_done != NULL) {
+//    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
+    free(prev_done);
     prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
@@ -26,7 +27,6 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   old_thread->last_run = cycles_run;
   ++cycles_run;
   --should_maintain;
-
   if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
     if (old_thread->cycles_left > 0) { // allow threads to run for
       // multiple interrupt cycles
@@ -46,8 +46,8 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     }
     insert_ready_q(old_thread, old_thread->priority);
 
-  } else if (old_thread->status == DONE){
-    prev_done = old_context;
+  } else if (old_thread->status == DONE && old_thread->id != 2) {
+    prev_done = old_context->uc_stack.ss_sp;
   }
 
   if (should_maintain <= 0) {
@@ -109,7 +109,7 @@ void run_maintenance() {
         }
         node_t* temp = ptr;
         ptr = ptr->next;
-        free(temp);
+        mydeallocate(temp, __FILE__, __LINE__, LIBRARYREQ);
       }
     }
   }
@@ -117,14 +117,13 @@ void run_maintenance() {
 
 void free_data() {
   if (prev_done != NULL) {
-    free(prev_done->uc_stack.ss_sp);
+  //  mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
+    free(prev_done);
   }
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);
   for (int i = 0; i < NUM_QUEUES; ++i) {
     free_list(ready_q[i]);
   }
-  timer_delete(sig_timer);
-  free(sig_timer);
-  free(act);
+  timer_delete(&sig_timer);
 }

@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "datastructs_t.h"
-
+#include "my_malloc.h"
 /** linked list functions **/ 
+
 void print_list(linked_list_t* list, void (*fptr)(void *)) {
   if (list == NULL) {return;}
   node_t* ptr = list->head;
@@ -28,14 +28,14 @@ void* get_tail(linked_list_t* list) {
 }
 
 node_t* create_node(void* data) {
-  node_t* node = (node_t*) malloc(sizeof(node_t));
+  node_t* node = (node_t*) myallocate(sizeof(node_t), __FILE__, __LINE__, LIBRARYREQ);
   node->data = data;
   node->next = NULL;
   return node;
 }
 
 linked_list_t* create_list() {
-  linked_list_t* list = (linked_list_t*)malloc(sizeof(linked_list_t));
+  linked_list_t* list = (linked_list_t*)myallocate(sizeof(linked_list_t), __FILE__, __LINE__, LIBRARYREQ);
   list->head = list->tail = NULL;
   return list;
 }
@@ -75,7 +75,7 @@ void* delete_head(linked_list_t* list) {
     list->tail = NULL;
   }
   void* d = temp->data;
-  free(temp);
+  mydeallocate(temp, __FILE__, __LINE__, LIBRARYREQ);
   return d;
 }
 
@@ -91,11 +91,11 @@ void free_list(linked_list_t* list) {
     while (curr) {
       next = curr->next;
       // no need to free tcb, since already freed during hashmap free
-      free(curr);
+      mydeallocate(curr, __FILE__, __LINE__, LIBRARYREQ);
       curr = next;
     }
   }
-  free(list);
+  mydeallocate(list, __FILE__, __LINE__, LIBRARYREQ);
 }
 
 /** hashmap functions **/
@@ -126,7 +126,8 @@ int rehash(hashmap* h) {
   size_t new_size, i;
   hash_node** new_buckets = NULL;
   new_size = hash_size(h->entries * 2);
-  new_buckets = calloc(new_size, sizeof(hash_node*));
+  new_buckets = myallocate(new_size*sizeof(hash_node*), __FILE__, __LINE__,
+                           LIBRARYREQ);
   for (i = 0; i < h->num_buckets; i++) {
     hash_node* node = h->buckets[i];
     while (node) {
@@ -139,13 +140,14 @@ int rehash(hashmap* h) {
   }
 
   h->num_buckets = new_size;
-  free(h->buckets);
+  mydeallocate(h->buckets, __FILE__, __LINE__, LIBRARYREQ);
   h->buckets = new_buckets;
   return 1;
 }
 
 hash_node* create_hash_node(uint32_t key, void* value) {  
-  hash_node* node = (hash_node*) calloc(1, sizeof(hash_node));
+  hash_node* node = (hash_node*) myallocate(sizeof(hash_node), __FILE__,
+                                            __LINE__, LIBRARYREQ);
   node->key = key;
   node->value = value;
   node->next = NULL;
@@ -153,11 +155,11 @@ hash_node* create_hash_node(uint32_t key, void* value) {
 }
 
 hashmap* create_map() {
-  hashmap* hm = (hashmap*) malloc(sizeof(hashmap));
+  hashmap* hm = (hashmap*) myallocate(sizeof(hashmap), __FILE__, __LINE__, LIBRARYREQ);
   memset(hm, '\000', sizeof(hashmap));
   hm->num_buckets = HASHSIZE;
   hm->entries = 0;
-  hm->buckets = calloc(HASHSIZE, sizeof(hash_node*));
+  hm->buckets = myallocate(HASHSIZE*sizeof(hash_node*), __FILE__, __LINE__, LIBRARYREQ);
   return hm;
 }
 
@@ -167,14 +169,14 @@ void free_map(hashmap* h) {
     while (node) {
       hash_node* next = node->next;
       // context, linkedlists free'd earlier
-      free(node->value); //free tcb
-      free(node);
+      mydeallocate(node->value, __FILE__, __LINE__, LIBRARYREQ); //free tcb
+      mydeallocate(node, __FILE__, __LINE__, LIBRARYREQ);
       node = next;
     }
   }
   
-  free(h->buckets);
-  free(h);
+  mydeallocate(h->buckets, __FILE__, __LINE__, LIBRARYREQ);
+  mydeallocate(h, __FILE__, __LINE__, LIBRARYREQ);
   return;
 }
 

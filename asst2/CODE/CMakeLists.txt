@@ -9,6 +9,7 @@ set(CMAKE_C_FLAGS "-g")
 add_executable(tests
     test_runner.c
     pthread_test.c
+    malloc_test.c
     open_address_ht_test.c
     datastructs.c
     my_scheduler.c

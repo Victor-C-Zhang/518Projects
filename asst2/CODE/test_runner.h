@@ -1,7 +1,3 @@
-//
-// Created by victor on 4/19/21.
-//
-
 #ifndef ASST1_TEST_RUNNER_H
 #define ASST1_TEST_RUNNER_H
 
@@ -14,8 +10,12 @@
   void test_thread_create_join();
   void test_thread_yield();
 
-// malloc tests
+// open-address ht tests
 void TEST_create();
 void TEST_get_put_delete();
+
+// malloc tests
+void TEST_malloc_thread_create_join();
+void TEST_malloc_directmapping();
 
 #endif //ASST1_TEST_RUNNER_H
