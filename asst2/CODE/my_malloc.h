@@ -10,14 +10,6 @@
 //#define malloc(x) myallocate(x, __FILE__, __LINE__, THREADREQ)
 //#define free(x) mydeallocate(x, __FILE__, __LINE__, THREADREQ)
 
-//metadata is represented as an unsigned char
-//it tells us the number of 64 byte segments
-//which are allocated or free for user data
-//if the leftmost bit is 1, then the block is occupied else free
-struct _metadata_ {
-	unsigned char size;
-} typedef metadata;
-
 struct _pagedata_ {
 	uint32_t pid; //id of process using page
 	unsigned short p_ind; //where process thinks data is; left most bit == 1, is occupied, else free
