@@ -2,7 +2,7 @@
 #include "global_vals.h"
 
 int dm_block_occupied(metadata* curr) {
-  return curr->size & 0x80;
+  return (curr->size & 0x80) >> 7;
 }
 
 int dm_is_last_segment(metadata* curr) {

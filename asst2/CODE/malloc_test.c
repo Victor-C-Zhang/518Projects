@@ -46,14 +46,14 @@ void TEST_malloc_thread_create_join() {
 void TEST_malloc_directmapping() {
   char* ptrs[5]; 
   for (int i = 0 ; i < 5; i++) { 
-    char* p = (char*) myallocate(5*sizeof(char), __FILE__, __LINE__, LIBRARYREQ);
+    char* p = (char*) myallocate(5*sizeof(char), __FILE__, __LINE__, THREADREQ);
     strcpy(p,"help"); 
     ptrs[i] = p;
     printMemory();
   }
   for (int i = 0 ; i < 5; i++) { 
 //    printf("%s\n", ptrs[i]);
-    mydeallocate(ptrs[i], __FILE__, __LINE__, LIBRARYREQ);
+    mydeallocate(ptrs[i], __FILE__, __LINE__, THREADREQ);
     printMemory();
   }
 }

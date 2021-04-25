@@ -56,7 +56,7 @@ void write_occupied_page(pagedata* curr, uint32_t pid, unsigned short index) {
 //followed by 0 for free or any other integer for occupied
 //followed by the size of user data
 void printMemory() {
-	printf("-----------------------MEMORY-----------------------\n");
+	printf("<----------------------MEMORY---------------------->\n");
 	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
 		if (!is_occupied_page(pdata)) {continue;}
@@ -64,21 +64,23 @@ void printMemory() {
 		printf("--------------------PAGE--------------------\n");
 		int j = 0;
 		while (j < num_segments) {
-			metadata* mdata = start + j;
-			char curr_seg = dm_block_size(mdata);
+			metadata* mdata = start + j*SEGMENTSIZE;
+			uint8_t curr_seg = dm_block_size(mdata);
 			int isOcc = dm_block_occupied(mdata);
-			printf("page[%d][%d] pid %d %p: %d  %hu %p\n", i, j, pdata->pid, mdata, isOcc, curr_seg, (start+num_segments) + j*SEGMENTSIZE);
+			int isLast = dm_is_last_segment(mdata);
+			printf("page[%d][%d]\t\tpid %d\t%p: %d %d %hu\n",
+					i, j, pdata->pid, mdata, isOcc, isLast, curr_seg);
 			j+=curr_seg;	
 		}
 	}
-	printf("-----------------------MEMORY-----------------------\n");
+	printf("</---------------------MEMORY---------------------->\n");
 }
 
 void initialize_pages() {
-	for (unsigned short i = 0; i < num_pages; i++) {
+	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
 		write_free_page(pdata, i);
-		metadata* mdata = (metadata*) ((char*)mem_space + i*page_size);
+		metadata* mdata = (metadata*) ((uint8_t*)mem_space + i*page_size);
 		dm_write_metadata(mdata, num_segments, 0, 1);
 	}
 }
@@ -108,7 +110,7 @@ void* find_free_page(size_t size, uint32_t curr_id) {
 			int seg_index = 0;
 			while ( seg_index < num_segments) {
 				metadata* curr = start + seg_index*SEGMENTSIZE;
-				unsigned char curr_seg = dm_block_size(curr);
+				uint8_t curr_seg = dm_block_size(curr);
 				if (!dm_block_occupied(curr) && (segments_alloc <= curr_seg ) ) {
 					dm_allocate_block(curr, segments_alloc);
 					//segment memory space = start + num_segments
@@ -126,7 +128,7 @@ void* find_free_page(size_t size, uint32_t curr_id) {
 	if ( (page_exist == -1 || curr_id == 0) && free_page != -1 ) {
 		write_occupied_page((pagedata*)myblock+free_page, curr_id, free_page);
 		metadata* curr = (metadata*) (mem_space + free_page*page_size);
-		unsigned char curr_seg = dm_block_size(curr);
+		uint8_t curr_seg = dm_block_size(curr);
 		if (segments_alloc <= curr_seg) { 
 			dm_allocate_block(curr, segments_alloc);
 			return (void*) (curr + 1);
@@ -171,19 +173,19 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	return p; 
 }
 
-int free_ptr(void* p) {	
+int free_ptr(void* p) {
 	int page_index = ( (char*)p - 1 - mem_space) /
 				page_size ;
 	metadata* start = (metadata*) (mem_space + page_index*page_size);
 	metadata* prev;
 	int prevFree = 0;
-	unsigned char prevSize = 0;
+	uint8_t prevSize = 0;
 	//if nothing has been malloc'd yet, cannot free!
 	int seg_index = (firstMalloc == 1) ? num_segments: 0;
 	//find the pointer to be free and keep track of the previous block incase it is free so we can combine them and avoid memory fragmentation
 	while (seg_index < num_segments) { 
 		metadata* curr = start + seg_index*SEGMENTSIZE;
-		unsigned char curr_seg = dm_block_size(curr);
+		uint8_t curr_seg = dm_block_size(curr);
 		//if we find the pointer to be free'd
 		if ( curr + 1 == p) {
 			//if it is already free, cannot free it -> error
@@ -208,7 +210,6 @@ int free_ptr(void* p) {
 					write_free_page( (pagedata*)myblock + page_index, page_index );
 				}
 			}		
-			exit_scheduler(&timer_pause_dump);
 			return 0;
 		}
 		prev = curr;
