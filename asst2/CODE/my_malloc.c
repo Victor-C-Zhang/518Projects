@@ -196,7 +196,7 @@ void* find_free_page(size_t size, uint32_t curr_id) {
 						if (last_page_ind == ind_acc_proc) *last_seg_ind = seg_index;	
 					}
 					if (!dm_block_occupied(curr) && (segments_alloc <= curr_seg ) ) {
-						dm_allocate_block(curr, segments_alloc, curr_seg);
+						dm_allocate_block(curr, segments_alloc);
 						//if this is the last segment allocated, it was initially free, therefore cannot be an overflow
 						//free last segments == no overflow! 
 /*						if (ovf_len != -1) { 

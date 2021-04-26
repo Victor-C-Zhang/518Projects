@@ -17,9 +17,8 @@ void dm_write_metadata(metadata* curr, size_t size, int occupied, int last) {
   curr -> size = ((uint8_t)(size-1)) | (occupied << 7) | (last << 6);
 }
 
-//last segment block size (if in overflow page), will not be dm_block_size.
-void dm_allocate_block(metadata* curr, size_t size, uint8_t curr_seg) {
-//  uint8_t curr_seg = dm_block_size(curr);
+void dm_allocate_block(metadata* curr, size_t size) {
+  uint8_t curr_seg = dm_block_size(curr);
   int is_last_segment = dm_is_last_segment(curr);
   if (size < curr_seg) {
     dm_write_metadata(curr, size, 1, 0);
