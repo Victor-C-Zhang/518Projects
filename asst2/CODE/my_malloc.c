@@ -61,6 +61,9 @@ void initialize_pages() {
 	}
 }
 
+//swaps data from page at indexA to page at indexB
+//updates the inverted pagetable and hastable to match
+//change in location of data
 void swap(int indexA, int indexB){
 	if (indexA == indexB) {return;}
 
@@ -85,7 +88,7 @@ void swap(int indexA, int indexB){
 	memcpy(pageTemp, pageB, page_size);
 }
 
-
+//makes allocations that will overflow into the next page 
 void* contiguous_page_alloc(size_t segments_alloc, int pages_alloc, uint32_t curr_id, int free_page, int last_page_ind, int last_seg_ind) {
 	int proc_ind; //index where process thinks the page is
 	int ret_seg_index = 0; //segment index of return ptr 
@@ -355,12 +358,18 @@ int free_ptr(void* p) {
 				if (prevFree) dm_write_metadata(prev, prevSize + dm_block_size(curr), NOT_OCC, dm_is_last_segment(curr));
 
 				//can't free pages if the page is all free, there might be pages before or after that are allocated
-/*				if (!dm_block_occupied(start) && dm_block_size(start) == num_segments) {
+				if (!dm_block_occupied(start) && dm_block_size(start) == num_segments) {
 					//check if this is first or last pagedata block associated w/ the pid...how? thooo --> error ?
-					pagedata* pdata = (pagedata*)myblock+page_index;
-					pg_write_pagedata( pdata, pdata->pid, NOT_OCC, pg_is_overflow(pdata), pg_index(pdata), pdata->length);
+					int p_index = pg_index(pdata);
+					if (p_index + 1 < num_pages && ht_get(ht_space,pdata->curr_id,(ht_key)(p_index+1)) == HT_NULL_VALL) {
+						pg_write_pagedata( pdata, pdata->pid, NOT_OCC, NOT_OVF, page_index, 1);	
+					}
+					else if ( (p_index > 0 ) && (ht_get(ht_space,pdata->curr_id,(ht_key)(p_index-1)) == HT_NULL_VAL)) {
+						pg_write_pagedata( pdata, pdata->pid, NOT_OCC, NOT_OVF, page_index, 1);	
+							
+					}
 				}
-				*/
+				
 			}		
 			return 0;
 		}
