@@ -14,4 +14,5 @@ int main() {
 
   TEST_malloc_thread_create_join();
   TEST_malloc_directmapping();
+  TEST_thread_swap1();
 }
