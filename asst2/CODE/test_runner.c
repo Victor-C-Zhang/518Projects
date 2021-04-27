@@ -9,10 +9,10 @@ int main() {
 //  test_thread_create_join();
 //  test_thread_yield();
 
-  TEST_create();
-  TEST_get_put_delete();
+//  TEST_create();
+//  TEST_get_put_delete();
 
-  TEST_malloc_thread_create_join();
-  TEST_malloc_directmapping();
-  TEST_thread_swap1();
+//  TEST_malloc_thread_create_join();
+//  TEST_malloc_directmapping();
+  TEST_thread_swap(TEST_thread_func_swap1);
 }

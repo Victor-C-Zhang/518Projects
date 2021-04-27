@@ -58,8 +58,10 @@ void TEST_malloc_directmapping() {
   }
 }
 
-void* TEST_thread_func_swap1(void* int) {
-  char* p = (char*) myallocate(4090*sizeof(char), __FILE__, __LINE__, THREADREQ);
+//contiguous allocation
+void* TEST_thread_func_swap1(void* i) {
+  printf("malloc %d\n", *((int*)i));
+  char* p = (char*) myallocate(4030*sizeof(char), __FILE__, __LINE__, THREADREQ);
   printMemory();
   
   long long n = 100000000;
@@ -67,26 +69,29 @@ void* TEST_thread_func_swap1(void* int) {
   //  if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
 
-  char* f = (char*) myallocate(40*sizeof(char), __FILE__, __LINE__, THREADREQ);
+  printf("malloc %d\n", *((int*)i));
+  char* f = (char*) myallocate(50*sizeof(char), __FILE__, __LINE__, THREADREQ);
   printMemory();
 
-  long long n = 100000000;
+  n = 100000000;
   while (n--) {
   //  if (!(n%5000000)) printf("Thread %d: %lld\n", id, n);
   }
 
+  printf("free %d\n", *((int*)i));
   mydeallocate(p, __FILE__, __LINE__, THREADREQ);
   printMemory();
+  printf("free %d\n", *((int*)i));
   mydeallocate(f, __FILE__, __LINE__, THREADREQ);
   printMemory();
 }
 
-void TEST_thread_swap1() {
+void TEST_thread_swap( void*(f(void*))) {
   int len = 2;
   pthread_t other[len];
   void* ret_val[len]; 
   for (int i = 0; i < len; i++) {
-  	pthread_create(&other[i], NULL, TEST_thread_func_swap1, NULL);
+  	pthread_create(&other[i], NULL, f, (void*)&i);
     	printf("thread create %d\n", i);
   }
   
@@ -94,3 +99,4 @@ void TEST_thread_swap1() {
     pthread_join(other[i], &ret_val[i]);
   }
 }
+

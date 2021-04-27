@@ -17,6 +17,7 @@ void TEST_get_put_delete();
 // malloc tests
 void TEST_malloc_thread_create_join();
 void TEST_malloc_directmapping();
-void TEST_thread_swap1();
+void* TEST_thread_func_swap1(void* i);
+void TEST_thread_swap();
 
 #endif //ASST1_TEST_RUNNER_H

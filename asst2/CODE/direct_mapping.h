@@ -84,8 +84,7 @@ int pg_is_overflow(pagedata* curr);
 
 //returns the index where the process owning the page
 //thinks the page is locate at
-int pg_index(pagedata* curr) {
-
+int pg_index(pagedata* curr);
 /**
  * Writes a given configuration to the metadata byte pointed by curr.
  * @param curr      the pointer.
