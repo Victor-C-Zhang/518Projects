@@ -32,8 +32,7 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
 
   getcontext(&new_thread->context);
   new_thread->context.uc_stack.ss_size = STACKSIZE;
-//  new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
-  new_thread->context.uc_stack.ss_sp = malloc(STACKSIZE);
+  new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
   sigemptyset(&new_thread->context.uc_sigmask);
   makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
 
@@ -53,7 +52,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     prev_done = NULL;
     // create tcb for current thread
     tcb* curr_thread = myallocate(sizeof(tcb), __FILE__, __LINE__, LIBRARYREQ);
-    printf("curr thread %p\n", curr_thread);
     curr_thread->id = ++tid; //no thread has 0 tid
     getcontext(&curr_thread->context);
     curr_thread->ret_val = NULL;
@@ -113,7 +111,6 @@ void my_pthread_exit(void *value_ptr) {
   while (curr_thread->waited_on->head != NULL){
     tcb* signal_thread = (tcb*) delete_head(curr_thread-> waited_on);
     signal_thread->status = READY; 
-    printf("%p\n", signal_thread);
     insert_ready_q(signal_thread, signal_thread->priority);
   }
   free_list(curr_thread->waited_on);
@@ -135,7 +132,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   if (t_block->status != DONE) { // block and wait
     insert_head(t_block -> waited_on, curr_thread);
     curr_thread->status = BLOCKED;
-    printf("curr_prio: %d\n", curr_thread->priority);
     raise(SIGALRM);
   }
   // by this point, t_block will be done
@@ -177,9 +173,6 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
           while (ptr != NULL) {
             tcb *thread = (tcb *) ptr->data;
             if (thread == holding_thread) {
-              if (curr_thread->priority >= NUM_QUEUES){
-	      printf("here7\n");
-	      }
 		insert_ready_q(thread, curr_thread->priority);
               if (ptr == ready_q[prio]->head) {
                 ready_q[prio]->head = ptr->next;

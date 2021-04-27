@@ -18,8 +18,7 @@ void exit_scheduler(struct itimerspec* ovalue) {
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
    if (prev_done != NULL) {
-//    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-    free(prev_done);
+    mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
     prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
@@ -37,21 +36,12 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
     if (old_thread->cycles_left == -1 || old_thread->acq_locks > 0) { // yield()
       // prio shouldn't change; hoisted prio shouldn't change
       old_thread->cycles_left = old_thread->priority;
-      if (old_thread->priority >= NUM_QUEUES){
-      	printf("here1\n");
-      }
     } else if (curr_prio == NUM_QUEUES - 1) { // cannot increase past max
       old_thread->priority = NUM_QUEUES - 1;
       old_thread->cycles_left = NUM_QUEUES - 1;
-      if (old_thread->priority >= NUM_QUEUES){
-      	printf("here2\n");
-      }
     } else { // age
       old_thread->priority = old_thread->priority + 1;
       old_thread->cycles_left = old_thread->priority + 1;
-      if (old_thread->priority >= NUM_QUEUES){
-      	printf("here3\n");
-      }
     }
     insert_ready_q(old_thread, old_thread->priority);
 
@@ -107,9 +97,6 @@ void run_maintenance() {
         ptr = ptr->next;
       } else { // remove thread from current queue and add it to lower queue
         thread->priority = new_prio;
-     	if (thread->priority >= NUM_QUEUES){
-      		printf("here4\n");
-      	}
         insert_ready_q(thread, new_prio);
         if (ptr == ready_q[i]->head) {
           ready_q[i]->head = ptr->next;
@@ -129,8 +116,7 @@ void run_maintenance() {
 
 void free_data() {
   if (prev_done != NULL) {
-  //  mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-    free(prev_done);
+    mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
   }
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);
