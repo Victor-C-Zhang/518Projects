@@ -148,13 +148,21 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	}
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	if (firstMalloc == 1) { // first time using malloc
+	  // init runtime constants,
+    // calculate size of necessary metadata/auxiliary structures
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGESIZE);
 		num_segments = page_size / SEGMENTSIZE;
-		num_pages = MEMSIZE / ( page_size + sizeof(pagedata));
+    uint32_t sched_stack_space = (STACKSIZE % page_size) ?
+                                 STACKSIZE/page_size + 1 : STACKSIZE/page_size;
+		num_pages = (MEMSIZE - sched_stack_space*page_size) / ( page_size + sizeof(pagedata));
 		uint32_t pt_space = num_pages*sizeof(pagedata);
 		pt_space = (pt_space % page_size) ? pt_space/page_size + 1 : pt_space/page_size;
-		mem_space = myblock + pt_space*page_size;
+
+		// leave space at the beginning for (inverted) PT and scheduler stack
+		_sched_stack_ptr = myblock + pt_space*page_size;
+		mem_space = myblock + (pt_space + sched_stack_space)*page_size;
+
 		initialize_pages();
 		memset(&segh, 0, sizeof(struct sigaction));
 		sigemptyset(&segh.sa_mask);
@@ -169,7 +177,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	if (p == NULL) {
 		error_message("Not enough memory", file, line);
 	}
-  	exit_scheduler(&timer_pause_dump);
+	exit_scheduler(&timer_pause_dump);
 	return p; 
 }
 

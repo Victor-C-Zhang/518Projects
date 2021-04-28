@@ -90,7 +90,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     scheduler_context->uc_stack.ss_size = STACKSIZE;
 //    scheduler_context->uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
 //    TODO: point to pre-allocated stack pages
-    scheduler_context->uc_stack.ss_sp = malloc(STACKSIZE);
+    scheduler_context->uc_stack.ss_sp = _sched_stack_ptr;
     sigemptyset(&scheduler_context->uc_sigmask);
     sigaddset(&scheduler_context->uc_sigmask, SIGALRM); // ignore scheduling calls within scheduler
     makecontext(scheduler_context, (void (*)(void)) schedule, 0);
