@@ -349,8 +349,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	
 	//printf("malloc call %s:%d\n", file, line);
 	void* p = segment_allocate(size, curr_id);
-//	printf("malloc %d call %s:%d %p\n", size / SEGMENTSIZE+1, file, line, p);
-//	printMemory();
+	printf("malloc %d call %s:%d %p\n", size / SEGMENTSIZE+1, file, line, p);
+	printMemory();
 	if (p == NULL) {
 		error_message("Not enough memory", file, line);
 	}
@@ -470,7 +470,7 @@ int free_ptr(void* p, uint32_t curr_id) {
 					//and the page is now empty, free all pages up to a occupied page
 					if (!dm_block_occupied(start) && dm_is_last_segment(start) && ovf_len == 0 && page_index == first_page_index) {	
 						//last page free only if last not occ and last segment
-/*						for (int i = 0; i < num_contig; i++) {
+						for (int i = 0; i < num_contig; i++) {
 							ht_val next_page_index = (uint16_t) ht_get(ht_space,pdata->pid,(ht_key)(page_index+i));
 							pagedata* next = (pagedata*)myblock+next_page_index;
 							if (i == num_contig-1){
@@ -482,7 +482,7 @@ int free_ptr(void* p, uint32_t curr_id) {
 							pg_write_pagedata(next, next->pid, NOT_OCC, NOT_OVF, page_index+i, 1);	
 							ht_delete(ht_space, next->pid, page_index+i);
 						}
-*/					}
+					}
 					
 					return 0;
 				}
@@ -527,9 +527,9 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 	
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	
-//	printf("free call %s:%d %p\n", file, line, p);
+	printf("free call %s:%d %p\n", file, line, p);
 	int d = free_ptr(p, curr_id);
-//	printMemory();
+	printMemory();
 	if (d == 1) {
 		error_message("Cannot free an already free pointer!", file, line);
 	}
