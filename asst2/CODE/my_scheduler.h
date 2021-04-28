@@ -8,7 +8,6 @@
 #include "my_malloc.h" 
 
 #define STACKSIZE 32768
-//#define STACKSIZE 1024
 #define QUANTUM 25000000
 #define ONE_SECOND 1000000000
 #define NUM_QUEUES 5

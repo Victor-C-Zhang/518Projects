@@ -33,6 +33,7 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   getcontext(&new_thread->context);
   new_thread->context.uc_stack.ss_size = STACKSIZE;
   new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
+//  new_thread->context.uc_stack.ss_sp = malloc(STACKSIZE);
   sigemptyset(&new_thread->context.uc_sigmask);
   makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
 

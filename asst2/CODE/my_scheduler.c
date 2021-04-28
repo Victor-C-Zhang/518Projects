@@ -19,6 +19,7 @@ void exit_scheduler(struct itimerspec* ovalue) {
 void schedule(int sig, siginfo_t* info, void* ucontext) {
    if (prev_done != NULL) {
     mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
+//     free(prev_done);
     prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
@@ -116,7 +117,8 @@ void run_maintenance() {
 
 void free_data() {
   if (prev_done != NULL) {
-    mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
+//     free(prev_done);
+   mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
   }
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);

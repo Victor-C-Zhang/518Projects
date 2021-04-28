@@ -62,7 +62,7 @@ void TEST_malloc_directmapping() {
 void* TEST_thread_func_swap1(void* i) {
   printf("malloc %d\n", *((int*)i));
   char* p = (char*) myallocate(4095*sizeof(char), __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
   
   long long n = 100000000;
   while (n--) {
@@ -71,7 +71,7 @@ void* TEST_thread_func_swap1(void* i) {
 
   printf("malloc %d\n", *((int*)i));
   char* f = (char*) myallocate(50*sizeof(char), __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
 
   n = 100000000;
   while (n--) {
@@ -80,38 +80,38 @@ void* TEST_thread_func_swap1(void* i) {
 
   printf("free %d\n", *((int*)i));
   mydeallocate(p, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
   printf("free %d\n", *((int*)i));
   mydeallocate(f, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
 }
 
 //overflow allocation
 void* TEST_thread_func_swap2(void* i) {
   printf("malloc %d\n", *((int*)i));
   char* p = (char*) myallocate(4031*sizeof(char), __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
 
   printf("malloc %d\n", *((int*)i));
   char* f = (char*) myallocate(85*sizeof(char), __FILE__, __LINE__, THREADREQ);
   strcpy(f, "pizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazz");
-  printMemory();
+ // printMemory();
 
   printf("malloc %d\n", *((int*)i));
   char* g = (char*) myallocate(85*sizeof(char), __FILE__, __LINE__, THREADREQ);
   strcpy(g, "pizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazzpizzazz");
-  printMemory();
+  //printMemory();
 
   printf("free %d\n", *((int*)i));
   mydeallocate(f, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
 
   printf("free %d\n", *((int*)i));
   mydeallocate(p, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
   printf("free %d\n", *((int*)i));
   mydeallocate(g, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
 
 }
 
@@ -156,7 +156,8 @@ void* TEST_thread_func_swap3(void* i) {
 
 
 void TEST_thread_swap( void*(f(void*))) {
-  int len = 1;
+
+  int len = 2;
   pthread_t other[len];
   void* ret_val[len]; 
   for (int i = 0; i < len; i++) {

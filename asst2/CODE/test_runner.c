@@ -1,5 +1,5 @@
 #include "test_runner.h"
-
+#include <stdio.h>
 int main() {
 //  testLinkedList();
 //  testHashMap();
@@ -14,7 +14,11 @@ int main() {
 
 //  TEST_malloc_thread_create_join();
 //  TEST_malloc_directmapping();
-//  TEST_thread_swap(TEST_thread_func_swap1);
-//  TEST_thread_swap(TEST_thread_func_swap2);
+
+	printf("swap1\n");
+  TEST_thread_swap(TEST_thread_func_swap1);
+	printf("swap2\n");
+  TEST_thread_swap(TEST_thread_func_swap2);
+	printf("swap3\n");
   TEST_thread_swap(TEST_thread_func_swap3);
 }
