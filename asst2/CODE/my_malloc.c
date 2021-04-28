@@ -35,11 +35,14 @@ void printMemory() {
 	printf("<----------------------MEMORY---------------------->\n");
 	int ovf_len = 0;
 	int i = 0;
-	while (i < num_pages){
-//	for (int i = 0; i < num_pages; i++) {
+//	while (i < num_pages){
+	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
 		int j = ovf_len;
-		if (!pg_block_occupied(pdata)) { i++; continue; }
+		if (!pg_block_occupied(pdata)) { 
+		//	i++; 
+			continue; 
+		}
 //		if (pdata->pid == 0) {continue;}
 		metadata* start = (metadata*) ((char*)mem_space + i*page_size);
 		printf("--------------------PAGE--------------------\n");
@@ -53,12 +56,12 @@ void printMemory() {
 			j+=curr_seg;	
 			if (isLast) {
 				j = num_segments;
-				if (pg_is_overflow(pdata)) ovf_len=curr_seg;
-				else ovf_len = 0;
+//				if (pg_is_overflow(pdata)) ovf_len=curr_seg;
+//				else ovf_len = 0;
 			}
 		}
-		if (ovf_len) i+=(pdata->length-1);
-		else { i++; }
+//		if (ovf_len) i+=(pdata->length-1);
+//		else { i++; }
 	}
 	printf("</---------------------MEMORY---------------------->\n");
 }
