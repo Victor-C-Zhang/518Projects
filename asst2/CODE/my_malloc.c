@@ -358,6 +358,12 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 }
 
 
+/**
+ * Releases pages from process' contiguous space if they are free and at front or end of memory space 
+ * @param curr_id		process id
+ * @param first_page_index	index of first page in process' view of contiguous memory space
+ * @param last_page_index	index of last page in process' view of contiguous memory space
+ */
 void free_process_pages(uint32_t curr_id, int first_page_index, int last_page_index){
 	int free_start = first_page_index;
 	int process_index = first_page_index;
@@ -411,7 +417,6 @@ void free_process_pages(uint32_t curr_id, int first_page_index, int last_page_in
  * Free's allocations that span multiple pages 
  * @param curr			segment where the allocation starts
  * @param pdata			page data for page where the allocation is
- * @param last_page_index	index of last page in process' contiguous memory space
  */
 void free_cont_pages(metadata* curr, pagedata* pdata) {
 	uint8_t ovf_len = dm_block_size(curr);
