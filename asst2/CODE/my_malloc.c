@@ -192,6 +192,11 @@ void* page_allocate(size_t size, uint32_t curr_id, int free_page, int page_index
 		if ( !pg_block_occupied(pdata) || pdata->pid == curr_id ) {
 			//add the actual index and where process thinks the page is to HT
 			ht_put(ht_space, curr_id, (ht_val)process_index, actual_index);
+			//if last page to alloc, set metadata for the free segment following the overflow segment
+			if (pages_alloc == 1 && ovf_len != num_segments && swap_array_index != 0){
+				int curr_seg = dm_block_size(start);
+				dm_write_metadata(start+ovf_len*SEGMENTSIZE,curr_seg-ovf_len, NOT_OCC, dm_is_last_segment(start));	
+			}
 			//if first page in allocation set page data and set segment data of the last
 			if (swap_array_index == 0) {
 //				printf("page mallc\n");
@@ -201,10 +206,6 @@ void* page_allocate(size_t size, uint32_t curr_id, int free_page, int page_index
 			}
 			else { 	//if not 1st page, write pagedata for process owning page and where process thinks it is,
 				pg_write_pagedata(pdata, curr_id, OCC, NOT_OVF, process_index, 1);
-			}
-			//if last page to alloc, set metadata for the free segment following the overflow segment
-			if (pages_alloc == 1 && ovf_len != num_segments && swap_array_index != 0){
-				dm_write_metadata(start+ovf_len*SEGMENTSIZE,num_segments-ovf_len, NOT_OCC, LAST);
 			}
 			//add the free page allocated into array for swapping to correct location later
 			pages_actual_index[swap_array_index] = actual_index;
@@ -345,8 +346,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	
 	//printf("malloc call %s:%d\n", file, line);
 	void* p = segment_allocate(size, curr_id);
-	printf("malloc %d call %s:%d %p\n", size / SEGMENTSIZE+1, file, line, p);
-	printMemory();
+//	printf("malloc %d call %s:%d %p\n", size / SEGMENTSIZE+1, file, line, p);
+//	printMemory();
 	if (p == NULL) {
 		error_message("Not enough memory", file, line);
 	}
@@ -523,9 +524,9 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 	
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	
-	printf("free call %s:%d %p\n", file, line, p);
+//	printf("free call %s:%d %p\n", file, line, p);
 	int d = free_ptr(p, curr_id);
-	printMemory();
+//	printMemory();
 	if (d == 1) {
 		error_message("Cannot free an already free pointer!", file, line);
 	}
