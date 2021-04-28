@@ -40,7 +40,7 @@ void printMemory() {
 		pagedata* pdata = (pagedata*)myblock + i;	
 		int j = ovf_len;
 		if (!pg_block_occupied(pdata)) { 
-		//	i++; 
+//			i++; 
 			continue; 
 		}
 //		if (pdata->pid == 0) {continue;}
@@ -350,7 +350,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	//printf("malloc call %s:%d\n", file, line);
 	void* p = segment_allocate(size, curr_id);
 	printf("malloc %d call %s:%d %p\n", size / SEGMENTSIZE+1, file, line, p);
-	printMemory();
+//	printMemory();
 	if (p == NULL) {
 		error_message("Not enough memory", file, line);
 	}
