@@ -63,8 +63,11 @@ void initialize_pages() {
 	}
 }
 
-//swaps data from page at indexA to page at indexB
-//updates the inverted pagetable and hastable to match change
+/** 
+ * Swaps data from page at indexA to page at indexB, updates page table and hash table to match the change
+ * @param indexA		first page index to be swapped
+ * @param indexB		second page index to be swapped
+ */
 void swap(int indexA, int indexB){
 	if (indexA == indexB) {return;}
 	pagedata* pdA = (pagedata*)myblock+indexA;
