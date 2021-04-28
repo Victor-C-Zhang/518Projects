@@ -64,22 +64,17 @@ void initialize_pages() {
 }
 
 //swaps data from page at indexA to page at indexB
-//updates the inverted pagetable and hastable to match
-//change in location of data
+//updates the inverted pagetable and hastable to match change
 void swap(int indexA, int indexB){
 	if (indexA == indexB) {return;}
-
 	pagedata* pdA = (pagedata*)myblock+indexA;
 	pagedata* pdB = (pagedata*)myblock+indexB;
-
 	ht_put(ht_space, pdA->pid, (ht_key)pg_index(pdA), indexB);
 	ht_put(ht_space, pdB->pid, (ht_key)pg_index(pdB), indexA);
-
 	pagedata pdTemp;
 	pg_write_pagedata(&pdTemp, pdA->pid, pg_block_occupied(pdA), pg_is_overflow(pdA), pg_index(pdA), pdA->length);
 	pg_write_pagedata(pdA, pdB->pid, pg_block_occupied(pdB), pg_is_overflow(pdB), pg_index(pdB), pdB->length);
 	pg_write_pagedata(pdB, pdTemp.pid, pg_block_occupied(&pdTemp), pg_is_overflow(&pdTemp), pg_index(&pdTemp), pdTemp.length);
-	
 	char* pageA = (char*)mem_space + indexA*page_size;
 	char* pageB = (char*)mem_space + indexB*page_size;
 	char  pageTemp;
@@ -89,90 +84,118 @@ void swap(int indexA, int indexB){
 		pageA[i] = pageB[i];
 		pageB[i] = pageTemp;
 	}
-	
 }
-//makes allocations that will overflow into next page
-void* contiguous_page_alloc(size_t size, uint32_t curr_id, int free_page, int last_page_ind, int last_seg_ind) {
+
+/**
+ * Finds the start and end of curr_id's view of memory, first free page, and number of free pages
+ * @param curr_id		ID of process in question.
+ * @param free_page		pointer to store index of first free page
+ * @param num_free 		pointer to store number of free pages available
+ * @param first_page_index	pointer to store the first page index according to process' view
+ * @param last_page_index	pointer to store the last page index according to process' view
+ */
+int find_contig_space(uint32_t curr_id, int* free_page, int* num_free_pages, int* first_page_index, int* last_page_index){ 
+	*free_page = -1;
+	*num_free_pages = 0;
+	*first_page_index = INT16_MAX;
+	*last_page_index = -1;
+	for (int index = 0; index < num_pages; index++) {	
+		pagedata* pdata = (pagedata*)myblock + index;	
+		if ( !pg_block_occupied(pdata) ) { //free page
+			if (*free_page == -1) *free_page = index;
+			*num_free_pages=*num_free_pages+1;
+		}
+		else if (pdata->pid == curr_id) { //occupied page, so see if it belongs to current process
+			int ind_acc_proc = pg_index(pdata); //index of current page according to process...
+			*last_page_index = (ind_acc_proc > *last_page_index) ? ind_acc_proc : *last_page_index;
+			*first_page_index = (ind_acc_proc < *first_page_index) ? ind_acc_proc : *first_page_index;
+		}
+	}
+}
+
+/**
+ * Services malloc requests which require new or contiguous page allocations
+ * @param size			size of malloc request in bytes
+ * @param curr_id		process making request 
+ * @param free_page 		first free page index
+ * @param page_index		index of process' page from which the allocation will start
+ * @param seg_index		index of page's segment from which the allocation will start
+ */
+void* page_allocate(size_t size, uint32_t curr_id, int free_page, int page_index, int seg_index) {
 	int pages_alloc = (size / page_size) + 1;
-	if ( (last_page_ind != -1 && last_page_ind+pages_alloc >= num_pages) ||
-		(last_page_ind == -1 && free_page+pages_alloc >= num_pages) ) {
+	
+	if ( (page_index != -1 && page_index+pages_alloc >= num_pages) ||
+		(page_index == -1 && free_page+pages_alloc >= num_pages) ) {
 		return NULL;
 	}
 
-	int proc_ind; //index where process thinks the page is
-	int ret_seg_index = 0; //segment index of return ptr 
-	int arr_ind = 0; //counter for array of pages to swap 
-	uint8_t ovf_len = (size % page_size) / SEGMENTSIZE + 1; //len of allocation in the last segment of contiguous page allocation
-	int actual_index; 
-
-	//there are no pages allocated for the process yet, so process will think 
-	//its contiguous memory starts at the first free page
-	if (last_page_ind == -1) proc_ind = free_page; 
-	//if there is memory allocated for the process, check if the last
-	//page of the contiguous memory has a last segment that is free
+	int process_index; //index where process thinks the page is
+	int actual_index; //index where page actually is
+	int ret_seg_index = 0; //segment index of return pointer 
+	int swap_array_index = 0; //counter for array of pages to swap 
+	uint8_t ovf_len = (size % page_size) / SEGMENTSIZE + 1; //segment count in the last segment of contiguous page allocation
+	//there are no pages allocated for the process yet, so process will think its contiguous memory starts at the first free page
+	if (page_index == -1) process_index = free_page; 
+	//if there is memory allocated for the process, check if the page_index's last segment is free
 	else {
-		actual_index = ht_get(ht_space, curr_id, (ht_key)last_page_ind);
-		pagedata* pdata = (pagedata*)myblock+actual_index;
-		metadata* curr = (metadata*) (mem_space + actual_index*page_size + last_seg_ind*SEGMENTSIZE);
-		//if last segment is free, set it to occupied, set the overflow length
-		//and set the page to be an overflow
+		actual_index = ht_get(ht_space, curr_id, (ht_key)page_index);
+		metadata* curr = (metadata*) (mem_space + actual_index*page_size + seg_index*SEGMENTSIZE);
+		//if last segment is free, set segment's occupied flag and the overflow length
+		//and set the page to be an overflow with correct page length
 		if (!dm_block_occupied(curr)){
-			ret_seg_index = last_seg_ind;
-			size -= (num_segments-last_seg_ind)*SEGMENTSIZE;
+			ret_seg_index = seg_index;
+			size -= (num_segments-seg_index)*SEGMENTSIZE;
 			ovf_len = (size % page_size)/SEGMENTSIZE +1;
 			pages_alloc = (size / page_size)+1;
 			dm_write_metadata(curr,ovf_len,OCC,LAST);
+			pagedata* pdata = (pagedata*)myblock+actual_index;
 			pg_write_pagedata(pdata, curr_id, OCC, OVF, pg_index(pdata), pages_alloc+1);
-			arr_ind++;
+			swap_array_index++;
 		}
 		
 		//since the process has memory allocated for it already, any additional pages allocated 
 		//for the process must seem contiguous, so need to know where process thinks
 		//its current last page is, so subsequent pages could be appropriately swapped		
-		proc_ind=last_page_ind+1;
+		process_index=page_index+1;
 	}
 	
-	//array for swapping pages to correct index after free pages 
-	//are found and allocated 
-	int swap_len = (arr_ind == 1) ? pages_alloc+1 : pages_alloc;
+	//array for swapping pages to correct index after all pages allocated 
+	int swap_len = (swap_array_index == 1) ? pages_alloc+1 : pages_alloc;
 	int pages_actual_index[swap_len];
-	if (arr_ind == 1) pages_actual_index[0] = actual_index;
-	int index = (free_page == -1) ? proc_ind : free_page; 
-	while (pages_alloc && index < num_pages) {
-		if (free_page == -1) index = ht_get(ht_space, curr_id, (ht_key)proc_ind);
-		pagedata* pdata = (pagedata*)myblock + index;
-		metadata* start = (metadata*) (mem_space + index*page_size);
+	if (swap_array_index == 1) pages_actual_index[0] = actual_index;
+	
+	//if free_page is -1, then we are not allocating new pages, but within the process' existing contiguous memory space
+	actual_index = (free_page == -1) ? process_index : free_page; 
+	//allocates additional pages 
+	while (pages_alloc && actual_index < num_pages) { 
+		if (free_page == -1) actual_index = ht_get(ht_space, curr_id, (ht_key)process_index);
+		pagedata* pdata = (pagedata*)myblock + actual_index;
+		metadata* start = (metadata*) (mem_space + actual_index*page_size);
 		//update HT, PT, and metadata is page is allocated to process
 		if ( !pg_block_occupied(pdata) || pdata->pid == curr_id ) {
 			//add the actual index and where process thinks the page is to HT
-			ht_put(ht_space, curr_id, (ht_val)proc_ind, index);
-			//if this is the first page in the contiguous allocation
-			//set page to: occupied, overflowing, and length of pages in allocation
-			//also, set last segment of first page to hold the overflow length
-			if (arr_ind == 0) {
+			ht_put(ht_space, curr_id, (ht_val)process_index, actual_index);
+			//if first page in allocation set page data and set segment data of the last
+			if (swap_array_index == 0) {
 				int is_ovf = (pages_alloc == 1) ? NOT_OVF : OVF;
-				pg_write_pagedata(pdata, curr_id, OCC, is_ovf, proc_ind, pages_alloc);
+				pg_write_pagedata(pdata, curr_id, OCC, is_ovf, process_index, pages_alloc);
 				dm_allocate_block(start,ovf_len);
 			}
-			//if not first page, simply write pagedata for who the page belongs to,
-			//and where the process thinks the page is
-			else {
-				pg_write_pagedata(pdata, curr_id, OCC, NOT_OVF, proc_ind, 1);
+			else { 	//if not 1st page, write pagedata for process owning page and where process thinks it is,
+				pg_write_pagedata(pdata, curr_id, OCC, NOT_OVF, process_index, 1);
 			}
-			//if this is the last page to allocate, set metadata for the free segment 
-			//that follows the overflow segment
-			if (pages_alloc == 1 && ovf_len != num_segments && arr_ind != 0){
+			//if last page to alloc, set metadata for the free segment following the overflow segment
+			if (pages_alloc == 1 && ovf_len != num_segments && swap_array_index != 0){
 				dm_write_metadata(start+ovf_len*SEGMENTSIZE,num_segments-ovf_len, NOT_OCC, LAST);
 			}
-			//add the free page allocated into array for swapping 
-			//to correct location later
-			pages_actual_index[arr_ind] = index;
-			arr_ind++;
+			//add the free page allocated into array for swapping to correct location later
+			pages_actual_index[swap_array_index] = actual_index;
+			swap_array_index++;
 			pages_alloc--;
-			proc_ind++;
+			process_index++;
 		}
 		
-		index++;
+		actual_index++;
 	}
 	//swap newly allocated pages to where the process thinks they are
 	//and set return pointer to be returned from first page newly allocated 
@@ -188,95 +211,84 @@ void* contiguous_page_alloc(size_t size, uint32_t curr_id, int free_page, int la
 	return ret;
 }
 
-void* find_free_segment(uint32_t curr_id, size_t size, int first_page_ind, int last_page_ind, int free_page, int num_free){
+/**
+ * Services requests that are within a page or outsources to page_allocate() multiple page allocations
+ * @param size			size of malloc request in bytes
+ * @param curr_id		process making request 
+ */
+void* segment_allocate(size_t size, uint32_t curr_id){
+	int first_page_index;
+	int last_page_index;
+	int free_page;
+	int num_free;
+	find_contig_space(curr_id, &free_page, &num_free, &first_page_index, &last_page_index);
+	
 	size_t segments_alloc = size / SEGMENTSIZE + 1;
 	int pages_alloc = (segments_alloc/num_segments+1);
 
-	int start_index; //index according the process where tan allocation could start 
-	int last_seg_ind = -1;
-	int contig_free_space = 0; //from start index to current index how much contiguous free space available
-	int proc_ind = first_page_ind;
+	int alloc_page_index; //page index according the process where an allocation could start 
+	int alloc_seg_index = -1; //segment index within alloc_page_index page where allocation could start
+	int contig_free_space = 0; //from start index, to current index how much contiguous free space available
+	int process_index = first_page_index;
 	uint8_t ovf_len = 0;
-
-	while (proc_ind <= last_page_ind){
-		int actual_location = ht_get(ht_space, curr_id, (ht_key)proc_ind);
-		pagedata* pdata = (pagedata*)myblock + actual_location;
-		//traverse memory to find the first free block that can fit the size requested
-		metadata* start = (metadata*) (mem_space + actual_location*page_size);
+	//traverse memory to find the most current current contigious free block that can fit the size requested
+	while (process_index <= last_page_index) {
+		int actual_index = ht_get(ht_space, curr_id, (ht_key)process_index);
+		pagedata* pdata = (pagedata*)myblock + actual_index;
+		metadata* start = (metadata*) (mem_space + actual_index*page_size);
 		int seg_index = ovf_len;
 		while ( seg_index < num_segments) {
 			metadata* curr = start + seg_index*SEGMENTSIZE;
 			uint8_t curr_seg = dm_block_size(curr);
 			if (dm_is_last_segment(curr)) {
-				if (pg_is_overflow(pdata)) { 
-					ovf_len=curr_seg;
-				}
-				else { ovf_len=0; }
+				if (last_page_index == process_index) alloc_seg_index = seg_index;
+				if (pg_is_overflow(pdata)) ovf_len=curr_seg;
+				else ovf_len = 0;
 				curr_seg = num_segments - seg_index;
-				if (last_page_ind == proc_ind) last_seg_ind = seg_index;
 			}
+			
 			if (!dm_block_occupied(curr)){
 				if (contig_free_space == 0) {
-					start_index = proc_ind;
-					last_seg_ind = seg_index;
+					alloc_page_index = process_index;
+					alloc_seg_index = seg_index;
 				}
 				contig_free_space+=curr_seg;
-				if (contig_free_space >= segments_alloc){
-					if (curr_seg >= segments_alloc) {
+				if (contig_free_space >= segments_alloc){ 
+					//current segment can service the request
+					if (curr_seg >= segments_alloc) { 
 						dm_allocate_block(curr, segments_alloc);
-						swap(actual_location, proc_ind);
-						metadata* swapped_mdata = (metadata*) (mem_space+proc_ind*page_size) + seg_index*SEGMENTSIZE;
+						swap(actual_index, process_index);
+						metadata* swapped_mdata = (metadata*) (mem_space+process_index*page_size) + seg_index*SEGMENTSIZE;
 						return (void*) (swapped_mdata + 1);
 					}
-					last_page_ind = start_index;
+					//multiple page allocation required --> outsource
+					//free_page = -1 to convey that this is 
+					//memory allocation within existing space
 					free_page = -1;
 					break;
-
 				}
 			}
 			else {
 				contig_free_space = 0;
-				start_index = -1;
+				alloc_page_index = -1;
+				alloc_seg_index = -1;
 			}
 			seg_index+=curr_seg;
 		}
 	
 		if (contig_free_space >= segments_alloc) break;
-		else if (ovf_len) proc_ind+=(pdata->length-1);
-		else { proc_ind++; }
+		else if (ovf_len) process_index+=(pdata->length-1);
+		else { process_index++; }
 	}
-
-	if ( free_page != -1 && pages_alloc > num_free) return NULL; 
-	return contiguous_page_alloc(size, curr_id, free_page, last_page_ind, last_seg_ind);
+	
+	//if we need to allocate new pages, make sure there's enough space
+	if ( free_page != -1) {
+		if (pages_alloc > num_free) return NULL;
+		alloc_page_index = last_page_index;
+	}
+	return page_allocate(size, curr_id, free_page, alloc_page_index, alloc_seg_index);
 }
 
-void* find_free_page(size_t size, uint32_t curr_id) {
-	int first_page_ind = INT16_MAX;
-	int last_page_ind = -1;
-	int free_page = -1;
-	int num_free_pages = 0;
-
-	//traverse memory to find the contiguous memory space of current process
-	//if exists, and find first free page, as well as the number of free pages
-	for (int index = 0; index < num_pages; index++) {	
-		pagedata* pdata = (pagedata*)myblock + index;	
-		if ( !pg_block_occupied(pdata) ) { //free page
-			if (free_page == -1) free_page = index;
-			num_free_pages++;
-		}
-		else if (pdata->pid == curr_id) { //occupied page see if it belongs to current process
-			//find the start and end of the process' contiguous space
-			int ind_acc_proc = pg_index(pdata);//index of current page according to process...
-			last_page_ind = (ind_acc_proc > last_page_ind) ? ind_acc_proc : last_page_ind;
-			first_page_ind = (ind_acc_proc < first_page_ind) ? ind_acc_proc : first_page_ind;
-		}
-	}
-
-	void* val = find_free_segment(curr_id, size, first_page_ind, last_page_ind, free_page, num_free_pages);
-	return val;
-}
-
-//returns to the user a pointer to the amount of memory requested
 void* myallocate(size_t size, char* file, int line, int threadreq){
 	enter_scheduler(&timer_pause_dump);
 	
@@ -285,6 +297,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		error_message("Cannot malloc 0 or negative bytes", file, line);
 		return NULL;
 	}
+	
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	if (firstMalloc == 1) { // first time using malloc
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
@@ -306,7 +319,9 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		sigaction(SIGSEGV, &segh, NULL);
 		firstMalloc = 0;
 	}
-	void* p = find_free_page(size, curr_id);
+	
+	void* p = segment_allocate(size, curr_id);
+//	printMemory();
 	if (p == NULL) {
 		error_message("Not enough memory", file, line);
 	}
@@ -314,24 +329,28 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 	return p;
 }
 
-//free's ptr that spans across multiple pages
-void free_cont_pages(metadata* curr, pagedata* pdata, int seg_index, int* last_page_ind) {
+/**
+ * Free's allocations that span multiple pages 
+ * @param curr			segment where the allocation starts
+ * @param pdata			page data for page where the allocation is
+ * @param last_page_index	index of last page in process' contiguous memory space
+ */
+void free_cont_pages(metadata* curr, pagedata* pdata, int* last_page_index) {
 	uint8_t ovf_len = dm_block_size(curr);
 	uint16_t num_contig_pages = pdata->length;
 	
 	//change first page of multiple page allocation to not overflow, and length of page allocation to be 1
 	pg_write_pagedata(pdata, pdata->pid, OCC, NOT_OVF, pg_index(pdata), 1);
 
-	//find the last page in the multiple page allocation, set the beginning of the page to a free block the 
+	//find the last page in the multiple page allocation, 
+	//set the beginning of the page to a free block the 
 	//size of the overflow length 
 	int p_index = pg_index(pdata);
-	ht_val last_page_index = (uint16_t) ht_get(ht_space,pdata->pid,(ht_key)(p_index+num_contig_pages-1));
-	pagedata* last = (pagedata*)myblock+last_page_index;
-	curr = (metadata*) mem_space+last_page_index*page_size;
-	
-	//consolidate free segments within the last page
-	if (ovf_len < num_segments){
-		dm_write_metadata(curr, ovf_len,NOT_OCC,NOT_LAST);
+	ht_val last_alloc_page_index = (uint16_t) ht_get(ht_space,pdata->pid,(ht_key)(p_index+num_contig_pages-1));
+	pagedata* last = (pagedata*)myblock+last_alloc_page_index;
+	curr = (metadata*) mem_space+last_alloc_page_index*page_size;
+	if (ovf_len < num_segments){ //consolidate free segments within the last page
+		dm_write_metadata(curr, ovf_len, NOT_OCC,NOT_LAST);
 		metadata* next = curr + ovf_len*SEGMENTSIZE;
 		if (!dm_block_occupied(next)) dm_write_metadata(curr, ovf_len + dm_block_size(next), NOT_OCC, dm_is_last_segment(next));	
 	}
@@ -339,65 +358,55 @@ void free_cont_pages(metadata* curr, pagedata* pdata, int seg_index, int* last_p
 	
 	//if the last page in multiple page allocation is the last page in the process' contiguous memory space
 	//deallocate pages from process
-	if (dm_is_last_segment(curr) && (num_contig_pages-1+p_index == *last_page_ind)) {
+	if (dm_is_last_segment(curr) && (num_contig_pages-1+p_index == *last_page_index)) {
 		for (int i = 1; i < num_contig_pages; i++) {
 			ht_val next_page_index = (uint16_t) ht_get(ht_space,pdata->pid,(ht_key)(p_index+i));
 			pagedata* next = (pagedata*)myblock+next_page_index;
 			pg_write_pagedata(next, next->pid, NOT_OCC, NOT_OVF, p_index+i, 1);
 			ht_delete(ht_space, next->pid, p_index+i);
 		}
-		*last_page_ind = p_index;
+		*last_page_index = p_index;
 	}
 }
 
-int find_contig_space(uint32_t curr_id, int* first_page_ind, int* last_page_ind){ 
-	*first_page_ind = INT16_MAX;
-	*last_page_ind = -1;
-	//traverse memory to find the contiguous memory space of current process
-	for (int index = 0; index < num_pages; index++) {	
-		pagedata* pdata = (pagedata*)myblock + index;	
-		if ( pg_block_occupied(pdata) && (pdata->pid == curr_id) ) { //occupied page see if it belongs to current process
-			//find the start and end of the process' contiguous space
-			int ind_acc_proc = pg_index(pdata);//index of current page according to process...
-			*last_page_ind = (ind_acc_proc > *last_page_ind) ? ind_acc_proc : *last_page_ind;
-			*first_page_ind = (ind_acc_proc < *first_page_ind) ? ind_acc_proc : *first_page_ind;
-		}
-	}
-	
-}
-
+/**
+ * Free's allocations
+ * @param p			pointer to free
+ * @param curr_id		process owning the pointer
+ */
 int free_ptr(void* p, uint32_t curr_id) {
-	//process thinks the page is, swap it where with it actually is
-	int first_page_ind;
-	int last_page_ind;
-	find_contig_space(curr_id, &first_page_ind, &last_page_ind);
+	//find the process' contiguous memory space
+	int first_page_index;
+	int last_page_index;
+	int free_page;
+	int num_free;
+	find_contig_space(curr_id, &free_page, &num_free, &first_page_index, &last_page_index);
 
+	//page where pointer is according to process
 	int page_index = ( (char*)p - 1 - mem_space) / page_size ;
 	//if nothing has been malloc'd yet, cannot free!
-	int proc_ind = (firstMalloc == 1) ? last_page_ind+1 : first_page_ind;
+	int process_index = (firstMalloc == 1) ? last_page_index+1 : first_page_index; //index of page in contig memory according to process
 	uint8_t ovf_len = 0;
 
-	//find the pointer to be free and keep track of the previous block incase it is free so we can combine them and avoid memory fragmentation
-	while (proc_ind <= last_page_ind){
-		int actual_location = ht_get(ht_space, curr_id, (ht_key)proc_ind);
-		if (proc_ind == page_index) {
-			swap(proc_ind, actual_location);
-			actual_location = proc_ind;
+	//find the pointer to be free'd
+	//keep track of the previous block incase it is free so we can combine them and avoid memory fragmentation
+	while (process_index <= last_page_index){
+		int actual_index = ht_get(ht_space, curr_id, (ht_key)process_index);
+		if (process_index == page_index) {
+			swap(process_index, actual_index);
+			actual_index = process_index;
 		}
-		
-		pagedata* pdata = (pagedata*)myblock + actual_location;
+		pagedata* pdata = (pagedata*)myblock + actual_index;
 		metadata* prev;
 		int prevFree = 0;
 		uint8_t prevSize = 0;
-		//traverse memory to find the first free block that can fit the size requested
-		metadata* start = (metadata*) (mem_space + actual_location*page_size);
+		//traverse page to find segment of pointer to free
+		metadata* start = (metadata*) (mem_space + actual_index*page_size);
 		int seg_index = ovf_len;
 		while (seg_index < num_segments) { 
 			metadata* curr = start + seg_index*SEGMENTSIZE;
 			uint8_t curr_seg = dm_block_size(curr);
-			if (dm_is_last_segment(curr)) {
-				curr_seg = num_segments - seg_index;
-			}
+			if (dm_is_last_segment(curr)) curr_seg = num_segments - seg_index;
 			//if we find the pointer to be free'd
 			if ( curr + 1 == p) {
 				//if it is already free, cannot free it -> error
@@ -409,7 +418,7 @@ int free_ptr(void* p, uint32_t curr_id) {
 						//free the last segment in first page of multiple page allocation 
 					        if (pg_is_overflow(pdata)) {
 							num_contig = pdata->length;
-							free_cont_pages(curr, pdata, seg_index, &last_page_ind);
+							free_cont_pages(curr, pdata, &last_page_index);
 						}
 						dm_write_metadata(curr, num_segments-seg_index, NOT_OCC, LAST);
 					}
@@ -426,10 +435,9 @@ int free_ptr(void* p, uint32_t curr_id) {
 				
 					//if previous block was free, combine my current pointer with previous block
 					if (prevFree) dm_write_metadata(prev, prevSize + dm_block_size(curr), NOT_OCC, dm_is_last_segment(curr));
-	
-					//can't free pages if the page is all free, there might be pages before or after that are allocated
-
-					if (!dm_block_occupied(start) && dm_is_last_segment(start) && ovf_len == 0 && page_index == first_page_ind) {	
+					//if the page of the pointer to free is first page of process' contiguous memory space, 
+					//and the page is now empty, free all pages up to a occupied page
+					if (!dm_block_occupied(start) && dm_is_last_segment(start) && ovf_len == 0 && page_index == first_page_index) {	
 						//last page free only if last not occ and last segment
 						for (int i = 0; i < num_contig; i++) {
 							ht_val next_page_index = (uint16_t) ht_get(ht_space,pdata->pid,(ht_key)(page_index+i));
@@ -453,6 +461,7 @@ int free_ptr(void* p, uint32_t curr_id) {
 				if (pg_is_overflow(pdata)) ovf_len=dm_block_size(curr);
 				else ovf_len=0;
 			}
+			
 			prev = curr;
 			if (!dm_block_occupied(curr)) {
 				prevFree = 1;
@@ -464,9 +473,9 @@ int free_ptr(void* p, uint32_t curr_id) {
 			seg_index += curr_seg;
 		}
 		
-		if (ovf_len) proc_ind+=(pdata->length-1);
+		if (ovf_len) process_index+=(pdata->length-1);
 		else {
-			proc_ind++;
+			process_index++;
 			ovf_len=0;
 		}
 	}
@@ -474,8 +483,6 @@ int free_ptr(void* p, uint32_t curr_id) {
 	return 2;
 }
 
-//frees up any memory malloc'd with this pointer for future use
-//frees up any memory malloc'd with this pointer for future use
 void mydeallocate(void* p, char* file, int line, int threadreq) {
 	enter_scheduler(&timer_pause_dump);
 	//if the pointer is NULL, there is nothing we can free
@@ -486,6 +493,7 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 	
 	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	int d = free_ptr(p, curr_id);
+//	printMemory();
 	if (d == 1) {
 		error_message("Cannot free an already free pointer!", file, line);
 	}
