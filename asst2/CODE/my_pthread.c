@@ -75,7 +75,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, &sig_timer);
 
     // register signal handler for alarms
-    act.sa_sigaction = schedule;
+    act.sa_sigaction = alrm_handler;
     act.sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&act.sa_mask);
     sigaction(SIGALRM, &act, NULL);
@@ -83,6 +83,17 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     // set timer
     timer_settime(sig_timer, 0, &timer_25ms, NULL);
     initScheduler = 0;
+
+    // create context for scheduler to run in
+    scheduler_context = myallocate(sizeof(ucontext_t), __FILE__, __LINE__, LIBRARYREQ);
+    getcontext(scheduler_context);
+    scheduler_context->uc_stack.ss_size = STACKSIZE;
+//    scheduler_context->uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
+//    TODO: point to pre-allocated stack pages
+    scheduler_context->uc_stack.ss_sp = malloc(STACKSIZE);
+    sigemptyset(&scheduler_context->uc_sigmask);
+    sigaddset(&scheduler_context->uc_sigmask, SIGALRM); // ignore scheduling calls within scheduler
+    makecontext(scheduler_context, (void (*)(void)) schedule, 0);
   } else { // no need to init scheduler, can just add thread normally
     enter_scheduler(&timer_pause_dump);
     insert_ready_q(new_thread,0);

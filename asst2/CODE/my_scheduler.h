@@ -46,6 +46,7 @@ struct itimerspec timer_pause_dump;
 struct sigaction act;
 
 ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
+ucontext_t* scheduler_context; // context that only runs the scheduler in a loop
 int curr_prio; // priority of the currently scheduled thread. should usually
 // be 0.
 void* prev_done; // stack pointer of previously done context
@@ -74,7 +75,13 @@ void exit_scheduler(struct itimerspec* ovalue);
  * Moves thread to end of ready queue.
  * Sets context to head of ready queue.
  */
-void schedule(int sig, siginfo_t* info, void* ucontext);
+void alrm_handler(int sig, siginfo_t* info, void* ucontext);
+
+/**
+ * Utility function that actually does swapping. Will be called from a different
+ * context as user threads, to allow swapping of user memory without issue.
+ */
+void schedule();
 
 /**
  * Decay long-running procs.

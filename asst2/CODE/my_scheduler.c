@@ -16,23 +16,31 @@ void exit_scheduler(struct itimerspec* ovalue) {
   timer_settime(&sig_timer,0,ovalue,NULL);
 }
 
-void schedule(int sig, siginfo_t* info, void* ucontext) {
-   if (prev_done != NULL) {
+void alrm_handler(int sig, siginfo_t* info, void* ucontext) {
+  tcb* old_thread = (tcb*) ready_q[curr_prio]->head->data;
+  swapcontext(&old_thread->context, scheduler_context);
+}
+
+void schedule() {
+  START_SCHED:
+  if (prev_done != NULL) {
 //    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
     free(prev_done);
     prev_done = NULL;
   }
-  tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
-  ucontext_t* old_context = &old_thread->context;
+  tcb *old_thread = (tcb *) delete_head(ready_q[curr_prio]);
+  ucontext_t *old_context = &old_thread->context;
   old_thread->last_run = cycles_run;
   ++cycles_run;
   --should_maintain;
-  if ( old_thread -> status == READY ) { //DONE or BLOCKED status, don't insert back to ready queue
+  if (old_thread->status ==
+      READY) { //DONE or BLOCKED status, don't insert back to ready queue
     if (old_thread->cycles_left > 0) { // allow threads to run for
       // multiple interrupt cycles
       --(old_thread->cycles_left);
       insert_head(ready_q[curr_prio], old_thread);
-      return;
+      swapcontext(scheduler_context, &old_thread->context);
+      goto START_SCHED;
     }
     if (old_thread->cycles_left == -1 || old_thread->acq_locks > 0) { // yield()
       // prio shouldn't change; hoisted prio shouldn't change
@@ -52,15 +60,15 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
 
   if (should_maintain <= 0) {
     run_maintenance();
-    should_maintain = ONE_SECOND/QUANTUM;
+    should_maintain = ONE_SECOND / QUANTUM;
   }
 
-  struct ucontext_t* new_context = NULL;
+  struct ucontext_t *new_context = NULL;
   // pick highest priority task to run
   for (int i = 0; i < NUM_QUEUES; ++i) {
     if (!isEmpty(ready_q[i])) {
       curr_prio = i;
-      new_context = &((tcb*)get_head(ready_q[i]))->context;
+      new_context = &((tcb *) get_head(ready_q[i]))->context;
       break;
     }
   }
@@ -71,7 +79,8 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   if (new_context == NULL) { // teardown and cleanup
     exit(0);
   }
-  swapcontext(old_context, new_context);
+  swapcontext(scheduler_context, new_context);
+  goto START_SCHED;
 }
 
 /* Uses function
