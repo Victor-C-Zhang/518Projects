@@ -175,13 +175,16 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		num_segments = page_size / SEGMENTSIZE;
     stack_page_size = (STACKSIZE % page_size) ?
                                  STACKSIZE/page_size + 1 : STACKSIZE/page_size;
-		num_pages = (MEMSIZE - stack_page_size * page_size) / (page_size + sizeof(pagedata));
+		num_pages = (MEMSIZE - stack_page_size * page_size - 1) / (page_size +
+		      sizeof(pagedata));
 		uint32_t pt_space = num_pages*sizeof(pagedata);
 		pt_space = (pt_space % page_size) ? pt_space/page_size + 1 : pt_space/page_size;
 
-		// leave space at the beginning for (inverted) PT and scheduler stack
+		// leave space at the beginning for (inverted) PT and scheduler (stack, context)
 		sched_stack_ptr_ = myblock + pt_space * page_size;
-		mem_space = myblock + (pt_space + stack_page_size) * page_size;
+		scheduler_context = (ucontext_t*)(myblock + (pt_space + stack_page_size) *
+		      page_size);
+		mem_space = myblock + (pt_space + stack_page_size + 1) * page_size;
 
 		initialize_pages();
 		memset(&segh, 0, sizeof(struct sigaction));

@@ -57,14 +57,19 @@ int should_maintain; // run a maintenance cycle once
 hashmap* all_threads; //all threads accessed by ids
 
 /**
+ * Enters scheduler context:
  * Pauses the alarm counter so the "scheduler" can work uninterrupted.
+ * Unprotects scheduler-owned memory pages.
  * @param ovalue a pointer to store the current itimerspec in.
  */
 void enter_scheduler(struct itimerspec* ovalue);
 
 /**
- * Resumes the alarm counter. Must be the LAST thing done prior to returning
- * control to user threads.
+ * Exits scheduler context:
+ * Resumes the alarm counter.
+ * Protects scheduler-owned memory pages.
+ *
+ * Must be the LAST thing done prior to returning control to user threads.
  * @param ovalue the itimerspec to resume.
  */
 void exit_scheduler(struct itimerspec* ovalue);

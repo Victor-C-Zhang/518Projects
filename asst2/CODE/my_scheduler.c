@@ -14,10 +14,18 @@ void insert_ready_q(tcb* thread, int queue_num) {
 
 void enter_scheduler(struct itimerspec* ovalue) {
   timer_settime(&sig_timer,0,&timer_stopper,ovalue);
+  for (int i = 0; i < num_pages; ++i) {
+    if (((pagedata*)myblock)[i].pid == 0)
+      mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
+  }
   in_scheduler = 1;
 }
 
 void exit_scheduler(struct itimerspec* ovalue) {
+  for (int i = 0; i < num_pages; ++i) {
+    if (((pagedata*)myblock)[i].pid == 0)
+      mprotect(mem_space + page_size*i, page_size, PROT_NONE);
+  }
   timer_settime(&sig_timer,0,ovalue,NULL);
 }
 

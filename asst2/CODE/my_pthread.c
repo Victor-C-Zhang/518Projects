@@ -85,8 +85,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_settime(sig_timer, 0, &timer_25ms, NULL);
     initScheduler = 0;
 
-    // create context for scheduler to run in
-    scheduler_context = myallocate(sizeof(ucontext_t), __FILE__, __LINE__, LIBRARYREQ);
+    // create statically-allocated space for scheduler to run in
     getcontext(scheduler_context);
     scheduler_context->uc_stack.ss_size = STACKSIZE;
     scheduler_context->uc_stack.ss_sp = sched_stack_ptr_;
