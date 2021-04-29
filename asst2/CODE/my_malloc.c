@@ -71,6 +71,7 @@ void initialize_pages() {
 	}
 }
 
+//TODO: update num_pages in phase c
 void* myallocate(size_t size, char* file, int line, int threadreq){
 	enter_scheduler(&timer_pause_dump);
 	
