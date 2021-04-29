@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <math.h>
 #include "my_scheduler.h"
+#include "my_malloc.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
   assert(queue_num < NUM_QUEUES);
@@ -17,9 +18,8 @@ void exit_scheduler(struct itimerspec* ovalue) {
 }
 
 void schedule(int sig, siginfo_t* info, void* ucontext) {
-   if (prev_done != NULL) {
+  if (prev_done != NULL) {
     mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
-//     free(prev_done);
     prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);

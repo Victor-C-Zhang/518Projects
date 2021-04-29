@@ -40,7 +40,8 @@ int pg_index(pagedata* curr) {
 	return (curr->p_ind & 0x3fff);
 }
 
-void pg_write_pagedata(pagedata* curr, uint32_t pid, int occ, int overf, unsigned short ind, unsigned short len) {
+void pg_write_pagedata(pagedata* curr, my_pthread_t pid, int occ, int overf, unsigned
+short ind, unsigned short len) {
   curr->pid = pid;
   curr->p_ind = (ind & 0x7fff) | (occ << 15) | (overf << 14);
   curr->length = len;

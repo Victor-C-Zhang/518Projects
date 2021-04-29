@@ -20,12 +20,11 @@
 #include <stdint.h>
 #include <signal.h>
 #include <time.h>
-#include "datastructs_t.h"
 
 /***********************************
 * STRUCT DEFINITIONS 
 ***********************************/
-typedef uint32_t my_pthread_t;
+typedef pid_t my_pthread_t;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {

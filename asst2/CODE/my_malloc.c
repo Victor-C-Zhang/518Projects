@@ -80,16 +80,26 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		error_message("Cannot malloc 0 or negative bytes", file, line);
 		return NULL;
 	}
-	
+
 	my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	if (firstMalloc == 1) { // first time using malloc
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGESIZE);
 		num_segments = page_size / SEGMENTSIZE;
-		num_pages = MEMSIZE / ( page_size + sizeof(pagedata) + sizeof(ht_entry) );
+		num_pages = (MEMSIZE - 1) / ( page_size + sizeof(pagedata) + sizeof
+		      (ht_entry) );
 		my_pthread_t pt_space = num_pages*sizeof(pagedata);
 		pt_space = (pt_space % page_size) ? pt_space/page_size + 1 : pt_space/page_size;
-		mem_space = myblock + pt_space*page_size;
+
+		// init tcbs for main, scheduler
+		scheduler_tcb = (tcb*)(myblock + pt_space * page_size);
+		scheduler_tcb->first_page_index = UINT16_MAX;
+		scheduler_tcb->last_page_index = -1;
+		main_tcb = scheduler_tcb + 1;
+		main_tcb->first_page_index = UINT16_MAX;
+		main_tcb->last_page_index = -1;
+
+		mem_space = myblock + (pt_space + 1)*page_size;
 		ht_space = (ht_entry*) (mem_space + page_size*num_pages);
 		createTable(ht_space);
 		initialize_pages();
@@ -125,7 +135,7 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		error_message("This pointer was not malloc'd!", file, line);
 		exit_scheduler(&timer_pause_dump);
 		return;
-	}	
+	}
 	my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	
 //	printf("free call %s:%d %p\n", file, line, p);

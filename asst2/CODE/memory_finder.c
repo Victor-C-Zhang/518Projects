@@ -44,20 +44,23 @@ void swap(int indexA, int indexB){
 int find_contig_space(my_pthread_t curr_id, int* free_page, int* num_free_pages, int* first_page_index, int* last_page_index){
 	*free_page = -1;
 	*num_free_pages = 0;
-	*first_page_index = INT16_MAX;
-	*last_page_index = -1;
+	// change
+	if (curr_id == 0) { //scheduler
+	  *first_page_index = scheduler_tcb->first_page_index;
+	  *last_page_index = scheduler_tcb->last_page_index;
+	} else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
+	  *first_page_index = main_tcb->first_page_index;
+	  *last_page_index = main_tcb->last_page_index;
+	} else {
+    *first_page_index = ((tcb*)get(all_threads,curr_id))->first_page_index;
+    *last_page_index = ((tcb*)get(all_threads,curr_id))->last_page_index;
+  }
 	for (int index = 0; index < num_pages; index++) {
 		pagedata* pdata = (pagedata*)myblock + index;
 //		printf("find_cont page[%d], isocc %d currid %d\n", index, pg_block_occupied(pdata), pdata->pid);
 		if ( !pg_block_occupied(pdata) ) { //free page
 			if (*free_page == -1) *free_page = index;
 			*num_free_pages=*num_free_pages+1;
-		}
-		else if (pdata->pid == curr_id) { //occupied page, so see if it belongs to current process
-			int ind_acc_proc = pg_index(pdata); //index of current page according to process...
-
-			*last_page_index = (ind_acc_proc > *last_page_index) ? ind_acc_proc : *last_page_index;
-			*first_page_index = (ind_acc_proc < *first_page_index) ? ind_acc_proc : *first_page_index;
 		}
 	}
 }
@@ -84,7 +87,18 @@ void* page_allocate(size_t size, my_pthread_t curr_id, int free_page, int page_i
 	int swap_array_index = 0; //counter for array of pages to swap
 	uint8_t ovf_len = (size % page_size) / SEGMENTSIZE + 1; //segment count in the last segment of contiguous page allocation
 	//there are no pages allocated for the process yet, so process will think its contiguous memory starts at the first free page
-	if (page_index == -1) process_index = free_page;
+	if (page_index == -1) {
+	  process_index = free_page;
+	  tcb* thread_tcb;
+	  if (curr_id == 0) { // scheduler
+	    thread_tcb = scheduler_tcb;
+	  } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
+	    thread_tcb = main_tcb;
+	  } else {
+	    thread_tcb = get(all_threads,curr_id);
+	  }
+	  thread_tcb->first_page_index = thread_tcb->last_page_index = free_page;
+	}
 	//if there is memory allocated for the process, check if the page_index's last segment is free
 	else {
 		if (seg_index != -1){
@@ -98,6 +112,9 @@ void* page_allocate(size_t size, my_pthread_t curr_id, int free_page, int page_i
 				ret_seg_index = seg_index;
 				size -= (num_segments-seg_index)*SEGMENTSIZE;
 				ovf_len = (size % page_size)/SEGMENTSIZE +1;
+
+				// there's something wrong with this arithmetic but I don't have the
+				// energy to figure this out right now
 				pages_alloc = (size / page_size)+1;
 				dm_write_metadata(curr,ovf_len,OCC,LAST);
 				pagedata* pdata = (pagedata*)myblock+actual_index;
@@ -127,6 +144,19 @@ void* page_allocate(size_t size, my_pthread_t curr_id, int free_page, int page_i
 		if ( !pg_block_occupied(pdata) || pdata->pid == curr_id ) {
 			//add the actual index and where process thinks the page is to HT
 			ht_put(ht_space, curr_id, (ht_val)process_index, actual_index);
+			// extend first_index, last_index if necessary
+      tcb* thread_tcb;
+      if (curr_id == 0) { // scheduler
+        thread_tcb = scheduler_tcb;
+      } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
+        thread_tcb = main_tcb;
+      } else {
+        thread_tcb = get(all_threads,curr_id);
+      }
+      if (thread_tcb->first_page_index > process_index)
+        thread_tcb->first_page_index = process_index;
+      if (thread_tcb->last_page_index < process_index)
+        thread_tcb->last_page_index = process_index;
 			//if last page to alloc, set metadata for the free segment following the overflow segment
 			if (pages_alloc == 1 && ovf_len != num_segments && swap_array_index != 0){
 				int curr_seg = dm_block_size(start);
@@ -275,6 +305,13 @@ void free_process_pages(my_pthread_t curr_id, int first_page_index, int last_pag
 			if (seg_index == 0 && !dm_block_occupied(curr) && is_last) {
 				if (free_start == first_page_index){
 					pg_write_pagedata(pdata, curr_id, NOT_OCC, NOT_OVF, process_index, 1);
+          if (curr_id == 0) { //scheduler
+            scheduler_tcb->first_page_index = process_index + 1;
+          } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
+            main_tcb->first_page_index = process_index + 1;
+          } else {
+            ((tcb*)get(all_threads,curr_id))->first_page_index = process_index + 1;
+          }
 					ht_delete(ht_space, curr_id, process_index);
 				}
 				else if (free_start == -1) {
@@ -293,6 +330,13 @@ void free_process_pages(my_pthread_t curr_id, int first_page_index, int last_pag
 	}
 
 	if (free_start != -1 && free_start != first_page_index) {
+    if (curr_id == 0) { //scheduler
+      scheduler_tcb->last_page_index = free_start - 1;
+    } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
+      main_tcb->last_page_index = free_start - 1;
+    } else {
+      ((tcb*)get(all_threads,curr_id))->last_page_index = free_start - 1;
+    }
 		for (process_index = free_start; process_index <= last_page_index; process_index++){
 			ht_val actual_index = (uint16_t) ht_get(ht_space,curr_id,(ht_key)(process_index));
 			pagedata* pdata = (pagedata*)myblock+actual_index;
@@ -301,6 +345,26 @@ void free_process_pages(my_pthread_t curr_id, int first_page_index, int last_pag
 			ht_delete(ht_space, curr_id, process_index);
 		}
 	}
+
+	// if we've released all alloc-ed memory, update first/last indices to
+	// reflect this
+  if (curr_id == 0) { //scheduler
+    if (scheduler_tcb->first_page_index > scheduler_tcb->last_page_index) {
+      scheduler_tcb->first_page_index = UINT16_MAX;
+      scheduler_tcb->last_page_index = -1;
+    }
+  } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
+    if (main_tcb->first_page_index > main_tcb->last_page_index) {
+      main_tcb->first_page_index = UINT16_MAX;
+      main_tcb->last_page_index = -1;
+    }
+  } else {
+    tcb* thread = (tcb*)get(all_threads,curr_id);
+    if (thread->first_page_index > thread->last_page_index) {
+      thread->first_page_index = UINT16_MAX;
+      thread->last_page_index = -1;
+    }
+  }
 }
 
 /**
