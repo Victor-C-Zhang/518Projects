@@ -12,8 +12,7 @@
 #include "global_vals.h"
 
 static my_pthread_t tid = 0;
-int initScheduler = 1; // if 1, initialize scheduler
-
+int initScheduler = 1;
 // wraps user-provided func to ensure pthread_exit is called
 void thread_func_wrapper(void* (*function)(void*), void* arg) {
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);

@@ -80,8 +80,11 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		error_message("Cannot malloc 0 or negative bytes", file, line);
 		return NULL;
 	}
+//  if (initScheduler && threadreq != LIBRARYREQ) printf("Didn't init scheduler\n");
+	my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : (
+        (initScheduler) ? 2 : ((tcb*) get_head(ready_q[curr_prio]))->id
+  );
 
-	my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	if (firstMalloc == 1) { // first time using malloc
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGESIZE);
@@ -136,7 +139,9 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		exit_scheduler(&timer_pause_dump);
 		return;
 	}
-	my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
+  my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : (
+        (initScheduler) ? 2 : ((tcb*) get_head(ready_q[curr_prio]))->id
+  );
 	
 //	printf("free call %s:%d %p\n", file, line, p);
 	int d = free_ptr(p, curr_id);

@@ -32,6 +32,7 @@ typedef struct threadControlBlock {
   int last_page_index; // index in virtual memory of last occupied page
 } tcb;
 
+int initScheduler; // if 1, initialize scheduler
 timer_t sig_timer;
 static struct itimerspec timer_25ms = {
       .it_interval = {

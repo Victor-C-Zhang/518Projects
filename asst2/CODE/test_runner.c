@@ -15,6 +15,9 @@ int main() {
 //  TEST_malloc_thread_create_join();
 //  TEST_malloc_directmapping();
 
+  int throwaway = -1000;
+  TEST_thread_func_swap1(&throwaway);
+
   printf("swap1\n");
   TEST_thread_swap(TEST_thread_func_swap1);
   printf("swap2\n");
