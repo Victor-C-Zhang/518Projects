@@ -3,7 +3,9 @@
 #include <assert.h>
 #include "datastructs_t.h"
 #include "my_malloc.h"
-/** linked list functions **/ 
+#include "my_scheduler.h"
+
+/** linked list functions **/
 
 void print_list(linked_list_t* list, void (*fptr)(void *)) {
   if (list == NULL) {return;}
@@ -169,7 +171,11 @@ void free_map(hashmap* h) {
     while (node) {
       hash_node* next = node->next;
       // context, linkedlists free'd earlier
-      mydeallocate(node->value, __FILE__, __LINE__, LIBRARYREQ); //free tcb
+
+      // free tcb if not scheduler, main
+      if (((tcb*)node->value)->id != 0 && ((tcb*)node->value)->id != 2) {
+        mydeallocate(node->value, __FILE__, __LINE__, LIBRARYREQ);
+      }
       mydeallocate(node, __FILE__, __LINE__, LIBRARYREQ);
       node = next;
     }
@@ -180,7 +186,7 @@ void free_map(hashmap* h) {
   return;
 }
 
-void* put(hashmap* h, uint32_t key, void* value){
+void* put(hashmap* h, my_pthread_t key, void* value){
   if (h == NULL) {return NULL;}
   unsigned int index = hash(h->num_buckets, key);
   hash_node* node = NULL;
@@ -203,7 +209,7 @@ void* put(hashmap* h, uint32_t key, void* value){
   return node->value;
 }
 
-void* get(hashmap* h, uint32_t key){
+void* get(hashmap* h, my_pthread_t key){
   if (h == NULL) {return NULL;}
   unsigned int index = hash(h->num_buckets, key);
   hash_node* node;

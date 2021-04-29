@@ -8,10 +8,11 @@
 
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
+#include "my_malloc.h"
+#include "global_vals.h"
 
-static uint32_t tid = 0;
-static int initScheduler = 1; //if 1, initialize scheduler
-
+static my_pthread_t tid = 0;
+int initScheduler = 1;
 // wraps user-provided func to ensure pthread_exit is called
 void thread_func_wrapper(void* (*function)(void*), void* arg) {
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
@@ -29,11 +30,12 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   new_thread->acq_locks = 0;
   new_thread->last_run = cycles_run;
   new_thread->waited_on = create_list();
+  new_thread->first_page_index = UINT16_MAX;
+  new_thread->last_page_index = -1;
 
   getcontext(&new_thread->context);
   new_thread->context.uc_stack.ss_size = STACKSIZE;
-//  new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
-  new_thread->context.uc_stack.ss_sp = malloc(STACKSIZE);
+  new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
   sigemptyset(&new_thread->context.uc_sigmask);
   makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
 
@@ -51,25 +53,23 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     all_threads = create_map();
     should_maintain = ONE_SECOND/QUANTUM;
     prev_done = NULL;
-    // create tcb for current thread
-    tcb* curr_thread = myallocate(sizeof(tcb), __FILE__, __LINE__, LIBRARYREQ);
-
-    curr_thread->id = ++tid; //no thread has 0 tid
-    getcontext(&curr_thread->context);
-    curr_thread->ret_val = NULL;
-    curr_thread->status = READY;
-    curr_thread->priority = 0;
-    curr_thread->cycles_left = 0;
-    curr_thread->acq_locks = 0;
-    curr_thread->waited_on = create_list();
-    put(all_threads, curr_thread->id, curr_thread);
+    // populate tcb for current thread
+    main_tcb->id = ++tid; //no thread has 0 tid
+    getcontext(&main_tcb->context);
+    main_tcb->ret_val = NULL;
+    main_tcb->status = READY;
+    main_tcb->priority = 0;
+    main_tcb->cycles_left = 0;
+    main_tcb->acq_locks = 0;
+    main_tcb->waited_on = create_list();
+    put(all_threads, main_tcb->id, main_tcb);
     put(all_threads, new_thread->id, new_thread);
 
     *thread = new_thread->id;
     // add new thread to ready queue
     insert_head(ready_q[0], new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
-    insert_head(ready_q[0], curr_thread);
+    insert_head(ready_q[0], main_tcb);
 
     // create timer
     timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, &sig_timer);
@@ -175,7 +175,7 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
           while (ptr != NULL) {
             tcb *thread = (tcb *) ptr->data;
             if (thread == holding_thread) {
-              insert_ready_q(thread, curr_thread->priority);
+		insert_ready_q(thread, curr_thread->priority);
               if (ptr == ready_q[prio]->head) {
                 ready_q[prio]->head = ptr->next;
               } else {

@@ -5,10 +5,9 @@
 #include <time.h>
 #include "datastructs_t.h"
 #include "my_pthread_t.h"
-#include "my_malloc.h" 
+#include "open_address_ht.h"
 
 #define STACKSIZE 32768
-//#define STACKSIZE 1024
 #define QUANTUM 25000000
 #define ONE_SECOND 1000000000
 #define NUM_QUEUES 5
@@ -19,7 +18,7 @@ typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
 
 /* tcb struct definition */
 typedef struct threadControlBlock {
-  uint32_t id;
+  my_pthread_t id;
   ucontext_t context;
   void* ret_val;
   thread_status status;
@@ -29,8 +28,11 @@ typedef struct threadControlBlock {
   int acq_locks; // how many locks the thread currently has
   uint64_t last_run; // cycle during which the thread was last run
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
+  int first_page_index; // index in virtual memory of the first occupied page
+  int last_page_index; // index in virtual memory of last occupied page
 } tcb;
 
+int initScheduler; // if 1, initialize scheduler
 timer_t sig_timer;
 static struct itimerspec timer_25ms = {
       .it_interval = {
