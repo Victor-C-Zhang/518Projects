@@ -2,17 +2,41 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 #include "my_malloc.h"
 #include "global_vals.h"
 #include "direct_mapping.h"
+#include "open_address_ht.h"
+#include "temp_swap.h"
 
 static char* myblock;
 static int firstMalloc = 1;
 struct sigaction segh;
 
 static void handler(int sig, siginfo_t* si, void* unused) {
-	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
-	exit(0);
+  // can only access memory in block
+  if ((char*)si->si_addr < mem_space || (char*)si->si_addr >= (mem_space +
+  page_size*num_pages)) {
+    printf("Illegal address: 0x%lx\n",(long) si->si_addr);
+    exit(1);
+  }
+  // verify thread owns the requested page
+  int pagenum = ((char*)si->si_addr - mem_space)/page_size;
+  ht_val actual_loc = ht_get(ht_space, ((tcb*)get_head(ready_q[curr_prio]))->id,
+                             pagenum);
+  if (actual_loc == HT_NULL_VAL) {
+    printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
+    exit(1);
+  }
+  // find requested page
+  if (actual_loc == pagenum) { // (could be the page itself)
+    mprotect(mem_space + page_size*pagenum, page_size, PROT_READ | PROT_WRITE);
+  } else { // otherwise swap and update protections
+    mprotect(mem_space + page_size*pagenum, page_size, PROT_READ | PROT_WRITE);
+    mprotect(mem_space + page_size*actual_loc, page_size, PROT_READ | PROT_WRITE);
+    swap(pagenum,actual_loc);
+    mprotect(mem_space + page_size*actual_loc, page_size, PROT_READ | PROT_WRITE);
+  }
 }
 
 //prints any error messages followed by memory 
