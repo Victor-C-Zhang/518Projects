@@ -10,8 +10,7 @@ INSTALLDIR  = ./build
 .PHONY: all
 all: $(OUTPUTFILE)
 
-$(OUTPUTFILE): datastructs.o my_scheduler.o my_pthread.o my_malloc.o test_runner.o open_address_ht.o direct_mapping.o
-
+$(OUTPUTFILE): datastructs.o my_scheduler.o my_pthread.o my_malloc.o test_runner.o open_address_ht.o direct_mapping.o memory_finder.o
 	ar ru $@ $^
 	ranlib $@
 
@@ -27,7 +26,7 @@ clean:
 
 tests: datastructs.o my_scheduler.o my_pthread.o pthread_test.o
 	$(CC) -g -o $@ $^ -lrt -lm
-malloc: datastructs.o my_scheduler.o my_pthread.o malloc_test.o my_malloc.o test_runner.o open_address_ht.o direct_mapping.o
+malloc: datastructs.o my_scheduler.o my_pthread.o malloc_test.o my_malloc.o test_runner.o open_address_ht.o direct_mapping.o memory_finder.o
 	$(CC) -g -o $@ $^ -lrt -lm
 
 # include dependencies
@@ -40,3 +39,4 @@ malloc_test.o: my_malloc.h
 test_runner.o: test_runner.h
 open_address_ht.o: open_address_ht.h
 direct_mapping.o: direct_mapping.h
+memory_finder.o: memory_finder.h
