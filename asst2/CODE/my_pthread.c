@@ -8,8 +8,9 @@
 
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
+#include "global_vals.h"
 
-static uint32_t tid = 0;
+static my_pthread_t tid = 0;
 static int initScheduler = 1; //if 1, initialize scheduler
 
 // wraps user-provided func to ensure pthread_exit is called
@@ -88,9 +89,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     scheduler_context = myallocate(sizeof(ucontext_t), __FILE__, __LINE__, LIBRARYREQ);
     getcontext(scheduler_context);
     scheduler_context->uc_stack.ss_size = STACKSIZE;
-//    scheduler_context->uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
-//    TODO: point to pre-allocated stack pages
-    scheduler_context->uc_stack.ss_sp = _sched_stack_ptr;
+    scheduler_context->uc_stack.ss_sp = sched_stack_ptr_;
     sigemptyset(&scheduler_context->uc_sigmask);
     sigaddset(&scheduler_context->uc_sigmask, SIGALRM); // ignore scheduling calls within scheduler
     makecontext(scheduler_context, (void (*)(void)) schedule, 0);

@@ -10,8 +10,6 @@
 //#define malloc(x) myallocate(x, __FILE__, __LINE__, THREADREQ)
 //#define free(x) mydeallocate(x, __FILE__, __LINE__, THREADREQ)
 
-void* _sched_stack_ptr;
-
 struct _pagedata_ {
 	uint32_t pid; //id of process using page
 	unsigned short p_ind; //where process thinks data is; left most bit == 1, is occupied, else free

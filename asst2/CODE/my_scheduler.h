@@ -19,7 +19,7 @@ typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
 
 /* tcb struct definition */
 typedef struct threadControlBlock {
-  uint32_t id;
+  my_pthread_t id;
   ucontext_t context;
   void* ret_val;
   thread_status status;
@@ -94,6 +94,13 @@ void run_maintenance();
  * @param queue_num the queue to insert to. 0 is highest priority.
  */
 void insert_ready_q(tcb* thread, int queue_num);
+
+/**
+ * Swap in the relevant pages for the stack of the "new" process.
+ * The new process stack will be unprotected. all other pages will retain
+ * their protection status.
+ */
+int swap_stack(my_pthread_t new_id);
 
 /**
  * Utility function to free data structures used by the scheduler. Called during

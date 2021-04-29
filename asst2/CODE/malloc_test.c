@@ -8,7 +8,7 @@
 
 typedef struct params {
 //  pthread_mutex_t* lock;
-  uint32_t* id; 
+  my_pthread_t* id;
 } params;
 
 void* malloc_thread_func(void* ignored) {

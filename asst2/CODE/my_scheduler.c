@@ -1,6 +1,11 @@
 #include <assert.h>
 #include <math.h>
+#include <sys/mman.h>
+
 #include "my_scheduler.h"
+#include "global_vals.h"
+#include "open_address_ht.h"
+#include "temp_swap.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
   assert(queue_num < NUM_QUEUES);
@@ -64,11 +69,13 @@ void schedule() {
   }
 
   struct ucontext_t *new_context = NULL;
+  my_pthread_t new_id = -1;
   // pick highest priority task to run
   for (int i = 0; i < NUM_QUEUES; ++i) {
     if (!isEmpty(ready_q[i])) {
       curr_prio = i;
       new_context = &((tcb *) get_head(ready_q[i]))->context;
+      new_id = ((tcb *) get_head(ready_q[i]))->id;
       break;
     }
   }
@@ -79,6 +86,10 @@ void schedule() {
   if (new_context == NULL) { // teardown and cleanup
     exit(0);
   }
+
+  // protect all data pages and swap stack of new thread
+  mprotect(mem_space, page_size*num_pages, PROT_NONE);
+  swap_stack(new_id);
   swapcontext(scheduler_context, new_context);
   goto START_SCHED;
 }
@@ -135,4 +146,16 @@ void free_data() {
     free_list(ready_q[i]);
   }
   timer_delete(&sig_timer);
+}
+
+int swap_stack(my_pthread_t new_id) {
+  for (int i = 0; i < stack_page_size; ++i) {
+    int new_loc = ht_get(ht_space, new_id, i);
+    // unprotect relevant stack pages
+    mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
+    mprotect(mem_space + page_size*new_loc, page_size, PROT_READ | PROT_WRITE);
+    swap(i,new_loc);
+    // protect old stack page
+    mprotect(mem_space + page_size*new_loc, page_size, PROT_NONE);
+  }
 }

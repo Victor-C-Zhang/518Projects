@@ -9,10 +9,6 @@
 static char* myblock;
 static int firstMalloc = 1;
 struct sigaction segh;
-size_t page_size;  //size of page given to each process
-int num_pages; //number of pages available for user
-int num_segments; //number of segments within a page available for allocation 
-char* mem_space; //user space, after page table
 
 static void handler(int sig, siginfo_t* si, void* unused) {
 	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
@@ -153,15 +149,15 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGESIZE);
 		num_segments = page_size / SEGMENTSIZE;
-    uint32_t sched_stack_space = (STACKSIZE % page_size) ?
+    stack_page_size = (STACKSIZE % page_size) ?
                                  STACKSIZE/page_size + 1 : STACKSIZE/page_size;
-		num_pages = (MEMSIZE - sched_stack_space*page_size) / ( page_size + sizeof(pagedata));
+		num_pages = (MEMSIZE - stack_page_size * page_size) / (page_size + sizeof(pagedata));
 		uint32_t pt_space = num_pages*sizeof(pagedata);
 		pt_space = (pt_space % page_size) ? pt_space/page_size + 1 : pt_space/page_size;
 
 		// leave space at the beginning for (inverted) PT and scheduler stack
-		_sched_stack_ptr = myblock + pt_space*page_size;
-		mem_space = myblock + (pt_space + sched_stack_space)*page_size;
+		sched_stack_ptr_ = myblock + pt_space * page_size;
+		mem_space = myblock + (pt_space + stack_page_size) * page_size;
 
 		initialize_pages();
 		memset(&segh, 0, sizeof(struct sigaction));
