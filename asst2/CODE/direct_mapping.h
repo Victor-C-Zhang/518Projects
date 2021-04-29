@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "my_pthread_t.h"
 
 #define NOT_OCC 0
 #define OCC 1
@@ -45,7 +46,7 @@ struct metadata_ {
  * 	      in the current page span.
  */
 struct _pagedata_ {
-	uint32_t pid;
+	my_pthread_t pid;
 	unsigned short p_ind;
 	unsigned short length;
 } typedef pagedata;
@@ -94,6 +95,6 @@ int pg_index(pagedata* curr);
  * @param ind       index of where the process thinks this page is located.
  * @param len       the number of contiguous pages allocations in the curr span.
  */
-void pg_write_pagedata(pagedata* curr, uint32_t pid, int occ, int overf, unsigned short ind, unsigned short len);
+void pg_write_pagedata(pagedata* curr, my_pthread_t pid, int occ, int overf, unsigned short ind, unsigned short len);
 
 #endif //ASST2_DIRECT_MAPPING_H
