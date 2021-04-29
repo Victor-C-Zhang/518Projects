@@ -6,7 +6,7 @@
 #include "memory_finder.h"
 #include "direct_mapping.h"
 #include "open_address_ht.h"
-
+#include "my_pthread_t.h"
 /**
  * Swaps data from page at indexA to page at indexB, updates page table and hash table to match the change
  * @param indexA		first page index to be swapped
@@ -41,7 +41,7 @@ void swap(int indexA, int indexB){
  * @param first_page_index	pointer to store the first page index according to process' view
  * @param last_page_index	pointer to store the last page index according to process' view
  */
-int find_contig_space(uint32_t curr_id, int* free_page, int* num_free_pages, int* first_page_index, int* last_page_index){
+int find_contig_space(my_pthread_t curr_id, int* free_page, int* num_free_pages, int* first_page_index, int* last_page_index){
 	*free_page = -1;
 	*num_free_pages = 0;
 	*first_page_index = INT16_MAX;
@@ -70,7 +70,7 @@ int find_contig_space(uint32_t curr_id, int* free_page, int* num_free_pages, int
  * @param page_index		index of process' page from which the allocation will start
  * @param seg_index		index of page's segment from which the allocation will start
  */
-void* page_allocate(size_t size, uint32_t curr_id, int free_page, int page_index, int seg_index) {
+void* page_allocate(size_t size, my_pthread_t curr_id, int free_page, int page_index, int seg_index) {
 	int pages_alloc = (size / page_size) + 1;
 
 	if ( (page_index != -1 && page_index+pages_alloc >= num_pages) ||
@@ -170,7 +170,7 @@ void* page_allocate(size_t size, uint32_t curr_id, int free_page, int page_index
  * @param size			size of malloc request in bytes
  * @param curr_id		process making request
  */
-void* segment_allocate(size_t size, uint32_t curr_id){
+void* segment_allocate(size_t size, my_pthread_t curr_id){
 	int first_page_index;
 	int last_page_index;
 	int free_page;
@@ -254,7 +254,7 @@ void* segment_allocate(size_t size, uint32_t curr_id){
  * @param first_page_index	index of first page in process' view of contiguous memory space
  * @param last_page_index	index of last page in process' view of contiguous memory space
  */
-void free_process_pages(uint32_t curr_id, int first_page_index, int last_page_index){
+void free_process_pages(my_pthread_t curr_id, int first_page_index, int last_page_index){
 	int free_start = first_page_index;
 	int process_index = first_page_index;
 	int ovf_len = 0;
@@ -335,7 +335,7 @@ void free_cont_pages(metadata* curr, pagedata* pdata) {
  * @param p			pointer to free
  * @param curr_id		process owning the pointer
  */
-int free_ptr(void* p, uint32_t curr_id) {
+int free_ptr(void* p, my_pthread_t curr_id) {
 	//find the process' contiguous memory space
 	int first_page_index;
 	int last_page_index;

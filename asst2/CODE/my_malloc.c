@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "my_malloc.h"
 #include "global_vals.h"
+#include "my_pthread_t.h"
 #include "direct_mapping.h"
 #include "open_address_ht.h"
 #include "memory_finder.h"
@@ -79,13 +80,13 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		return NULL;
 	}
 	
-	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
+	my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	if (firstMalloc == 1) { // first time using malloc
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
 		page_size = sysconf( _SC_PAGESIZE);
 		num_segments = page_size / SEGMENTSIZE;
 		num_pages = MEMSIZE / ( page_size + sizeof(pagedata) + sizeof(ht_entry) );
-		uint32_t pt_space = num_pages*sizeof(pagedata);
+		my_pthread_t pt_space = num_pages*sizeof(pagedata);
 		pt_space = (pt_space % page_size) ? pt_space/page_size + 1 : pt_space/page_size;
 		mem_space = myblock + pt_space*page_size;
 		ht_space = (ht_entry*) (mem_space + page_size*num_pages);
@@ -124,7 +125,7 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
 		exit_scheduler(&timer_pause_dump);
 		return;
 	}	
-	uint32_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
+	my_pthread_t curr_id = (threadreq == LIBRARYREQ) ? 0 : ( (tcb*) get_head(ready_q[curr_prio]) )->id;
 	
 //	printf("free call %s:%d %p\n", file, line, p);
 	int d = free_ptr(p, curr_id);
