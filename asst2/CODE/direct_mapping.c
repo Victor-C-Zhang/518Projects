@@ -27,3 +27,22 @@ void dm_allocate_block(metadata* curr, size_t size) {
     dm_write_metadata(curr, size, 1, is_last_segment);
   }
 }
+
+int pg_block_occupied(pagedata* curr) {
+	return  (curr->p_ind & 0x8000) >> 15;
+}
+
+int pg_is_overflow(pagedata* curr) {
+	return (curr->p_ind & 0x4000) >> 14;
+}
+
+int pg_index(pagedata* curr) {
+	return (curr->p_ind & 0x3fff);
+}
+
+void pg_write_pagedata(pagedata* curr, my_pthread_t pid, int occ, int overf, unsigned
+short ind, unsigned short len) {
+  curr->pid = pid;
+  curr->p_ind = (ind & 0x7fff) | (occ << 15) | (overf << 14);
+  curr->length = len;
+}

@@ -16,8 +16,9 @@ add_executable(tests
     my_pthread.c
     my_malloc.c
     open_address_ht.c
-    direct_mapping.c direct_mapping.h)
+    direct_mapping.c direct_mapping.h
+    memory_finder.h memory_finder.c)
 target_link_libraries(tests -lrt -lm)
 
-add_executable(bchmk datastructs.c my_scheduler.c my_pthread.c data1.c my_malloc.c open_address_ht.c open_address_ht.h)
+add_executable(bchmk datastructs.c my_scheduler.c my_pthread.c data1.c my_malloc.c open_address_ht.c open_address_ht.h memory_finder.h memory_finder.c)
 target_link_libraries(bchmk -lrt -lm)

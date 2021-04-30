@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <stdint.h>
+#include "my_pthread_t.h"
 
 #define HASHSIZE 256 //must be a power of 2!
 
@@ -50,7 +51,7 @@ void free_list(linked_list_t* list);
 
 hashmap* create_map();
 void free_map(hashmap* h);
-void* put(hashmap* h, uint32_t key, void* value);
-void* get(hashmap* h, uint32_t key);
+void* put(hashmap* h, my_pthread_t key, void* value);
+void* get(hashmap* h, my_pthread_t key);
 
 #endif

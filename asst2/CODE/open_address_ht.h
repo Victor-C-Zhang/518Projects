@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
+#include <sys/types.h>
 /*
  * Table entries are represented in one 64-bit integer:
  * |----------pid----------|xxxxxkey|xxxval|

@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <signal.h>
 #include <time.h>
-#include "datastructs_t.h"
 
 /***********************************
 * STRUCT DEFINITIONS 

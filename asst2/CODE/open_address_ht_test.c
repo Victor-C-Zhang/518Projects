@@ -16,7 +16,7 @@ void TEST_create() {
   }
 }
 
-void swap(ht_entry* first, ht_entry* second) {
+void ht_test_swap(ht_entry* first, ht_entry* second) {
   first->pid ^= second->pid;
   second->pid ^= first->pid;
   first->pid ^= second->pid;
@@ -41,7 +41,7 @@ void TEST_get_put_delete() {
   for (int i = HT_SIZE/2; i > 1; --i) {
     srand(14);
     int randnum = rand()%i;
-    swap(&inserts[0],&inserts[randnum]);
+    ht_test_swap(&inserts[0],&inserts[randnum]);
   }
   for (int i = 0; i < HT_SIZE/2; ++i) {
     ht_put(ht, inserts[i].pid, inserts[i].key, inserts[i].val);

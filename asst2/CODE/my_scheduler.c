@@ -6,6 +6,8 @@
 #include "global_vals.h"
 #include "open_address_ht.h"
 #include "temp_swap.h"
+#include "my_malloc.h"
+#include "direct_mapping.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
   assert(queue_num < NUM_QUEUES);
@@ -14,7 +16,7 @@ void insert_ready_q(tcb* thread, int queue_num) {
 
 void enter_scheduler(struct itimerspec* ovalue) {
   timer_settime(&sig_timer,0,&timer_stopper,ovalue);
-  for (int i = 0; i < num_pages; ++i) {
+  for (int i = stack_page_size; i < num_pages; ++i) {
     if (((pagedata*)myblock)[i].pid == 0)
       mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
   }
@@ -22,7 +24,7 @@ void enter_scheduler(struct itimerspec* ovalue) {
 }
 
 void exit_scheduler(struct itimerspec* ovalue) {
-  for (int i = 0; i < num_pages; ++i) {
+  for (int i = stack_page_size; i < num_pages; ++i) {
     if (((pagedata*)myblock)[i].pid == 0)
       mprotect(mem_space + page_size*i, page_size, PROT_NONE);
   }
@@ -37,8 +39,7 @@ void alrm_handler(int sig, siginfo_t* info, void* ucontext) {
 void schedule() {
   START_SCHED:
   if (prev_done != NULL) {
-//    mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-    free(prev_done);
+    mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
     prev_done = NULL;
   }
   tcb *old_thread = (tcb *) delete_head(ready_q[curr_prio]);
@@ -145,8 +146,8 @@ void run_maintenance() {
 
 void free_data() {
   if (prev_done != NULL) {
-  //  mydeallocate(prev_done->uc_stack.ss_sp, __FILE__, __LINE__, LIBRARYREQ);
-    free(prev_done);
+//     free(prev_done);
+   mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
   }
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);

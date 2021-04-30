@@ -6,12 +6,14 @@
 // username of iLab: bam270
 // iLab Server: pwd
 
+#include <sys/mman.h>
 #include "my_pthread_t.h"
 #include "my_scheduler.h"
+#include "my_malloc.h"
 #include "global_vals.h"
 
 static my_pthread_t tid = 0;
-static int initScheduler = 1; //if 1, initialize scheduler
+int initScheduler = 1;
 
 // wraps user-provided func to ensure pthread_exit is called
 void thread_func_wrapper(void* (*function)(void*), void* arg) {
@@ -20,6 +22,8 @@ void thread_func_wrapper(void* (*function)(void*), void* arg) {
   my_pthread_exit(curr_thread->ret_val);
 }
 
+// DOES NOT ALLOCATE SPACE FOR STACK OR MAKE CONTEXT! MUST DO SO IN
+// PTHREAD_CREATE
 tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   tcb* new_thread = (tcb*) myallocate(sizeof(tcb), __FILE__, __LINE__, LIBRARYREQ);
   new_thread->id = id;
@@ -30,47 +34,50 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   new_thread->acq_locks = 0;
   new_thread->last_run = cycles_run;
   new_thread->waited_on = create_list();
+  new_thread->first_page_index = UINT16_MAX;
+  new_thread->last_page_index = -1;
 
   getcontext(&new_thread->context);
   new_thread->context.uc_stack.ss_size = STACKSIZE;
-//  new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
-  new_thread->context.uc_stack.ss_sp = malloc(STACKSIZE);
   sigemptyset(&new_thread->context.uc_sigmask);
-  makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
 
   return new_thread;
 }
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
-  tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
   if (initScheduler) { // spin up a new scheduler
     atexit(free_data);
+    // workaround to avoid circular dependencies
+    mprotect(mem_space, page_size*num_pages, PROT_READ | PROT_WRITE);
+
     for (int i = 0; i < NUM_QUEUES; ++i) {
       ready_q[i] = create_list();
     }
     all_threads = create_map();
     should_maintain = ONE_SECOND/QUANTUM;
     prev_done = NULL;
-    // create tcb for current thread
-    tcb* curr_thread = myallocate(sizeof(tcb), __FILE__, __LINE__, LIBRARYREQ);
 
-    curr_thread->id = ++tid; //no thread has 0 tid
-    getcontext(&curr_thread->context);
-    curr_thread->ret_val = NULL;
-    curr_thread->status = READY;
-    curr_thread->priority = 0;
-    curr_thread->cycles_left = 0;
-    curr_thread->acq_locks = 0;
-    curr_thread->waited_on = create_list();
-    put(all_threads, curr_thread->id, curr_thread);
+    tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
     put(all_threads, new_thread->id, new_thread);
+    insert_head(ready_q[0], new_thread);
+    new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, STACKREQ);
+    makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
+
+    // populate tcb for current thread
+    main_tcb->id = ++tid; //no thread has 0 tid
+    getcontext(&main_tcb->context);
+    main_tcb->ret_val = NULL;
+    main_tcb->status = READY;
+    main_tcb->priority = 0;
+    main_tcb->cycles_left = 0;
+    main_tcb->acq_locks = 0;
+    main_tcb->waited_on = create_list();
+    put(all_threads, main_tcb->id, main_tcb);
 
     *thread = new_thread->id;
-    // add new thread to ready queue
-    insert_head(ready_q[0], new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
-    insert_head(ready_q[0], curr_thread);
+    insert_head(ready_q[0], main_tcb);
 
     // create timer
     timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, &sig_timer);
@@ -92,11 +99,22 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     sigemptyset(&scheduler_context->uc_sigmask);
     sigaddset(&scheduler_context->uc_sigmask, SIGALRM); // ignore scheduling calls within scheduler
     makecontext(scheduler_context, (void (*)(void)) schedule, 0);
+
+    // re-protect all pages except stack
+    mprotect(mem_space + stack_page_size, num_pages - stack_page_size,
+             PROT_NONE);
   } else { // no need to init scheduler, can just add thread normally
     enter_scheduler(&timer_pause_dump);
-    insert_ready_q(new_thread,0);
-    *thread = new_thread->id;
+
+    // these statements MUST be executed as a block, in this order
+    /* */
+    tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
     put(all_threads, new_thread->id, new_thread);
+    insert_ready_q(new_thread,0);
+    new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, STACKREQ);
+    makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
+    /* */
+    *thread = new_thread->id;
     exit_scheduler(&timer_pause_dump);
   }
   return 0;
