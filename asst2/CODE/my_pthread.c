@@ -100,11 +100,10 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     sigaddset(&scheduler_context->uc_sigmask, SIGALRM); // ignore scheduling calls within scheduler
     makecontext(scheduler_context, (void (*)(void)) schedule, 0);
 
-    // re-protect all pages except stack
-    mprotect(mem_space + stack_page_size, num_pages - stack_page_size,
-             PROT_NONE);
+    // re-protect all pages
+    mprotect(mem_space, num_pages, PROT_NONE);
   } else { // no need to init scheduler, can just add thread normally
-    enter_scheduler(&timer_pause_dump);
+    enter_scheduler_context(&timer_pause_dump);
 
     // these statements MUST be executed as a block, in this order
     /* */
@@ -115,7 +114,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
     /* */
     *thread = new_thread->id;
-    exit_scheduler(&timer_pause_dump);
+    exit_scheduler_context(&timer_pause_dump);
   }
   return 0;
 }
@@ -123,7 +122,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 
 /* give CPU pocession to other user level thread_blocks voluntarily */
 int my_pthread_yield() {
-  enter_scheduler(&timer_pause_dump);
+  enter_scheduler_context(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->cycles_left = -1; // tell the scheduler the scheduling is caused
   // by yield
@@ -133,7 +132,7 @@ int my_pthread_yield() {
 
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
-  enter_scheduler(&timer_pause_dump);
+  enter_scheduler_context(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->ret_val = value_ptr;
   // notify waiting threads
@@ -152,7 +151,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
   if (tid < thread) {
     return -1;
   }
-  enter_scheduler(&timer_pause_dump);
+  enter_scheduler_context(&timer_pause_dump);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   tcb* t_block = get(all_threads, thread);
   if (t_block == NULL) {
@@ -182,7 +181,7 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-  enter_scheduler(&timer_pause_dump);
+  enter_scheduler_context(&timer_pause_dump);
   while (__atomic_exchange_n(&mutex->locked, 1, __ATOMIC_ACQ_REL)) {
     // hoist priority of mutex
     tcb* curr_thread = (tcb*)get_head(ready_q[curr_prio]);
@@ -239,13 +238,13 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
     // fixed before any other thread runs
   }
   ++curr_thread->acq_locks;
-  exit_scheduler(&timer_pause_dump);
+  exit_scheduler_context(&timer_pause_dump);
   return 0;
 }
 
 /* release the mutex lock */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
-  enter_scheduler(&timer_pause_dump);
+  enter_scheduler_context(&timer_pause_dump);
   mutex->locked = 0;
   tcb* curr_thread = (tcb*)get_head(ready_q[curr_prio]);
   --curr_thread->acq_locks;
@@ -256,7 +255,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
     curr_thread->priority = mutex->holding_thread_priority;
     if (curr_thread->cycles_left < 0) curr_thread->cycles_left = 0;
   }
-  exit_scheduler(&timer_pause_dump);
+  exit_scheduler_context(&timer_pause_dump);
   return 0;
 }
 

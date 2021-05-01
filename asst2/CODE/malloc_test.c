@@ -169,4 +169,3 @@ void TEST_thread_swap( void*(f(void*))) {
     pthread_join(other[i], &ret_val[i]);
   }
 }
-

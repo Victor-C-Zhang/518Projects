@@ -52,19 +52,31 @@ ucontext_t* scheduler_context; // context that only runs the scheduler in a loop
 int curr_prio; // priority of the currently scheduled thread. should usually
 // be 0.
 void* prev_done; // stack pointer of previously done context
-int in_scheduler; // if scheduler is running
+int non_alarm_call; // if scheduler is called explicitly (not through alarm)
+int in_scheduler; // if the scheduler context is running
 uint64_t cycles_run; // number of scheduling cycles run so far
 int should_maintain; // run a maintenance cycle once
 // value is <= 0
 hashmap* all_threads; //all threads accessed by ids
 
 /**
+ * Pauses the alarm counter.
+ * @param ovalue
+ */
+void pause_timer(struct itimerspec* ovalue);
+
+/**
+ * Resumes the alarm counter.
+ * @param ovalue
+ */
+void resume_timer(struct itimerspec* ovalue);
+
+/**
  * Enters scheduler context:
  * Pauses the alarm counter so the "scheduler" can work uninterrupted.
- * Unprotects scheduler-owned memory pages.
  * @param ovalue a pointer to store the current itimerspec in.
  */
-void enter_scheduler(struct itimerspec* ovalue);
+void enter_scheduler_context(struct itimerspec* ovalue);
 
 /**
  * Exits scheduler context:
@@ -74,7 +86,7 @@ void enter_scheduler(struct itimerspec* ovalue);
  * Must be the LAST thing done prior to returning control to user threads.
  * @param ovalue the itimerspec to resume.
  */
-void exit_scheduler(struct itimerspec* ovalue);
+void exit_scheduler_context(struct itimerspec* ovalue);
 
 /**
  * Will only be called via SIGALRM. (No need to set SA mask to ignore duplicate signal)

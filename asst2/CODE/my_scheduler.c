@@ -14,16 +14,25 @@ void insert_ready_q(tcb* thread, int queue_num) {
   insert_tail(ready_q[queue_num], thread);
 }
 
-void enter_scheduler(struct itimerspec* ovalue) {
+void pause_timer(struct itimerspec* ovalue) {
   timer_settime(&sig_timer,0,&timer_stopper,ovalue);
-  for (int i = stack_page_size; i < num_pages; ++i) {
-    if (((pagedata*)myblock)[i].pid == 0)
-      mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
-  }
-  in_scheduler = 1;
 }
 
-void exit_scheduler(struct itimerspec* ovalue) {
+void resume_timer(struct itimerspec* ovalue) {
+  timer_settime(&sig_timer,0,ovalue,NULL);
+}
+
+void enter_scheduler_context(struct itimerspec* ovalue) {
+  timer_settime(&sig_timer,0,&timer_stopper,ovalue);
+//  for (int i = stack_page_size; i < num_pages; ++i) {
+//    if (((pagedata*)myblock)[i].pid == 0)
+//      mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
+//  }
+  in_scheduler = 1;
+  non_alarm_call = 1;
+}
+
+void exit_scheduler_context(struct itimerspec* ovalue) {
   for (int i = stack_page_size; i < num_pages; ++i) {
     if (((pagedata*)myblock)[i].pid == 0)
       mprotect(mem_space + page_size*i, page_size, PROT_NONE);
@@ -38,6 +47,7 @@ void alrm_handler(int sig, siginfo_t* info, void* ucontext) {
 
 void schedule() {
   START_SCHED:
+  in_scheduler = 1;
   if (prev_done != NULL) {
     mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
     prev_done = NULL;
@@ -88,10 +98,7 @@ void schedule() {
       break;
     }
   }
-  if (in_scheduler) {
-    in_scheduler = 0;
-    exit_scheduler(&timer_25ms);
-  }
+
   if (new_context == NULL) { // teardown and cleanup
     exit(0);
   }
@@ -99,6 +106,12 @@ void schedule() {
   // protect all data pages and swap stack of new thread
   mprotect(mem_space, page_size*num_pages, PROT_NONE);
   swap_stack(new_id);
+
+  if (non_alarm_call) {
+    non_alarm_call = 0;
+    exit_scheduler_context(&timer_25ms);
+  }
+  in_scheduler = 0;
   swapcontext(scheduler_context, new_context);
   goto START_SCHED;
 }
@@ -162,9 +175,7 @@ int swap_stack(my_pthread_t new_id) {
     int new_loc = ht_get(ht_space, new_id, i);
     // unprotect relevant stack pages
     mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
-    mprotect(mem_space + page_size*new_loc, page_size, PROT_READ | PROT_WRITE);
     swap(i,new_loc);
     // protect old stack page
-    mprotect(mem_space + page_size*new_loc, page_size, PROT_NONE);
   }
 }

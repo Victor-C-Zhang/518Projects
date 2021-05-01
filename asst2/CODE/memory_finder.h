@@ -6,6 +6,19 @@
 #include "direct_mapping.h"
 #include "my_pthread_t.h"
 
+#define MF_PROTECTED 1
+#define MF_UNPROTECTED 0
+int prot_request; // bool flag checked by seg_handler to see if the segfault is a query or an actual fault
+int prot_response; // the response from a segfault query, 0 for not protected, 1 for protected
+
+/**
+ * Returns whether the requested location is memory-protected. Guaranteed to
+ * not mutate any state (besides prot_response) after function return.
+ * @param location
+ * @return 1 if protected, 0 otherwise.
+ */
+int query_protection(const char* location);
+
 /**
  * Swaps data from page at indexA to page at indexB, updates page table and hash table to match the change
  * @param indexA		first page index to be swapped
