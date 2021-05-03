@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <fcntl.h>
 #include "my_malloc.h"
 #include "global_vals.h"
 #include "my_pthread_t.h"
@@ -104,6 +105,10 @@ void printMemory() {
 
 }
 
+void close_swapfile() {
+  close(swapfile);
+}
+
 void initialize_pages() {
 	for (int i = 0; i < resident_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
@@ -167,6 +172,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
   }
 
 	if (firstMalloc == 1) { // first time using malloc
+    atexit(close_swapfile);
 	  // init runtime constants
 	  // calculate size of necessary metadata/auxiliary structures
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
@@ -206,7 +212,17 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		createTable(ht_space);
 		initialize_pages();
 
-
+    swapfile = open("./SWAPFILE", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    if (swapfile == -1) {
+      fprintf(stderr, "Could not create swapfile. Aborting\n");
+      exit(1);
+    }
+    int alloc_res = posix_fallocate(swapfile, 0, 16*(1<<20));
+    if (alloc_res != 0) {
+      fprintf(stderr, "Problem allocating swapfile size.\n");
+      strerror(alloc_res);
+      exit(1);
+    }
 
 		memset(&segh, 0, sizeof(struct sigaction));
 		sigemptyset(&segh.sa_mask);

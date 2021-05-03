@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <errno.h>
 #include "my_malloc.h"
 #include "global_vals.h"
 #include "memory_finder.h"
@@ -18,6 +19,11 @@
  */
 void swap(int indexA, int indexB){
 	if (indexA == indexB) {return;}
+	if (indexB < indexA) {
+	  int tempval = indexB;
+	  indexB = indexA;
+	  indexA = tempval;
+	}
 	pagedata* pdA = (pagedata*)myblock+indexA;
 	pagedata* pdB = (pagedata*)myblock+indexB;
 //	printf("swap pidA: %d pg_idxA: %d pidB: %d pg_idxB: %d\n", pdA->pid,
@@ -28,14 +34,48 @@ void swap(int indexA, int indexB){
 	pg_write_pagedata(&pdTemp, pdA->pid, pg_block_occupied(pdA), pg_is_overflow(pdA), pg_index(pdA), pdA->length);
 	pg_write_pagedata(pdA, pdB->pid, pg_block_occupied(pdB), pg_is_overflow(pdB), pg_index(pdB), pdB->length);
 	pg_write_pagedata(pdB, pdTemp.pid, pg_block_occupied(&pdTemp), pg_is_overflow(&pdTemp), pg_index(&pdTemp), pdTemp.length);
-	char* pageA = (char*)mem_space + indexA*page_size;
-	char* pageB = (char*)mem_space + indexB*page_size;
-	char  pageTemp;
-	size_t i;
-	for (i=0; i<page_size; i++) {
-		pageTemp = pageA[i];
-		pageA[i] = pageB[i];
-		pageB[i] = pageTemp;
+	if (indexA >= resident_pages) {
+	  fprintf(stderr, "Both swap indices are on disk: %d %d\n", indexA, indexB);
+	  exit(1);
+	}
+  char  pageTemp[page_size];
+  char* pageA = (char*)mem_space + indexA*page_size;
+	if (indexB >= resident_pages) { // need to read/write to disk
+	  lseek(swapfile, (indexB - resident_pages)*page_size, SEEK_SET);
+	  int to_read = page_size;
+	  int num_read = 0;
+	  while (to_read > 0) {
+      num_read = read(swapfile, pageTemp + num_read, to_read);
+      if (num_read == -1) {
+        strerror(errno);
+        exit(1);
+      }
+      to_read -= num_read;
+	  }
+
+    lseek(swapfile, (indexB - resident_pages)*page_size, SEEK_SET);
+    int to_write = page_size;
+	  int num_write = 0;
+    while (to_write > 0) {
+      num_write = write(swapfile, pageA + num_write, to_write);
+      if (num_write == -1) {
+        strerror(errno);
+        exit(1);
+      }
+      to_write -= num_write;
+    }
+    for (int i = 0; i < page_size; ++i) {
+      pageA[i] = pageTemp[i];
+    }
+	} else {
+	  char* pageB = mem_space + indexB*page_size;
+    for (int i = 0; i < page_size; ++i) {
+      pageTemp[i] = pageB[i];
+    }
+    for (int i = 0; i < page_size; ++i) {
+      pageB[i] = pageA[i];
+      pageA[i] = pageTemp[i];
+    }
 	}
 }
 
