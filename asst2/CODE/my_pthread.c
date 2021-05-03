@@ -30,8 +30,7 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   new_thread->acq_locks = 0;
   new_thread->last_run = cycles_run;
   new_thread->waited_on = create_list();
-  new_thread->first_page_index = UINT16_MAX;
-  new_thread->last_page_index = -1;
+  new_thread->has_allocation = 0;
 
   getcontext(&new_thread->context);
   new_thread->context.uc_stack.ss_size = STACKSIZE;

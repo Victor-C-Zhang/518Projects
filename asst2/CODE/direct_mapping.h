@@ -71,11 +71,13 @@ void dm_write_metadata(metadata* curr, size_t size, int occupied, int last);
 
 /**
  * Allocate a segment at the pointed free block. Guaranteed to split the
- * block if necessary.
+ * block if necessary. Assumes it has contiguous access to all pages it will
+ * need.
  * @param curr
  * @param size
  */
-void dm_allocate_block(metadata* curr, size_t size);
+void* dm_allocate_block(my_pthread_t curr_id, int curr_page_num, int
+curr_segment_num, int space, int req_size);
 
 //if the page pointed to by curr is occupied
 int pg_block_occupied(pagedata* curr);

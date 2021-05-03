@@ -51,13 +51,64 @@ void TEST_malloc_directmapping() {
     ptrs[i] = p;
     printMemory();
   }
-  for (int i = 0 ; i < 5; i++) { 
-//    printf("%s\n", ptrs[i]);
+  char* t1 = myallocate(59*64 - 1, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t2 = myallocate(5, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t3 = myallocate(64*64 - 2, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t4 = myallocate(64*64*25 + 64*12, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  for (int i = 0 ; i < 5; i++) {
+    printf("%s\n", ptrs[i]);
     mydeallocate(ptrs[i], __FILE__, __LINE__, THREADREQ);
     printMemory();
   }
+  mydeallocate(t3, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t5 = myallocate(64*32 - 2, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t6 = myallocate(3*64 + 12, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t5, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t1, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t2, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t4, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t6, __FILE__, __LINE__, THREADREQ);
+  printMemory();
 }
 
+
+void TEST_malloc_directmapping1() {
+  char* t1 = myallocate(64*64*1000 - 1, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t3 = myallocate(64*64*1000 - 1, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t2 = myallocate(5*64, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t1, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t4 = myallocate(64*64*25, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t3, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t5 = myallocate(79*64 - 2, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  char* t6 = myallocate(1*64 - 1, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t5, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t2, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t4, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+  mydeallocate(t6, __FILE__, __LINE__, THREADREQ);
+  printMemory();
+}
 //contiguous allocation
 void* TEST_thread_func_swap1(void* i) {
   printf("malloc %d\n", *((int*)i));

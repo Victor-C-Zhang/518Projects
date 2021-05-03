@@ -28,8 +28,7 @@ typedef struct threadControlBlock {
   int acq_locks; // how many locks the thread currently has
   uint64_t last_run; // cycle during which the thread was last run
   linked_list_t* waited_on; // linked-list of threads waiting on this thread
-  int first_page_index; // index in virtual memory of the first occupied page
-  int last_page_index; // index in virtual memory of last occupied page
+  int has_allocation; // whether the page has allocated memory yet
 } tcb;
 
 int initScheduler; // if 1, initialize scheduler
