@@ -37,9 +37,11 @@ static void handler(int sig, siginfo_t* si, void* unused) {
   // find and swap requested page
   mprotect(mem_space + page_size*pagenum, page_size, PROT_READ | PROT_WRITE);
   if (actual_loc != pagenum) {
-    mprotect(mem_space + page_size*actual_loc, page_size, PROT_READ | PROT_WRITE);
+    if (actual_loc < resident_pages)
+      mprotect(mem_space + page_size*actual_loc, page_size, PROT_READ | PROT_WRITE);
     swap(pagenum, actual_loc);
-    mprotect(mem_space + page_size*actual_loc, page_size, PROT_NONE);
+    if (actual_loc < resident_pages)
+      mprotect(mem_space + page_size*actual_loc, page_size, PROT_NONE);
   }
 }
 
@@ -54,12 +56,12 @@ void error_message(char* error, char* file, int line) {
 //followed by 0 for free or any other integer for occupied
 //followed by the size of user data
 void printMemory() {
-  mprotect(mem_space, page_size*num_pages, PROT_READ | PROT_WRITE);
+  mprotect(mem_space, page_size*resident_pages, PROT_READ | PROT_WRITE);
 	printf("<----------------------MEMORY---------------------->\n");
 	int ovf_len = 0;
 	int i = 0;
   int j = 0;
-  while (i < num_pages){
+  while (i < resident_pages){
 //	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
 //		int j = ovf_len;
@@ -98,31 +100,36 @@ void printMemory() {
 		}
 	}
 	printf("</---------------------MEMORY---------------------->\n");
-  mprotect(mem_space, page_size*num_pages, PROT_NONE);
+  mprotect(mem_space, page_size*resident_pages, PROT_NONE);
 
 }
 
 void initialize_pages() {
-	for (int i = 0; i < num_pages; i++) {
+	for (int i = 0; i < resident_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
 		pg_write_pagedata(pdata, -1, NOT_OCC, NOT_OVF, -1, 1);
 		metadata* mdata = (metadata*) ((uint8_t*)mem_space + i*page_size);
 		dm_write_metadata(mdata, num_segments, 0, 1);
 	}
+  for (int i = resident_pages; i < num_pages; ++i) {
+    pagedata* pdata = (pagedata*)myblock + i;
+    pg_write_pagedata(pdata, -1, NOT_OCC, NOT_OVF, -1, 1);
+    // todo: write to disk
+  }
 }
 
 my_pthread_t enter_mem_manager(my_pthread_t curr_id) {
   mm_in_memory_manager = 1;
   my_pthread_t retval = mm_curr_id;
   mm_curr_id = curr_id;
-  mprotect(mem_space + stack_page_size*page_size, (num_pages -
+  mprotect(mem_space + stack_page_size*page_size, (resident_pages -
   stack_page_size)*page_size, PROT_NONE);
   return retval;
 }
 
 void exit_mem_manager(my_pthread_t prev_id) {
   mm_in_memory_manager = 0;
-  mprotect(mem_space + stack_page_size*page_size, (num_pages -
+  mprotect(mem_space + stack_page_size*page_size, (resident_pages -
   stack_page_size)*page_size, PROT_NONE);
   mprotect(mem_space, page_size*stack_page_size, PROT_READ | PROT_WRITE);
   mm_curr_id = prev_id;
@@ -170,9 +177,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
     pages_for_contexts = 200;
     max_thread_id = (int)(pages_for_contexts*page_size)/(int)sizeof(ucontext_t) - 1;
     // TODO: update for phase C
-    num_pages = (MEMSIZE - page_size * (stack_page_size + 1 + pages_for_contexts))
+    num_pages = (VIRTSIZE - page_size * (stack_page_size + 1 + pages_for_contexts))
           / (page_size + sizeof(pagedata) + sizeof(ht_entry));
-
     // leave space for
     // - (inverted) PT
     // - scheduler stack
@@ -194,10 +200,13 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
     main_tcb->context = &mm_contextarr[2];
 //    getcontext(&mm_contextarr[2]);
     mem_space = myblock + (pt_space + stack_page_size + 1 + pages_for_contexts) * page_size;
-
-		ht_space = (ht_entry*) (mem_space + page_size*num_pages);
+    resident_pages = ((myblock + MEMSIZE) - mem_space)/page_size -
+          (VIRTSIZE/page_size)*sizeof(ht_entry)/page_size;
+		ht_space = (ht_entry*) (mem_space + page_size*resident_pages);
 		createTable(ht_space);
 		initialize_pages();
+
+
 
 		memset(&segh, 0, sizeof(struct sigaction));
 		sigemptyset(&segh.sa_mask);
@@ -207,7 +216,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		sigaction(SIGSEGV, &segh, NULL);
 
 		// protect all pages
-    mprotect(mem_space, page_size*num_pages, PROT_NONE);
+    mprotect(mem_space, page_size*resident_pages, PROT_NONE);
 
 		firstMalloc = 0;
 	}

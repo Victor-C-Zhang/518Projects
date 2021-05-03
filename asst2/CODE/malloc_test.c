@@ -49,7 +49,7 @@ void TEST_malloc_directmapping() {
   char* ptrs[5]; 
   for (int i = 0 ; i < 5; i++) { 
     char* p = (char*) myallocate(5*sizeof(char), __FILE__, __LINE__, THREADREQ);
-    strcpy(p,"help"); 
+//    strcpy(p,"help");
     ptrs[i] = p;
     printMemory();
   }
@@ -66,7 +66,7 @@ void TEST_malloc_directmapping() {
   // printMemory works
   for (int i = 0 ; i < 5; i++) {
     mprotect(mem_space, page_size, PROT_READ | PROT_WRITE);
-    printf("%s\n", ptrs[i]);
+//    printf("%s\n", ptrs[i]);
     mydeallocate(ptrs[i], __FILE__, __LINE__, THREADREQ);
     printMemory();
   }

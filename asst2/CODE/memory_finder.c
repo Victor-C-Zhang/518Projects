@@ -48,15 +48,15 @@ void* fetch_blank_page(my_pthread_t curr_id, int position) {
       ht_put(ht_space,curr_id,(ht_key)position, (ht_val)i);
       mprotect(mem_space + page_size*position, page_size, PROT_READ | PROT_WRITE);
       if (position != i) {
-        mprotect(mem_space + page_size * i, page_size, PROT_READ | PROT_WRITE);
+        if (i < resident_pages)
+          mprotect(mem_space + page_size * i, page_size,PROT_READ | PROT_WRITE);
         swap(position, i);
-        mprotect(mem_space + page_size*i, page_size, PROT_NONE);
+        if (i < resident_pages)
+          mprotect(mem_space + page_size*i, page_size, PROT_NONE);
       }
       return mem_space + page_size*position;
     }
   }
-  // no free pages in memory, return NULL
-  // TODO: check for free disk pages
   fprintf(stderr, "Could not find any free pages to fetch\n");
   exit(1);
   return NULL;
@@ -81,11 +81,11 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
       dm_write_metadata((metadata *) mem_space + stack_page_size*page_size, 1,
                         NOT_OCC, LAST);
       pg_write_pagedata((pagedata *) myblock + stack_page_size, curr_id, OCC,
-                        OVF, stack_page_size,num_pages - stack_page_size);
+                        OVF, stack_page_size,resident_pages - stack_page_size);
     } else {
       if (fetch_blank_page(curr_id, 0) == NULL) return NULL;
       dm_write_metadata((metadata *) mem_space, 1, NOT_OCC, LAST);
-      pg_write_pagedata((pagedata *) myblock, curr_id, OCC, OVF, 0, num_pages);
+      pg_write_pagedata((pagedata *) myblock, curr_id, OCC, OVF, 0, resident_pages);
     }
   }
   // otherwise we will always be able to find page 0 of memory
@@ -102,15 +102,17 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
 //    mprotect(mem_space + first_page_pos*page_size, page_size, PROT_NONE);
 //  }
 
-  while (curr_page_num < num_pages) { // try to find a space
+  while (curr_page_num < resident_pages) { // try to find a space
     ht_val page_pos = ht_get(ht_space,curr_id,curr_page_num);
 //    printf("from finder id: %d pos: %d act: %d\n", curr_id, curr_page_num,
 //           page_pos);
     if (page_pos != curr_page_num) {
-      mprotect(mem_space + page_pos*page_size, page_size, PROT_READ |
+      if (page_pos < resident_pages)
+        mprotect(mem_space + page_pos*page_size, page_size, PROT_READ |
                                                                 PROT_WRITE);
       swap(curr_page_num, page_pos);
-      mprotect(mem_space + page_pos*page_size, page_size, PROT_NONE);
+      if (page_pos < resident_pages)
+        mprotect(mem_space + page_pos*page_size, page_size, PROT_NONE);
       printf("after swap id: %d pos: %d act: %d\n", curr_id, curr_page_num,
              ht_get(ht_space,curr_id,curr_page_num));
     }
@@ -140,10 +142,12 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
           //  whole alloc
           if (fetch_blank_page(curr_id,curr_page_num + i) == NULL) return NULL;
         } else if (where != position) {
-          mprotect(mem_space + where*page_size, page_size, PROT_READ |
+          if (where < resident_pages)
+            mprotect(mem_space + where*page_size, page_size, PROT_READ |
                                                            PROT_WRITE);
           swap(position, where);
-          mprotect(mem_space + where*page_size, page_size, PROT_NONE);
+          if (where < resident_pages)
+            mprotect(mem_space + where*page_size, page_size, PROT_NONE);
         }
       }
       if ((curr_seg_num + segments_reqd + 1)%num_segments == 0 &&
@@ -157,10 +161,12 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
           if (fetch_blank_page(curr_id, position) == NULL)
             return NULL;
         } else if (where != position) {
-          mprotect(mem_space + where*page_size, page_size, PROT_READ |
+          if (where < resident_pages)
+            mprotect(mem_space + where*page_size, page_size, PROT_READ |
           PROT_WRITE);
           swap(position, where);
-          mprotect(mem_space + where*page_size, page_size, PROT_NONE);
+          if (where < resident_pages)
+            mprotect(mem_space + where*page_size, page_size, PROT_NONE);
         }
       }
       return dm_allocate_block(curr_id, curr_page_num, curr_seg_num, space,
@@ -226,10 +232,12 @@ int free_ptr(void* p, my_pthread_t curr_id, int has_allocation) {
   // ensure first page is in the right place
   ht_val first_page_pos = ht_get(ht_space,curr_id,curr_page_num);
   if (first_page_pos != curr_page_num) {
-    mprotect(mem_space + first_page_pos*page_size, page_size, PROT_READ |
+    if (first_page_pos < resident_pages)
+      mprotect(mem_space + first_page_pos*page_size, page_size, PROT_READ |
                                                               PROT_WRITE);
     swap(curr_page_num, first_page_pos);
-    mprotect(mem_space + first_page_pos*page_size, page_size, PROT_NONE);
+    if (first_page_pos < resident_pages)
+      mprotect(mem_space + first_page_pos*page_size, page_size, PROT_NONE);
   }
 
   while (mem_space + curr_page_num*page_size + curr_seg_num*SEGMENTSIZE < pointer) {
@@ -323,7 +331,8 @@ int free_ptr(void* p, my_pthread_t curr_id, int has_allocation) {
         pg_write_pagedata((pagedata*)myblock + actual, -1, NOT_OCC,
                           NOT_OVF, -1, 1);
         ht_delete(ht_space, curr_id, (ht_key)free_page_num);
-        mprotect(mem_space + page_size*actual, page_size, PROT_NONE);
+        if (actual < resident_pages)
+          mprotect(mem_space + page_size*actual, page_size, PROT_NONE);
       }
       ++free_page_num;
       space -= num_segments;

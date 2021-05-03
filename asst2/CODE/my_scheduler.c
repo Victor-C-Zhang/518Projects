@@ -18,7 +18,7 @@ void enter_scheduler(struct itimerspec* ovalue) {
 }
 
 void exit_scheduler(struct itimerspec* ovalue) {
-  for (unsigned i = stack_page_size; i < num_pages; ++i) {
+  for (unsigned i = stack_page_size; i < resident_pages; ++i) {
     if (((pagedata*)myblock)[i].pid == 0)
       mprotect(mem_space + page_size*i, page_size, PROT_NONE);
   }
@@ -93,7 +93,7 @@ void schedule() {
   }
 
   // protect all data pages and swap stack of new thread
-  mprotect(mem_space, page_size*num_pages, PROT_NONE);
+  mprotect(mem_space, page_size*resident_pages, PROT_NONE);
   swap_stack(new_id);
   exit_mem_manager(new_id);
   swapcontext(scheduler_context, new_context);
@@ -165,9 +165,11 @@ void swap_stack(my_pthread_t new_id) {
     }
     // unprotect relevant stack pages
     mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
-    mprotect(mem_space + page_size*new_loc, page_size, PROT_READ | PROT_WRITE);
+    if (new_loc < resident_pages)
+      mprotect(mem_space + page_size*new_loc, page_size, PROT_READ | PROT_WRITE);
     swap(i,new_loc);
     // protect old stack page
-    mprotect(mem_space + page_size*new_loc, page_size, PROT_NONE);
+    if (new_loc < resident_pages)
+      mprotect(mem_space + page_size*new_loc, page_size, PROT_NONE);
   }
 }
