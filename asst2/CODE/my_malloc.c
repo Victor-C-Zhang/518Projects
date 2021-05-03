@@ -26,7 +26,6 @@ static void handler(int sig, siginfo_t* si, void* unused) {
   int pagenum = ((char*)si->si_addr - mem_space)/page_size;
   my_pthread_t curr_id = mm_curr_id;
   if (curr_id == -1) {
-    // TODO
     fprintf(stderr, "my_malloc line 29: Curr_id is -1\n");
   }
   ht_val actual_loc = ht_get(ht_space, curr_id, pagenum);
@@ -119,7 +118,10 @@ void initialize_pages() {
   for (int i = resident_pages; i < num_pages; ++i) {
     pagedata* pdata = (pagedata*)myblock + i;
     pg_write_pagedata(pdata, -1, NOT_OCC, NOT_OVF, -1, 1);
-    // todo: write to disk
+    metadata writ;
+    dm_write_metadata(&writ, num_segments, 0, 1);
+    lseek(swapfile, (i - resident_pages)*page_size, SEEK_SET);
+    write(swapfile, &writ, 1);
   }
 }
 
@@ -140,7 +142,6 @@ void exit_mem_manager(my_pthread_t prev_id) {
   mm_curr_id = prev_id;
 }
 
-//TODO: update num_pages in phase c
 void* myallocate(size_t size, char* file, int line, int threadreq){
 	enter_scheduler(&timer_pause_dump);
 	my_pthread_t temp_id = enter_mem_manager(0);
@@ -182,7 +183,6 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
                       (STACKSIZE+1)/page_size + 1 : (STACKSIZE+1)/page_size;
     pages_for_contexts = 200;
     max_thread_id = (int)(pages_for_contexts*page_size)/(int)sizeof(ucontext_t) - 1;
-    // TODO: update for phase C
     num_pages = (VIRTSIZE - page_size * (stack_page_size + 1 + pages_for_contexts))
           / (page_size + sizeof(pagedata) + sizeof(ht_entry));
     // leave space for
