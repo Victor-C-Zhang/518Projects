@@ -1,31 +1,32 @@
 swap1
 id: 0 malloc call my_pthread.c:57
 put id 0 indx 16 act 0
+swap indexA 16 indexB 0
 swap pidA: -1 pg_idxA: 16383 pidB: 0 pg_idxB: 16
 put id 0 indx 16 act 16
-malloc 1 call my_pthread.c:57 0x7f8d76c8c001
+malloc 1 call my_pthread.c:57 0x7f250e712001
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8c041
+malloc 1 call datastructs.c:40 0x7f250e712041
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8c081
+malloc 1 call datastructs.c:40 0x7f250e712081
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8c0c1
+malloc 1 call datastructs.c:40 0x7f250e7120c1
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8c101
+malloc 1 call datastructs.c:40 0x7f250e712101
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8c141
+malloc 1 call datastructs.c:40 0x7f250e712141
 id: 0 malloc call datastructs.c:160
-malloc 1 call datastructs.c:160 0x7f8d76c8c181
+malloc 1 call datastructs.c:160 0x7f250e712181
 id: 0 malloc call datastructs.c:164
-malloc 33 call datastructs.c:164 0x7f8d76c8c1c1
+malloc 33 call datastructs.c:164 0x7f250e7121c1
 id: 0 malloc call my_pthread.c:29
-malloc 2 call my_pthread.c:29 0x7f8d76c8ca01
+malloc 2 call my_pthread.c:29 0x7f250e712a01
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8ca81
+malloc 1 call datastructs.c:40 0x7f250e712a81
 id: 0 malloc call datastructs.c:152
-malloc 1 call datastructs.c:152 0x7f8d76c8cac1
+malloc 1 call datastructs.c:152 0x7f250e712ac1
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
 id: 1 malloc call my_pthread.c:77
 put id 1 indx 0 act 0
 put id 1 indx 1 act 1
@@ -44,629 +45,779 @@ put id 1 indx 13 act 13
 put id 1 indx 14 act 14
 put id 1 indx 15 act 15
 put id 1 indx 16 act 17
+swap indexA 16 indexB 17
 swap pidA: 0 pg_idxA: 16 pidB: 1 pg_idxB: 16
 put id 0 indx 16 act 17
 put id 1 indx 16 act 16
-malloc 1024 call my_pthread.c:77 0x7f8d76c7c001
+malloc 1024 call my_pthread.c:77 0x7f250e702001
+swap indexA 16 indexB 17
 swap pidA: 1 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 1 indx 16 act 17
 put id 0 indx 16 act 16
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8cb41
+malloc 1 call datastructs.c:40 0x7f250e712b41
 id: 0 malloc call datastructs.c:152
-malloc 1 call datastructs.c:152 0x7f8d76c8cb81
+malloc 1 call datastructs.c:152 0x7f250e712b81
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
 thread create 0
 id: 0 malloc call my_pthread.c:29
-malloc 2 call my_pthread.c:29 0x7f8d76c8cc01
+malloc 2 call my_pthread.c:29 0x7f250e712c01
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8cc81
+malloc 1 call datastructs.c:40 0x7f250e712c81
 id: 0 malloc call datastructs.c:152
-malloc 1 call datastructs.c:152 0x7f8d76c8ccc1
+malloc 1 call datastructs.c:152 0x7f250e712cc1
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cd01
+malloc 1 call datastructs.c:33 0x7f250e712d01
 id: 3 malloc call my_pthread.c:113
 put id 3 indx 0 act 18
+swap indexA 0 indexB 18
 swap pidA: 1 pg_idxA: 0 pidB: 3 pg_idxB: 0
 put id 1 indx 0 act 18
 put id 3 indx 0 act 0
 put id 3 indx 1 act 19
+swap indexA 1 indexB 19
 swap pidA: 1 pg_idxA: 1 pidB: 3 pg_idxB: 1
 put id 1 indx 1 act 19
 put id 3 indx 1 act 1
 put id 3 indx 2 act 20
+swap indexA 2 indexB 20
 swap pidA: 1 pg_idxA: 2 pidB: 3 pg_idxB: 2
 put id 1 indx 2 act 20
 put id 3 indx 2 act 2
 put id 3 indx 3 act 21
+swap indexA 3 indexB 21
 swap pidA: 1 pg_idxA: 3 pidB: 3 pg_idxB: 3
 put id 1 indx 3 act 21
 put id 3 indx 3 act 3
 put id 3 indx 4 act 22
+swap indexA 4 indexB 22
 swap pidA: 1 pg_idxA: 4 pidB: 3 pg_idxB: 4
 put id 1 indx 4 act 22
 put id 3 indx 4 act 4
 put id 3 indx 5 act 23
+swap indexA 5 indexB 23
 swap pidA: 1 pg_idxA: 5 pidB: 3 pg_idxB: 5
 put id 1 indx 5 act 23
 put id 3 indx 5 act 5
 put id 3 indx 6 act 24
+swap indexA 6 indexB 24
 swap pidA: 1 pg_idxA: 6 pidB: 3 pg_idxB: 6
 put id 1 indx 6 act 24
 put id 3 indx 6 act 6
 put id 3 indx 7 act 25
+swap indexA 7 indexB 25
 swap pidA: 1 pg_idxA: 7 pidB: 3 pg_idxB: 7
 put id 1 indx 7 act 25
 put id 3 indx 7 act 7
 put id 3 indx 8 act 26
+swap indexA 8 indexB 26
 swap pidA: 1 pg_idxA: 8 pidB: 3 pg_idxB: 8
 put id 1 indx 8 act 26
 put id 3 indx 8 act 8
 put id 3 indx 9 act 27
+swap indexA 9 indexB 27
 swap pidA: 1 pg_idxA: 9 pidB: 3 pg_idxB: 9
 put id 1 indx 9 act 27
 put id 3 indx 9 act 9
 put id 3 indx 10 act 28
+swap indexA 10 indexB 28
 swap pidA: 1 pg_idxA: 10 pidB: 3 pg_idxB: 10
 put id 1 indx 10 act 28
 put id 3 indx 10 act 10
 put id 3 indx 11 act 29
+swap indexA 11 indexB 29
 swap pidA: 1 pg_idxA: 11 pidB: 3 pg_idxB: 11
 put id 1 indx 11 act 29
 put id 3 indx 11 act 11
 put id 3 indx 12 act 30
+swap indexA 12 indexB 30
 swap pidA: 1 pg_idxA: 12 pidB: 3 pg_idxB: 12
 put id 1 indx 12 act 30
 put id 3 indx 12 act 12
 put id 3 indx 13 act 31
+swap indexA 13 indexB 31
 swap pidA: 1 pg_idxA: 13 pidB: 3 pg_idxB: 13
 put id 1 indx 13 act 31
 put id 3 indx 13 act 13
 put id 3 indx 14 act 32
+swap indexA 14 indexB 32
 swap pidA: 1 pg_idxA: 14 pidB: 3 pg_idxB: 14
 put id 1 indx 14 act 32
 put id 3 indx 14 act 14
 put id 3 indx 15 act 33
+swap indexA 15 indexB 33
 swap pidA: 1 pg_idxA: 15 pidB: 3 pg_idxB: 15
 put id 1 indx 15 act 33
 put id 3 indx 15 act 15
 put id 3 indx 16 act 34
+swap indexA 16 indexB 34
 swap pidA: 0 pg_idxA: 16 pidB: 3 pg_idxB: 16
 put id 0 indx 16 act 34
 put id 3 indx 16 act 16
-malloc 1024 call my_pthread.c:113 0x7f8d76c7c001
+malloc 1024 call my_pthread.c:113 0x7f250e702001
+swap indexA 16 indexB 34
 swap pidA: 3 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 3 indx 16 act 34
 put id 0 indx 16 act 16
 thread create 1
 thread joining 0
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cd41
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712d41
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 3 pg_idxA: 0 pidB: 1 pg_idxB: 0
 put id 3 indx 0 act 18
 put id 1 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: 3 pg_idxA: 1 pidB: 1 pg_idxB: 1
 put id 3 indx 1 act 19
 put id 1 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: 3 pg_idxA: 2 pidB: 1 pg_idxB: 2
 put id 3 indx 2 act 20
 put id 1 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: 3 pg_idxA: 3 pidB: 1 pg_idxB: 3
 put id 3 indx 3 act 21
 put id 1 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: 3 pg_idxA: 4 pidB: 1 pg_idxB: 4
 put id 3 indx 4 act 22
 put id 1 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: 3 pg_idxA: 5 pidB: 1 pg_idxB: 5
 put id 3 indx 5 act 23
 put id 1 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: 3 pg_idxA: 6 pidB: 1 pg_idxB: 6
 put id 3 indx 6 act 24
 put id 1 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: 3 pg_idxA: 7 pidB: 1 pg_idxB: 7
 put id 3 indx 7 act 25
 put id 1 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: 3 pg_idxA: 8 pidB: 1 pg_idxB: 8
 put id 3 indx 8 act 26
 put id 1 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: 3 pg_idxA: 9 pidB: 1 pg_idxB: 9
 put id 3 indx 9 act 27
 put id 1 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: 3 pg_idxA: 10 pidB: 1 pg_idxB: 10
 put id 3 indx 10 act 28
 put id 1 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: 3 pg_idxA: 11 pidB: 1 pg_idxB: 11
 put id 3 indx 11 act 29
 put id 1 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: 3 pg_idxA: 12 pidB: 1 pg_idxB: 12
 put id 3 indx 12 act 30
 put id 1 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: 3 pg_idxA: 13 pidB: 1 pg_idxB: 13
 put id 3 indx 13 act 31
 put id 1 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: 3 pg_idxA: 14 pidB: 1 pg_idxB: 14
 put id 3 indx 14 act 32
 put id 1 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: 3 pg_idxA: 15 pidB: 1 pg_idxB: 15
 put id 3 indx 15 act 33
 put id 1 indx 15 act 15
 done
 malloc(1) 2
 id: 1 malloc call malloc_test.c:96
+swap indexA 16 indexB 17
 swap pidA: 0 pg_idxA: 16 pidB: 1 pg_idxB: 16
 put id 0 indx 16 act 17
 put id 1 indx 16 act 16
 after swap id: 1 pos: 16 act: 16
 put id 1 indx 17 act 35
+swap indexA 17 indexB 35
 swap pidA: 0 pg_idxA: 16 pidB: 1 pg_idxB: 17
 put id 0 indx 16 act 35
 put id 1 indx 17 act 17
-malloc 64 call malloc_test.c:96 0x7f8d76c8c001
+malloc 64 call malloc_test.c:96 0x7f250e712001
+swap indexA 16 indexB 35
 swap pidA: 1 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 1 indx 16 act 35
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 1 pg_idxA: 0 pidB: 3 pg_idxB: 0
 put id 1 indx 0 act 18
 put id 3 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: 1 pg_idxA: 1 pidB: 3 pg_idxB: 1
 put id 1 indx 1 act 19
 put id 3 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: 1 pg_idxA: 2 pidB: 3 pg_idxB: 2
 put id 1 indx 2 act 20
 put id 3 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: 1 pg_idxA: 3 pidB: 3 pg_idxB: 3
 put id 1 indx 3 act 21
 put id 3 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: 1 pg_idxA: 4 pidB: 3 pg_idxB: 4
 put id 1 indx 4 act 22
 put id 3 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: 1 pg_idxA: 5 pidB: 3 pg_idxB: 5
 put id 1 indx 5 act 23
 put id 3 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: 1 pg_idxA: 6 pidB: 3 pg_idxB: 6
 put id 1 indx 6 act 24
 put id 3 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: 1 pg_idxA: 7 pidB: 3 pg_idxB: 7
 put id 1 indx 7 act 25
 put id 3 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: 1 pg_idxA: 8 pidB: 3 pg_idxB: 8
 put id 1 indx 8 act 26
 put id 3 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: 1 pg_idxA: 9 pidB: 3 pg_idxB: 9
 put id 1 indx 9 act 27
 put id 3 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: 1 pg_idxA: 10 pidB: 3 pg_idxB: 10
 put id 1 indx 10 act 28
 put id 3 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: 1 pg_idxA: 11 pidB: 3 pg_idxB: 11
 put id 1 indx 11 act 29
 put id 3 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: 1 pg_idxA: 12 pidB: 3 pg_idxB: 12
 put id 1 indx 12 act 30
 put id 3 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: 1 pg_idxA: 13 pidB: 3 pg_idxB: 13
 put id 1 indx 13 act 31
 put id 3 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: 1 pg_idxA: 14 pidB: 3 pg_idxB: 14
 put id 1 indx 14 act 32
 put id 3 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: 1 pg_idxA: 15 pidB: 3 pg_idxB: 15
 put id 1 indx 15 act 33
 put id 3 indx 15 act 15
 done
 malloc(1) 2
 id: 3 malloc call malloc_test.c:96
+swap indexA 16 indexB 34
 swap pidA: 0 pg_idxA: 16 pidB: 3 pg_idxB: 16
 put id 0 indx 16 act 34
 put id 3 indx 16 act 16
 after swap id: 3 pos: 16 act: 16
 put id 3 indx 17 act 36
+swap indexA 17 indexB 36
 swap pidA: 1 pg_idxA: 17 pidB: 3 pg_idxB: 17
 put id 1 indx 17 act 36
 put id 3 indx 17 act 17
-malloc 64 call malloc_test.c:96 0x7f8d76c8c001
+malloc 64 call malloc_test.c:96 0x7f250e712001
+swap indexA 16 indexB 34
 swap pidA: 3 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 3 indx 16 act 34
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8cd01
+id: 0 free call datastructs.c:80 0x7f250e712d01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 3 pg_idxA: 0 pidB: 1 pg_idxB: 0
 put id 3 indx 0 act 18
 put id 1 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: 3 pg_idxA: 1 pidB: 1 pg_idxB: 1
 put id 3 indx 1 act 19
 put id 1 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: 3 pg_idxA: 2 pidB: 1 pg_idxB: 2
 put id 3 indx 2 act 20
 put id 1 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: 3 pg_idxA: 3 pidB: 1 pg_idxB: 3
 put id 3 indx 3 act 21
 put id 1 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: 3 pg_idxA: 4 pidB: 1 pg_idxB: 4
 put id 3 indx 4 act 22
 put id 1 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: 3 pg_idxA: 5 pidB: 1 pg_idxB: 5
 put id 3 indx 5 act 23
 put id 1 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: 3 pg_idxA: 6 pidB: 1 pg_idxB: 6
 put id 3 indx 6 act 24
 put id 1 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: 3 pg_idxA: 7 pidB: 1 pg_idxB: 7
 put id 3 indx 7 act 25
 put id 1 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: 3 pg_idxA: 8 pidB: 1 pg_idxB: 8
 put id 3 indx 8 act 26
 put id 1 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: 3 pg_idxA: 9 pidB: 1 pg_idxB: 9
 put id 3 indx 9 act 27
 put id 1 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: 3 pg_idxA: 10 pidB: 1 pg_idxB: 10
 put id 3 indx 10 act 28
 put id 1 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: 3 pg_idxA: 11 pidB: 1 pg_idxB: 11
 put id 3 indx 11 act 29
 put id 1 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: 3 pg_idxA: 12 pidB: 1 pg_idxB: 12
 put id 3 indx 12 act 30
 put id 1 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: 3 pg_idxA: 13 pidB: 1 pg_idxB: 13
 put id 3 indx 13 act 31
 put id 1 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: 3 pg_idxA: 14 pidB: 1 pg_idxB: 14
 put id 3 indx 14 act 32
 put id 1 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: 3 pg_idxA: 15 pidB: 1 pg_idxB: 15
 put id 3 indx 15 act 33
 put id 1 indx 15 act 15
 done
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 1 pg_idxA: 0 pidB: 3 pg_idxB: 0
 put id 1 indx 0 act 18
 put id 3 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: 1 pg_idxA: 1 pidB: 3 pg_idxB: 1
 put id 1 indx 1 act 19
 put id 3 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: 1 pg_idxA: 2 pidB: 3 pg_idxB: 2
 put id 1 indx 2 act 20
 put id 3 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: 1 pg_idxA: 3 pidB: 3 pg_idxB: 3
 put id 1 indx 3 act 21
 put id 3 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: 1 pg_idxA: 4 pidB: 3 pg_idxB: 4
 put id 1 indx 4 act 22
 put id 3 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: 1 pg_idxA: 5 pidB: 3 pg_idxB: 5
 put id 1 indx 5 act 23
 put id 3 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: 1 pg_idxA: 6 pidB: 3 pg_idxB: 6
 put id 1 indx 6 act 24
 put id 3 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: 1 pg_idxA: 7 pidB: 3 pg_idxB: 7
 put id 1 indx 7 act 25
 put id 3 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: 1 pg_idxA: 8 pidB: 3 pg_idxB: 8
 put id 1 indx 8 act 26
 put id 3 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: 1 pg_idxA: 9 pidB: 3 pg_idxB: 9
 put id 1 indx 9 act 27
 put id 3 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: 1 pg_idxA: 10 pidB: 3 pg_idxB: 10
 put id 1 indx 10 act 28
 put id 3 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: 1 pg_idxA: 11 pidB: 3 pg_idxB: 11
 put id 1 indx 11 act 29
 put id 3 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: 1 pg_idxA: 12 pidB: 3 pg_idxB: 12
 put id 1 indx 12 act 30
 put id 3 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: 1 pg_idxA: 13 pidB: 3 pg_idxB: 13
 put id 1 indx 13 act 31
 put id 3 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: 1 pg_idxA: 14 pidB: 3 pg_idxB: 14
 put id 1 indx 14 act 32
 put id 3 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: 1 pg_idxA: 15 pidB: 3 pg_idxB: 15
 put id 1 indx 15 act 33
 put id 3 indx 15 act 15
 done
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 3 pg_idxA: 0 pidB: 1 pg_idxB: 0
 put id 3 indx 0 act 18
 put id 1 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: 3 pg_idxA: 1 pidB: 1 pg_idxB: 1
 put id 3 indx 1 act 19
 put id 1 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: 3 pg_idxA: 2 pidB: 1 pg_idxB: 2
 put id 3 indx 2 act 20
 put id 1 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: 3 pg_idxA: 3 pidB: 1 pg_idxB: 3
 put id 3 indx 3 act 21
 put id 1 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: 3 pg_idxA: 4 pidB: 1 pg_idxB: 4
 put id 3 indx 4 act 22
 put id 1 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: 3 pg_idxA: 5 pidB: 1 pg_idxB: 5
 put id 3 indx 5 act 23
 put id 1 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: 3 pg_idxA: 6 pidB: 1 pg_idxB: 6
 put id 3 indx 6 act 24
 put id 1 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: 3 pg_idxA: 7 pidB: 1 pg_idxB: 7
 put id 3 indx 7 act 25
 put id 1 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: 3 pg_idxA: 8 pidB: 1 pg_idxB: 8
 put id 3 indx 8 act 26
 put id 1 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: 3 pg_idxA: 9 pidB: 1 pg_idxB: 9
 put id 3 indx 9 act 27
 put id 1 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: 3 pg_idxA: 10 pidB: 1 pg_idxB: 10
 put id 3 indx 10 act 28
 put id 1 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: 3 pg_idxA: 11 pidB: 1 pg_idxB: 11
 put id 3 indx 11 act 29
 put id 1 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: 3 pg_idxA: 12 pidB: 1 pg_idxB: 12
 put id 3 indx 12 act 30
 put id 1 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: 3 pg_idxA: 13 pidB: 1 pg_idxB: 13
 put id 3 indx 13 act 31
 put id 1 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: 3 pg_idxA: 14 pidB: 1 pg_idxB: 14
 put id 3 indx 14 act 32
 put id 1 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: 3 pg_idxA: 15 pidB: 1 pg_idxB: 15
 put id 3 indx 15 act 33
 put id 1 indx 15 act 15
 done
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
 malloc(1) 2
 id: 1 malloc call malloc_test.c:105
+swap indexA 16 indexB 35
 swap pidA: 0 pg_idxA: 16 pidB: 1 pg_idxB: 16
 put id 0 indx 16 act 35
 put id 1 indx 16 act 16
 after swap id: 1 pos: 16 act: 16
+swap indexA 17 indexB 36
 swap pidA: 3 pg_idxA: 17 pidB: 1 pg_idxB: 17
 put id 3 indx 17 act 36
 put id 1 indx 17 act 17
 after swap id: 1 pos: 17 act: 17
-malloc 1 call malloc_test.c:105 0x7f8d76c8d001
+malloc 1 call malloc_test.c:105 0x7f250e713001
+swap indexA 16 indexB 35
 swap pidA: 1 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 1 indx 16 act 35
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 1 pg_idxA: 0 pidB: 3 pg_idxB: 0
 put id 1 indx 0 act 18
 put id 3 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: 1 pg_idxA: 1 pidB: 3 pg_idxB: 1
 put id 1 indx 1 act 19
 put id 3 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: 1 pg_idxA: 2 pidB: 3 pg_idxB: 2
 put id 1 indx 2 act 20
 put id 3 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: 1 pg_idxA: 3 pidB: 3 pg_idxB: 3
 put id 1 indx 3 act 21
 put id 3 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: 1 pg_idxA: 4 pidB: 3 pg_idxB: 4
 put id 1 indx 4 act 22
 put id 3 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: 1 pg_idxA: 5 pidB: 3 pg_idxB: 5
 put id 1 indx 5 act 23
 put id 3 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: 1 pg_idxA: 6 pidB: 3 pg_idxB: 6
 put id 1 indx 6 act 24
 put id 3 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: 1 pg_idxA: 7 pidB: 3 pg_idxB: 7
 put id 1 indx 7 act 25
 put id 3 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: 1 pg_idxA: 8 pidB: 3 pg_idxB: 8
 put id 1 indx 8 act 26
 put id 3 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: 1 pg_idxA: 9 pidB: 3 pg_idxB: 9
 put id 1 indx 9 act 27
 put id 3 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: 1 pg_idxA: 10 pidB: 3 pg_idxB: 10
 put id 1 indx 10 act 28
 put id 3 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: 1 pg_idxA: 11 pidB: 3 pg_idxB: 11
 put id 1 indx 11 act 29
 put id 3 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: 1 pg_idxA: 12 pidB: 3 pg_idxB: 12
 put id 1 indx 12 act 30
 put id 3 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: 1 pg_idxA: 13 pidB: 3 pg_idxB: 13
 put id 1 indx 13 act 31
 put id 3 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: 1 pg_idxA: 14 pidB: 3 pg_idxB: 14
 put id 1 indx 14 act 32
 put id 3 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: 1 pg_idxA: 15 pidB: 3 pg_idxB: 15
 put id 1 indx 15 act 33
 put id 3 indx 15 act 15
 done
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
+free done
+id: 0 malloc call datastructs.c:33
+malloc 1 call datastructs.c:33 0x7f250e712bc1
 malloc(1) 2
 id: 3 malloc call malloc_test.c:105
+swap indexA 16 indexB 34
 swap pidA: 0 pg_idxA: 16 pidB: 3 pg_idxB: 16
 put id 0 indx 16 act 34
 put id 3 indx 16 act 16
 after swap id: 3 pos: 16 act: 16
+swap indexA 17 indexB 36
 swap pidA: 1 pg_idxA: 17 pidB: 3 pg_idxB: 17
 put id 1 indx 17 act 36
 put id 3 indx 17 act 17
 after swap id: 3 pos: 17 act: 17
-malloc 1 call malloc_test.c:105 0x7f8d76c8d001
+malloc 1 call malloc_test.c:105 0x7f250e713001
+swap indexA 16 indexB 34
 swap pidA: 3 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 3 indx 16 act 34
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
-free done
-id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:33 0x7f250e712bc1
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 3 pg_idxA: 0 pidB: 1 pg_idxB: 0
 put id 3 indx 0 act 18
 put id 1 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: 3 pg_idxA: 1 pidB: 1 pg_idxB: 1
 put id 3 indx 1 act 19
 put id 1 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: 3 pg_idxA: 2 pidB: 1 pg_idxB: 2
 put id 3 indx 2 act 20
 put id 1 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: 3 pg_idxA: 3 pidB: 1 pg_idxB: 3
 put id 3 indx 3 act 21
 put id 1 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: 3 pg_idxA: 4 pidB: 1 pg_idxB: 4
 put id 3 indx 4 act 22
 put id 1 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: 3 pg_idxA: 5 pidB: 1 pg_idxB: 5
 put id 3 indx 5 act 23
 put id 1 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: 3 pg_idxA: 6 pidB: 1 pg_idxB: 6
 put id 3 indx 6 act 24
 put id 1 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: 3 pg_idxA: 7 pidB: 1 pg_idxB: 7
 put id 3 indx 7 act 25
 put id 1 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: 3 pg_idxA: 8 pidB: 1 pg_idxB: 8
 put id 3 indx 8 act 26
 put id 1 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: 3 pg_idxA: 9 pidB: 1 pg_idxB: 9
 put id 3 indx 9 act 27
 put id 1 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: 3 pg_idxA: 10 pidB: 1 pg_idxB: 10
 put id 3 indx 10 act 28
 put id 1 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: 3 pg_idxA: 11 pidB: 1 pg_idxB: 11
 put id 3 indx 11 act 29
 put id 1 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: 3 pg_idxA: 12 pidB: 1 pg_idxB: 12
 put id 3 indx 12 act 30
 put id 1 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: 3 pg_idxA: 13 pidB: 1 pg_idxB: 13
 put id 3 indx 13 act 31
 put id 1 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: 3 pg_idxA: 14 pidB: 1 pg_idxB: 14
 put id 3 indx 14 act 32
 put id 1 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: 3 pg_idxA: 15 pidB: 1 pg_idxB: 15
 put id 3 indx 15 act 33
 put id 1 indx 15 act 15
 done
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
 free(1) 2
-id: 1 free call malloc_test.c:114 0x7f8d76c8c001
+id: 1 free call malloc_test.c:114 0x7f250e712001
+swap indexA 16 indexB 35
 swap pidA: 0 pg_idxA: 16 pidB: 1 pg_idxB: 16
 put id 0 indx 16 act 35
 put id 1 indx 16 act 16
+swap indexA 17 indexB 36
 swap pidA: 3 pg_idxA: 17 pidB: 1 pg_idxB: 17
 put id 3 indx 17 act 36
 put id 1 indx 17 act 17
 free done
 free(1) 2
+swap indexA 16 indexB 35
 swap pidA: 1 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 1 indx 16 act 35
 put id 0 indx 16 act 16
-id: 1 free call malloc_test.c:117 0x7f8d76c8d001
+id: 1 free call malloc_test.c:117 0x7f250e713001
+swap indexA 16 indexB 35
 swap pidA: 0 pg_idxA: 16 pidB: 1 pg_idxB: 16
 put id 0 indx 16 act 35
 put id 1 indx 16 act 16
 delete id 1 indx 17 act 1
 free done
+swap indexA 16 indexB 35
 swap pidA: 1 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 1 indx 16 act 35
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8cd41
+id: 0 free call datastructs.c:80 0x7f250e712d41
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cd01
-id: 0 free call datastructs.c:100 0x7f8d76c8ca81
+malloc 1 call datastructs.c:33 0x7f250e712d01
+id: 0 free call datastructs.c:100 0x7f250e712a81
 free done
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 swap stack
 thread joined 0
 thread joining 1
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8ca81
-id: 1 free call my_scheduler.c:38 0x7f8d76c7c001
+malloc 1 call datastructs.c:33 0x7f250e712a81
+id: 1 free call my_scheduler.c:38 0x7f250e702001
+swap indexA 16 indexB 35
 swap pidA: 0 pg_idxA: 16 pidB: 1 pg_idxB: 16
 put id 0 indx 16 act 35
 put id 1 indx 16 act 16
@@ -687,264 +838,324 @@ delete id 1 indx 14 act 1
 delete id 1 indx 15 act 1
 delete id 1 indx 16 act 1
 free done
+swap indexA 16 indexB 35
 swap pidA: -1 pg_idxA: 16383 pidB: 0 pg_idxB: 16
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8cd01
+id: 0 free call datastructs.c:80 0x7f250e712d01
 free done
 swap stack
+swap indexA 0 indexB 18
 swap pidA: 1 pg_idxA: 0 pidB: 3 pg_idxB: 0
 put id 1 indx 0 act 18
 put id 3 indx 0 act 0
+swap indexA 1 indexB 19
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 1
 put id 3 indx 1 act 1
+swap indexA 2 indexB 20
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 2
 put id 3 indx 2 act 2
+swap indexA 3 indexB 21
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 3
 put id 3 indx 3 act 3
+swap indexA 4 indexB 22
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 4
 put id 3 indx 4 act 4
+swap indexA 5 indexB 23
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 5
 put id 3 indx 5 act 5
+swap indexA 6 indexB 24
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 6
 put id 3 indx 6 act 6
+swap indexA 7 indexB 25
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 7
 put id 3 indx 7 act 7
+swap indexA 8 indexB 26
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 8
 put id 3 indx 8 act 8
+swap indexA 9 indexB 27
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 9
 put id 3 indx 9 act 9
+swap indexA 10 indexB 28
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 10
 put id 3 indx 10 act 10
+swap indexA 11 indexB 29
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 11
 put id 3 indx 11 act 11
+swap indexA 12 indexB 30
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 12
 put id 3 indx 12 act 12
+swap indexA 13 indexB 31
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 13
 put id 3 indx 13 act 13
+swap indexA 14 indexB 32
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 14
 put id 3 indx 14 act 14
+swap indexA 15 indexB 33
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 15
 put id 3 indx 15 act 15
 done
-id: 0 free call datastructs.c:80 0x7f8d76c8cbc1
+id: 0 free call datastructs.c:80 0x7f250e712bc1
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cb01
+malloc 1 call datastructs.c:33 0x7f250e712b01
 free(1) 2
-id: 3 free call malloc_test.c:114 0x7f8d76c8c001
+id: 3 free call malloc_test.c:114 0x7f250e712001
+swap indexA 16 indexB 34
 swap pidA: 0 pg_idxA: 16 pidB: 3 pg_idxB: 16
 put id 0 indx 16 act 34
 put id 3 indx 16 act 16
+swap indexA 17 indexB 36
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 17
 put id 3 indx 17 act 17
 free done
 free(1) 2
+swap indexA 16 indexB 34
 swap pidA: 3 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 3 indx 16 act 34
 put id 0 indx 16 act 16
-id: 3 free call malloc_test.c:117 0x7f8d76c8d001
+id: 3 free call malloc_test.c:117 0x7f250e713001
+swap indexA 16 indexB 34
 swap pidA: 0 pg_idxA: 16 pidB: 3 pg_idxB: 16
 put id 0 indx 16 act 34
 put id 3 indx 16 act 16
 delete id 3 indx 17 act 3
 free done
+swap indexA 16 indexB 34
 swap pidA: 3 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 3 indx 16 act 34
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8ca81
+id: 0 free call datastructs.c:80 0x7f250e712a81
 free done
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8ca81
-id: 0 free call datastructs.c:100 0x7f8d76c8cc81
+malloc 1 call datastructs.c:33 0x7f250e712a81
+id: 0 free call datastructs.c:100 0x7f250e712c81
 free done
-id: 0 free call datastructs.c:80 0x7f8d76c8cb01
+id: 0 free call datastructs.c:80 0x7f250e712b01
 free done
 swap stack
 thread joined 1
 swap2
 id: 0 malloc call my_pthread.c:29
-malloc 2 call my_pthread.c:29 0x7f8d76c8cd01
+malloc 2 call my_pthread.c:29 0x7f250e712d01
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8cb01
+malloc 1 call datastructs.c:40 0x7f250e712b01
 id: 0 malloc call datastructs.c:152
-malloc 1 call datastructs.c:152 0x7f8d76c8cbc1
+malloc 1 call datastructs.c:152 0x7f250e712bc1
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cc81
+malloc 1 call datastructs.c:33 0x7f250e712c81
 id: 4 malloc call my_pthread.c:113
 put id 4 indx 0 act 17
+swap indexA 0 indexB 17
 swap pidA: 3 pg_idxA: 0 pidB: 4 pg_idxB: 0
 put id 3 indx 0 act 17
 put id 4 indx 0 act 0
 put id 4 indx 1 act 19
+swap indexA 1 indexB 19
 swap pidA: 3 pg_idxA: 1 pidB: 4 pg_idxB: 1
 put id 3 indx 1 act 19
 put id 4 indx 1 act 1
 put id 4 indx 2 act 20
+swap indexA 2 indexB 20
 swap pidA: 3 pg_idxA: 2 pidB: 4 pg_idxB: 2
 put id 3 indx 2 act 20
 put id 4 indx 2 act 2
 put id 4 indx 3 act 21
+swap indexA 3 indexB 21
 swap pidA: 3 pg_idxA: 3 pidB: 4 pg_idxB: 3
 put id 3 indx 3 act 21
 put id 4 indx 3 act 3
 put id 4 indx 4 act 22
+swap indexA 4 indexB 22
 swap pidA: 3 pg_idxA: 4 pidB: 4 pg_idxB: 4
 put id 3 indx 4 act 22
 put id 4 indx 4 act 4
 put id 4 indx 5 act 23
+swap indexA 5 indexB 23
 swap pidA: 3 pg_idxA: 5 pidB: 4 pg_idxB: 5
 put id 3 indx 5 act 23
 put id 4 indx 5 act 5
 put id 4 indx 6 act 24
+swap indexA 6 indexB 24
 swap pidA: 3 pg_idxA: 6 pidB: 4 pg_idxB: 6
 put id 3 indx 6 act 24
 put id 4 indx 6 act 6
 put id 4 indx 7 act 25
+swap indexA 7 indexB 25
 swap pidA: 3 pg_idxA: 7 pidB: 4 pg_idxB: 7
 put id 3 indx 7 act 25
 put id 4 indx 7 act 7
 put id 4 indx 8 act 26
+swap indexA 8 indexB 26
 swap pidA: 3 pg_idxA: 8 pidB: 4 pg_idxB: 8
 put id 3 indx 8 act 26
 put id 4 indx 8 act 8
 put id 4 indx 9 act 27
+swap indexA 9 indexB 27
 swap pidA: 3 pg_idxA: 9 pidB: 4 pg_idxB: 9
 put id 3 indx 9 act 27
 put id 4 indx 9 act 9
 put id 4 indx 10 act 28
+swap indexA 10 indexB 28
 swap pidA: 3 pg_idxA: 10 pidB: 4 pg_idxB: 10
 put id 3 indx 10 act 28
 put id 4 indx 10 act 10
 put id 4 indx 11 act 29
+swap indexA 11 indexB 29
 swap pidA: 3 pg_idxA: 11 pidB: 4 pg_idxB: 11
 put id 3 indx 11 act 29
 put id 4 indx 11 act 11
 put id 4 indx 12 act 30
+swap indexA 12 indexB 30
 swap pidA: 3 pg_idxA: 12 pidB: 4 pg_idxB: 12
 put id 3 indx 12 act 30
 put id 4 indx 12 act 12
 put id 4 indx 13 act 31
+swap indexA 13 indexB 31
 swap pidA: 3 pg_idxA: 13 pidB: 4 pg_idxB: 13
 put id 3 indx 13 act 31
 put id 4 indx 13 act 13
 put id 4 indx 14 act 32
+swap indexA 14 indexB 32
 swap pidA: 3 pg_idxA: 14 pidB: 4 pg_idxB: 14
 put id 3 indx 14 act 32
 put id 4 indx 14 act 14
 put id 4 indx 15 act 33
+swap indexA 15 indexB 33
 swap pidA: 3 pg_idxA: 15 pidB: 4 pg_idxB: 15
 put id 3 indx 15 act 33
 put id 4 indx 15 act 15
 put id 4 indx 16 act 35
+swap indexA 16 indexB 35
 swap pidA: 0 pg_idxA: 16 pidB: 4 pg_idxB: 16
 put id 0 indx 16 act 35
 put id 4 indx 16 act 16
-malloc 1024 call my_pthread.c:113 0x7f8d76c7c001
+malloc 1024 call my_pthread.c:113 0x7f250e702001
+swap indexA 16 indexB 35
 swap pidA: 4 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 4 indx 16 act 35
 put id 0 indx 16 act 16
 thread create 0
 id: 0 malloc call my_pthread.c:29
-malloc 2 call my_pthread.c:29 0x7f8d76c8cd81
+malloc 2 call my_pthread.c:29 0x7f250e712d81
 id: 0 malloc call datastructs.c:40
-malloc 1 call datastructs.c:40 0x7f8d76c8ce01
+malloc 1 call datastructs.c:40 0x7f250e712e01
 id: 0 malloc call datastructs.c:152
-malloc 1 call datastructs.c:152 0x7f8d76c8ce41
+malloc 1 call datastructs.c:152 0x7f250e712e41
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8ce81
+malloc 1 call datastructs.c:33 0x7f250e712e81
 id: 5 malloc call my_pthread.c:113
 put id 5 indx 0 act 36
+swap indexA 0 indexB 36
 swap pidA: 4 pg_idxA: 0 pidB: 5 pg_idxB: 0
 put id 4 indx 0 act 36
 put id 5 indx 0 act 0
 put id 5 indx 1 act 37
+swap indexA 1 indexB 37
 swap pidA: 4 pg_idxA: 1 pidB: 5 pg_idxB: 1
 put id 4 indx 1 act 37
 put id 5 indx 1 act 1
 put id 5 indx 2 act 38
+swap indexA 2 indexB 38
 swap pidA: 4 pg_idxA: 2 pidB: 5 pg_idxB: 2
 put id 4 indx 2 act 38
 put id 5 indx 2 act 2
 put id 5 indx 3 act 39
+swap indexA 3 indexB 39
 swap pidA: 4 pg_idxA: 3 pidB: 5 pg_idxB: 3
 put id 4 indx 3 act 39
 put id 5 indx 3 act 3
 put id 5 indx 4 act 40
+swap indexA 4 indexB 40
 swap pidA: 4 pg_idxA: 4 pidB: 5 pg_idxB: 4
 put id 4 indx 4 act 40
 put id 5 indx 4 act 4
 put id 5 indx 5 act 41
+swap indexA 5 indexB 41
 swap pidA: 4 pg_idxA: 5 pidB: 5 pg_idxB: 5
 put id 4 indx 5 act 41
 put id 5 indx 5 act 5
 put id 5 indx 6 act 42
+swap indexA 6 indexB 42
 swap pidA: 4 pg_idxA: 6 pidB: 5 pg_idxB: 6
 put id 4 indx 6 act 42
 put id 5 indx 6 act 6
 put id 5 indx 7 act 43
+swap indexA 7 indexB 43
 swap pidA: 4 pg_idxA: 7 pidB: 5 pg_idxB: 7
 put id 4 indx 7 act 43
 put id 5 indx 7 act 7
 put id 5 indx 8 act 44
+swap indexA 8 indexB 44
 swap pidA: 4 pg_idxA: 8 pidB: 5 pg_idxB: 8
 put id 4 indx 8 act 44
 put id 5 indx 8 act 8
 put id 5 indx 9 act 45
+swap indexA 9 indexB 45
 swap pidA: 4 pg_idxA: 9 pidB: 5 pg_idxB: 9
 put id 4 indx 9 act 45
 put id 5 indx 9 act 9
 put id 5 indx 10 act 46
+swap indexA 10 indexB 46
 swap pidA: 4 pg_idxA: 10 pidB: 5 pg_idxB: 10
 put id 4 indx 10 act 46
 put id 5 indx 10 act 10
 put id 5 indx 11 act 47
+swap indexA 11 indexB 47
 swap pidA: 4 pg_idxA: 11 pidB: 5 pg_idxB: 11
 put id 4 indx 11 act 47
 put id 5 indx 11 act 11
 put id 5 indx 12 act 48
+swap indexA 12 indexB 48
 swap pidA: 4 pg_idxA: 12 pidB: 5 pg_idxB: 12
 put id 4 indx 12 act 48
 put id 5 indx 12 act 12
 put id 5 indx 13 act 49
+swap indexA 13 indexB 49
 swap pidA: 4 pg_idxA: 13 pidB: 5 pg_idxB: 13
 put id 4 indx 13 act 49
 put id 5 indx 13 act 13
 put id 5 indx 14 act 50
+swap indexA 14 indexB 50
 swap pidA: 4 pg_idxA: 14 pidB: 5 pg_idxB: 14
 put id 4 indx 14 act 50
 put id 5 indx 14 act 14
 put id 5 indx 15 act 51
+swap indexA 15 indexB 51
 swap pidA: 4 pg_idxA: 15 pidB: 5 pg_idxB: 15
 put id 4 indx 15 act 51
 put id 5 indx 15 act 15
 put id 5 indx 16 act 52
+swap indexA 16 indexB 52
 swap pidA: 0 pg_idxA: 16 pidB: 5 pg_idxB: 16
 put id 0 indx 16 act 52
 put id 5 indx 16 act 16
-malloc 1024 call my_pthread.c:113 0x7f8d76c7c001
+malloc 1024 call my_pthread.c:113 0x7f250e702001
+swap indexA 16 indexB 52
 swap pidA: 5 pg_idxA: 16 pidB: 0 pg_idxB: 16
 put id 5 indx 16 act 52
 put id 0 indx 16 act 16
 thread create 1
 thread joining 0
 id: 0 malloc call datastructs.c:33
-malloc 1 call datastructs.c:33 0x7f8d76c8cec1
-id: 3 free call my_scheduler.c:38 0x7f8d76c7c001
+malloc 1 call datastructs.c:33 0x7f250e712ec1
+id: 3 free call my_scheduler.c:38 0x7f250e702001
+swap indexA 0 indexB 17
 swap pidA: 5 pg_idxA: 0 pidB: 3 pg_idxB: 0
 put id 5 indx 0 act 17
 put id 3 indx 0 act 0
+swap indexA 16 indexB 34
 swap pidA: 0 pg_idxA: 16 pidB: 3 pg_idxB: 16
 put id 0 indx 16 act 34
 put id 3 indx 16 act 16
@@ -966,99 +1177,117 @@ delete id 3 indx 15 act 3
 delete id 3 indx 16 act 3
 delete id 3 indx 17 act 3
 free done
+swap indexA 16 indexB 34
 swap pidA: -1 pg_idxA: 16383 pidB: 0 pg_idxB: 16
 put id 0 indx 16 act 16
-id: 0 free call datastructs.c:80 0x7f8d76c8ca81
+id: 0 free call datastructs.c:80 0x7f250e712a81
 free done
 swap stack
+swap indexA 0 indexB 36
 swap pidA: 3 pg_idxA: 0 pidB: -1 pg_idxB: 16383
 put id 3 indx 0 act 36
+swap indexA 1 indexB 37
 swap pidA: 5 pg_idxA: 1 pidB: 4 pg_idxB: 1
 put id 5 indx 1 act 37
 put id 4 indx 1 act 1
+swap indexA 2 indexB 38
 swap pidA: 5 pg_idxA: 2 pidB: 4 pg_idxB: 2
 put id 5 indx 2 act 38
 put id 4 indx 2 act 2
+swap indexA 3 indexB 39
 swap pidA: 5 pg_idxA: 3 pidB: 4 pg_idxB: 3
 put id 5 indx 3 act 39
 put id 4 indx 3 act 3
+swap indexA 4 indexB 40
 swap pidA: 5 pg_idxA: 4 pidB: 4 pg_idxB: 4
 put id 5 indx 4 act 40
 put id 4 indx 4 act 4
+swap indexA 5 indexB 41
 swap pidA: 5 pg_idxA: 5 pidB: 4 pg_idxB: 5
 put id 5 indx 5 act 41
 put id 4 indx 5 act 5
+swap indexA 6 indexB 42
 swap pidA: 5 pg_idxA: 6 pidB: 4 pg_idxB: 6
 put id 5 indx 6 act 42
 put id 4 indx 6 act 6
+swap indexA 7 indexB 43
 swap pidA: 5 pg_idxA: 7 pidB: 4 pg_idxB: 7
 put id 5 indx 7 act 43
 put id 4 indx 7 act 7
+swap indexA 8 indexB 44
 swap pidA: 5 pg_idxA: 8 pidB: 4 pg_idxB: 8
 put id 5 indx 8 act 44
 put id 4 indx 8 act 8
+swap indexA 9 indexB 45
 swap pidA: 5 pg_idxA: 9 pidB: 4 pg_idxB: 9
 put id 5 indx 9 act 45
 put id 4 indx 9 act 9
+swap indexA 10 indexB 46
 swap pidA: 5 pg_idxA: 10 pidB: 4 pg_idxB: 10
 put id 5 indx 10 act 46
 put id 4 indx 10 act 10
+swap indexA 11 indexB 47
 swap pidA: 5 pg_idxA: 11 pidB: 4 pg_idxB: 11
 put id 5 indx 11 act 47
 put id 4 indx 11 act 11
+swap indexA 12 indexB 48
 swap pidA: 5 pg_idxA: 12 pidB: 4 pg_idxB: 12
 put id 5 indx 12 act 48
 put id 4 indx 12 act 12
+swap indexA 13 indexB 49
 swap pidA: 5 pg_idxA: 13 pidB: 4 pg_idxB: 13
 put id 5 indx 13 act 49
 put id 4 indx 13 act 13
+swap indexA 14 indexB 50
 swap pidA: 5 pg_idxA: 14 pidB: 4 pg_idxB: 14
 put id 5 indx 14 act 50
 put id 4 indx 14 act 14
+swap indexA 15 indexB 51
 swap pidA: 5 pg_idxA: 15 pidB: 4 pg_idxB: 15
 put id 5 indx 15 act 51
 put id 4 indx 15 act 15
 done
 malloc(2) 2
 id: 4 malloc call malloc_test.c:124
+swap indexA 0 indexB 36
 swap pidA: -1 pg_idxA: 16383 pidB: 3 pg_idxB: 0
 put id 3 indx 0 act 0
 after swap id: 4 pos: 0 act: 36
 BIG ERROR: PAGE METADATA OUT OF SYNC (1)
-id: 4 pos: 0 act: 36 0x7f8d76c7c000
-id: 0 free call datastructs.c:177 0x7f8d76c8cd01
+id: 4 pos: 0 act: 36 0x7f250e702000
+id: 0 free call datastructs.c:177 0x7f250e712d01
 free done
-id: 0 free call datastructs.c:179 0x7f8d76c8cbc1
+id: 0 free call datastructs.c:179 0x7f250e712bc1
 free done
-id: 0 free call datastructs.c:179 0x7f8d76c8cb81
+id: 0 free call datastructs.c:179 0x7f250e712b81
 free done
-id: 0 free call datastructs.c:177 0x7f8d76c8cc01
+id: 0 free call datastructs.c:177 0x7f250e712c01
 free done
-id: 0 free call datastructs.c:179 0x7f8d76c8ccc1
+id: 0 free call datastructs.c:179 0x7f250e712cc1
 free done
-id: 0 free call datastructs.c:177 0x7f8d76c8ca01
+id: 0 free call datastructs.c:177 0x7f250e712a01
 free done
-id: 0 free call datastructs.c:179 0x7f8d76c8cac1
+id: 0 free call datastructs.c:179 0x7f250e712ac1
 free done
-id: 0 free call datastructs.c:177 0x7f8d76c8cd81
+id: 0 free call datastructs.c:177 0x7f250e712d81
 free done
-id: 0 free call datastructs.c:179 0x7f8d76c8ce41
+id: 0 free call datastructs.c:179 0x7f250e712e41
 free done
-id: 0 free call datastructs.c:184 0x7f8d76c8c1c1
+id: 0 free call datastructs.c:184 0x7f250e7121c1
 free done
-id: 0 free call datastructs.c:185 0x7f8d76c8c181
+id: 0 free call datastructs.c:185 0x7f250e712181
 free done
-id: 0 free call datastructs.c:80 0x7f8d76c8cc81
+id: 0 free call datastructs.c:80 0x7f250e712c81
 free done
-id: 0 free call datastructs.c:96 0x7f8d76c8ce81
+id: 0 free call datastructs.c:96 0x7f250e712e81
 free done
-id: 0 free call datastructs.c:100 0x7f8d76c8c041
+id: 0 free call datastructs.c:100 0x7f250e712041
 free done
-id: 0 free call datastructs.c:100 0x7f8d76c8c081
+id: 0 free call datastructs.c:100 0x7f250e712081
 free done
-id: 0 free call datastructs.c:100 0x7f8d76c8c0c1
+id: 0 free call datastructs.c:100 0x7f250e7120c1
 free done
-id: 0 free call datastructs.c:100 0x7f8d76c8c101
+id: 0 free call datastructs.c:100 0x7f250e712101
 free done
-id: 0 free call datastructs.c:100 0x7f8d76c8c141
+id: 0 free call datastructs.c:100 0x7f250e712141
 free done
