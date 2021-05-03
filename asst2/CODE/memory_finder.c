@@ -44,6 +44,7 @@ void* fetch_blank_page(my_pthread_t curr_id, int position) {
     if (!pg_block_occupied(page)) {
       pg_write_pagedata(page, curr_id, OCC, NOT_OVF, position, 1);
       ht_put(ht_space,curr_id,(ht_key)position, (ht_val)i);
+      *num_free_pages -= 1;
 //      mprotect(mem_space + page_size*position, page_size, PROT_READ | PROT_WRITE);
       if (position != i) {
 //        mprotect(mem_space + page_size * i, page_size, PROT_READ | PROT_WRITE);
@@ -116,22 +117,53 @@ void* segment_allocate(size_t size, my_pthread_t curr_id) {
         ++pages_to_check;
         last_seg -= num_segments;
       }
+
+      int next_access_needed =  ((curr_seg_num + segments_reqd + 1)%num_segments == 0 
+		      && space > segments_reqd);// will need to access next page as well
+      for (int i = 1; i <= pages_to_check; ++i) {
+	if (ht_get(ht_space,curr_id,curr_page_num + i) == HT_NULL_VAL) {
+      	 	if (next_access_needed && ht_get(ht_space, curr_id, curr_page_num + 
+		    	    (curr_seg_num +segments_reqd + 1)/num_segments) == HT_NULL_VAL) {
+		       if ( pages_to_check-(i-1)+1 > *num_free_pages) return NULL;
+		       break;
+		}
+		else {
+			if (pages_to_check - (i-1) > *num_free_pages) return NULL;
+			break;
+		}
+	}
+	if (pages_to_check == i && next_access_needed) {
+		if (ht_get(ht_space, curr_id, curr_page_num + (curr_seg_num +
+			    segments_reqd + 1)/num_segments) == HT_NULL_VAL) {
+			if ( 1 > *num_free_pages) return NULL;	
+			break;
+		}
+	}
+      }
+
       for (int i = 1; i <= pages_to_check; ++i) {
         if (ht_get(ht_space,curr_id,curr_page_num + i) == HT_NULL_VAL)
-          // TODO: release fetched pages if we don't have enough memory for
           //  whole alloc
-          if (fetch_blank_page(curr_id,curr_page_num + i) == NULL) return NULL;
+          if (fetch_blank_page(curr_id,curr_page_num + i) == NULL) {
+    		printf("BIG ERROR: NUM FREE PAGES WRONG (1)\n");
+		    exit(1);
+//		  return NULL;
+	  }
       }
-      if ((curr_seg_num + segments_reqd + 1)%num_segments == 0 &&
-      space > segments_reqd) { // will need to access next page as well
+
+      if (next_access_needed) { // will need to access next page as well
         if (ht_get(ht_space, curr_id, curr_page_num + (curr_seg_num +
         segments_reqd + 1)/num_segments) == HT_NULL_VAL) {
-          // TODO: release fetched pages if we don't have enough memory for
           //  whole alloc
           if (fetch_blank_page(curr_id, curr_page_num + (curr_seg_num +
-          segments_reqd + 1)/num_segments) == NULL) return NULL;
+          segments_reqd + 1)/num_segments) == NULL) {
+    		printf("BIG ERROR: NUM FREE PAGES WRONG (1)\n");
+		    exit(1);
+		  //return NULL;
+	  }
         }
       }
+      printf("malloc num free %d\n", *num_free_pages);
       return dm_allocate_block(curr_id, curr_page_num, curr_seg_num, space,
                      segments_reqd);
     }
@@ -288,10 +320,12 @@ int free_ptr(void* p, my_pthread_t curr_id) {
         pg_write_pagedata((pagedata*)myblock + actual, -1, NOT_OCC,
                           NOT_OVF, -1, 1);
         ht_delete(ht_space, curr_id, (ht_key)free_page_num);
+        *num_free_pages += 1;
       }
       ++free_page_num;
       space -= num_segments;
     }
+    printf("free num free %d\n", *num_free_pages);
     return 0;
   } else { // nooooo we didn't find it
     return 2;

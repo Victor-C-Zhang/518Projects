@@ -110,6 +110,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		scheduler_tcb->has_allocation = 0;
 		main_tcb = scheduler_tcb + 1;
 		main_tcb->has_allocation = 0;
+		num_free_pages = (short*) (main_tcb+1);
+		*num_free_pages = num_pages;
 
 		mem_space = myblock + (pt_space + 1)*page_size;
 		ht_space = (ht_entry*) (mem_space + page_size*num_pages);
