@@ -20,8 +20,10 @@ void swap(int indexA, int indexB){
 	if (indexA == indexB) {return;}
 	pagedata* pdA = (pagedata*)myblock+indexA;
 	pagedata* pdB = (pagedata*)myblock+indexB;
-	ht_put(ht_space, pdA->pid, (ht_key)pg_index(pdA), indexB);
-	ht_put(ht_space, pdB->pid, (ht_key)pg_index(pdB), indexA);
+//	printf("swap pidA: %d pg_idxA: %d pidB: %d pg_idxB: %d\n", pdA->pid,
+//        (ht_key)pg_index(pdA), pdB->pid, (ht_key)pg_index(pdB));
+	if (pdA->pid != -1) ht_put(ht_space, pdA->pid, (ht_key)pg_index(pdA), indexB);
+	if (pdB->pid != -1) ht_put(ht_space, pdB->pid, (ht_key)pg_index(pdB), indexA);
 	pagedata pdTemp;
 	pg_write_pagedata(&pdTemp, pdA->pid, pg_block_occupied(pdA), pg_is_overflow(pdA), pg_index(pdA), pdA->length);
 	pg_write_pagedata(pdA, pdB->pid, pg_block_occupied(pdB), pg_is_overflow(pdB), pg_index(pdB), pdB->length);
@@ -73,7 +75,8 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
   // nothing has been allocated for this thread yet, so allocate "all of
   // memory" for this thread as one big unused chunk
   if (!has_allocations) {
-    if (curr_id == 0) { // never touch stack memory from scheduler
+    if (curr_id == 0 || curr_id == 2) { // never touch stack memory from
+      // scheduler or main
       if (fetch_blank_page(curr_id, (int)stack_page_size) == NULL) return NULL;
       dm_write_metadata((metadata *) mem_space + stack_page_size*page_size, 1,
                         NOT_OCC, LAST);
@@ -88,10 +91,29 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
   // otherwise we will always be able to find page 0 of memory
   int segments_reqd = ((size+1) % SEGMENTSIZE) ? (size+1)/SEGMENTSIZE + 1 :
                       (size+1)/SEGMENTSIZE;
-  int curr_page_num = (curr_id == 0) ? (int)stack_page_size : 0;
+  int curr_page_num = (curr_id == 0 || curr_id == 2) ? (int)stack_page_size : 0;
   int curr_seg_num = 0;
   int space;
+//  ht_val first_page_pos = ht_get(ht_space,curr_id,curr_page_num);
+//  if (first_page_pos != curr_page_num) {
+//    mprotect(mem_space + first_page_pos*page_size, page_size, PROT_READ |
+//                                                     PROT_WRITE);
+//    swap(curr_page_num, first_page_pos);
+//    mprotect(mem_space + first_page_pos*page_size, page_size, PROT_NONE);
+//  }
+
   while (curr_page_num < num_pages) { // try to find a space
+    ht_val page_pos = ht_get(ht_space,curr_id,curr_page_num);
+//    printf("from finder id: %d pos: %d act: %d\n", curr_id, curr_page_num,
+//           page_pos);
+    if (page_pos != curr_page_num) {
+      mprotect(mem_space + page_pos*page_size, page_size, PROT_READ |
+                                                                PROT_WRITE);
+      swap(curr_page_num, page_pos);
+      mprotect(mem_space + page_pos*page_size, page_size, PROT_NONE);
+      printf("after swap id: %d pos: %d act: %d\n", curr_id, curr_page_num,
+             ht_get(ht_space,curr_id,curr_page_num));
+    }
     metadata* mdata = (metadata*)mem_space + curr_page_num*page_size +
           curr_seg_num*SEGMENTSIZE;
     pagedata* pdata = (pagedata*)myblock + curr_page_num;
@@ -111,19 +133,34 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
         last_seg -= num_segments;
       }
       for (int i = 1; i <= pages_to_check; ++i) {
-        if (ht_get(ht_space,curr_id,curr_page_num + i) == HT_NULL_VAL)
+        int position = curr_page_num + i;
+        ht_val where = ht_get(ht_space,curr_id,position);
+        if (where == HT_NULL_VAL) {
           // TODO: release fetched pages if we don't have enough memory for
           //  whole alloc
           if (fetch_blank_page(curr_id,curr_page_num + i) == NULL) return NULL;
+        } else if (where != position) {
+          mprotect(mem_space + where*page_size, page_size, PROT_READ |
+                                                           PROT_WRITE);
+          swap(position, where);
+          mprotect(mem_space + where*page_size, page_size, PROT_NONE);
+        }
       }
       if ((curr_seg_num + segments_reqd + 1)%num_segments == 0 &&
       space > segments_reqd) { // will need to access next page as well
-        if (ht_get(ht_space, curr_id, curr_page_num + (curr_seg_num +
-        segments_reqd + 1)/num_segments) == HT_NULL_VAL) {
+        int position = curr_page_num + (curr_seg_num + segments_reqd +
+        1) / num_segments;
+        ht_val where = ht_get(ht_space, curr_id, position);
+        if (where == HT_NULL_VAL) {
           // TODO: release fetched pages if we don't have enough memory for
           //  whole alloc
-          if (fetch_blank_page(curr_id, curr_page_num + (curr_seg_num +
-          segments_reqd + 1)/num_segments) == NULL) return NULL;
+          if (fetch_blank_page(curr_id, position) == NULL)
+            return NULL;
+        } else if (where != position) {
+          mprotect(mem_space + where*page_size, page_size, PROT_READ |
+          PROT_WRITE);
+          swap(position, where);
+          mprotect(mem_space + where*page_size, page_size, PROT_NONE);
         }
       }
       return dm_allocate_block(curr_id, curr_page_num, curr_seg_num, space,
@@ -177,7 +214,7 @@ int free_ptr(void* p, my_pthread_t curr_id, int has_allocation) {
   // nothing has been allocated for this thread yet, so it must be a bad pointer
   if (!has_allocation) return 2;
 
-  int curr_page_num = (curr_id == 0) ? (int)stack_page_size : 0;
+  int curr_page_num = (curr_id == 0 || curr_id == 2) ? (int)stack_page_size : 0;
   int curr_seg_num = 0;
   int prev_page_num = -1;
   int prev_seg_num = -1;
@@ -185,6 +222,15 @@ int free_ptr(void* p, my_pthread_t curr_id, int has_allocation) {
 
   if ((pointer-mem_space)%SEGMENTSIZE) return 2; // this should point to the
   // beginning of a block
+
+  // ensure first page is in the right place
+  ht_val first_page_pos = ht_get(ht_space,curr_id,curr_page_num);
+  if (first_page_pos != curr_page_num) {
+    mprotect(mem_space + first_page_pos*page_size, page_size, PROT_READ |
+                                                              PROT_WRITE);
+    swap(curr_page_num, first_page_pos);
+    mprotect(mem_space + first_page_pos*page_size, page_size, PROT_NONE);
+  }
 
   while (mem_space + curr_page_num*page_size + curr_seg_num*SEGMENTSIZE < pointer) {
     metadata* mdata = (metadata*)mem_space + curr_page_num*page_size +

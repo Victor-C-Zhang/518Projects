@@ -48,8 +48,6 @@ void schedule() {
       // multiple interrupt cycles
       --(old_thread->cycles_left);
       insert_head(ready_q[curr_prio], old_thread);
-      // TODO: make sure this doesn't segfault. Make sure old_thread.context
-      //  can be read by putting all contexts into "global" memory
       swapcontext(scheduler_context, old_thread->context);
       goto START_SCHED;
     }
@@ -145,8 +143,7 @@ void run_maintenance() {
 
 void free_data() {
   if (prev_done != NULL) {
-//     free(prev_done);
-   mydeallocate(prev_done, __FILE__, __LINE__, STACKDESREQ);
+    mydeallocate(prev_done, __FILE__, __LINE__, STACKDESREQ);
   }
   enter_mem_manager(0);
   free_map(all_threads);

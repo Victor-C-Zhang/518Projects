@@ -189,7 +189,7 @@ void* TEST_thread_func_swap3(void* i) {
 
 void TEST_thread_swap( void*(f(void*))) {
 
-  int len = 2;
+  int len = 3;
   pthread_t other[len];
   void* ret_val[len]; 
   for (int i = 0; i < len; i++) {
@@ -199,7 +199,6 @@ void TEST_thread_swap( void*(f(void*))) {
   
   for (int i=0; i < len; i++) {
     printf("thread joining %d\n", i);
-    printf("%d\n", initScheduler);
     pthread_join(other[i], &ret_val[i]);
     printf("thread joined %d\n", i);
   }

@@ -192,7 +192,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
     mm_contextarr = (ucontext_t*) (myblock + (pt_space + stack_page_size + 1) * page_size);
     scheduler_context = mm_contextarr;
     main_tcb->context = &mm_contextarr[2];
-    getcontext(&mm_contextarr[2]);
+//    getcontext(&mm_contextarr[2]);
     mem_space = myblock + (pt_space + stack_page_size + 1 + pages_for_contexts) * page_size;
 
 		ht_space = (ht_entry*) (mem_space + page_size*num_pages);

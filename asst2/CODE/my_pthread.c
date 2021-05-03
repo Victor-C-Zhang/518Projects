@@ -48,7 +48,6 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
   if (s_initScheduler) { // spin up a new scheduler
-    printf("initing scheduler\n");
     atexit(free_data);
     initScheduler = 0;
     s_initScheduler = 0;
@@ -81,13 +80,11 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     // populate tcb for current thread
     main_tcb->id = ++tid; //no thread has 0 tid
 //    getcontext(main_tcb->context);
-    printf("here\n");
     main_tcb->ret_val = NULL;
     main_tcb->status = READY;
     main_tcb->priority = 0;
     main_tcb->cycles_left = 0;
     main_tcb->acq_locks = 0;
-    printf("initing main tcb\n");
     main_tcb->waited_on = create_list();
     put(all_threads, main_tcb->id, main_tcb);
     // add current thread to ready queue head (must be head for execution to continue!)
@@ -111,7 +108,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     my_pthread_t prev_id = enter_mem_manager(0);
     tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
     put(all_threads, new_thread->id, new_thread);
-    insert_head(ready_q[0], new_thread);
+    insert_ready_q( new_thread, 0);
     stack_creat_id = new_thread->id;
     new_thread->context->uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, STACKREQ);
     makecontext(new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
