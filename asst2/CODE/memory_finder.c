@@ -163,7 +163,6 @@ void* segment_allocate(size_t size, my_pthread_t curr_id) {
 	  }
         }
       }
-      printf("malloc num free %d\n", *num_free_pages);
       return dm_allocate_block(curr_id, curr_page_num, curr_seg_num, space,
                      segments_reqd);
     }
@@ -325,7 +324,6 @@ int free_ptr(void* p, my_pthread_t curr_id) {
       ++free_page_num;
       space -= num_segments;
     }
-    printf("free num free %d\n", *num_free_pages);
     return 0;
   } else { // nooooo we didn't find it
     return 2;
