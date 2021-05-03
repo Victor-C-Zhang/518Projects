@@ -13,7 +13,7 @@ int main() {
 //  TEST_get_put_delete();
 
 //  TEST_malloc_thread_create_join();
-//  TEST_malloc_directmapping();
+  TEST_malloc_directmapping();
   TEST_malloc_directmapping1();
 
 //  int throwaway = -1000;
