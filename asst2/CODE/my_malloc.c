@@ -31,10 +31,11 @@ void printMemory() {
 	printf("<----------------------MEMORY---------------------->\n");
 	int ovf_len = 0;
 	int i = 0;
-	while (i < num_pages){
+  int j = 0;
+  while (i < num_pages){
 //	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
-		int j = ovf_len;
+//		int j = ovf_len;
 		if (!pg_block_occupied(pdata)) { 
 			i++; 
 			continue; 
@@ -47,17 +48,27 @@ void printMemory() {
 			uint8_t curr_seg = dm_block_size(mdata);
 			int isOcc = dm_block_occupied(mdata);
 			int isLast = dm_is_last_segment(mdata);
-			printf("page[%d][%d]\tpid %d\tp_ind %d\t ovf %d\t ovflen %d: %p %d %d %hu\n",
+      if (pg_is_overflow(pdata) && isLast) --curr_seg;
+      printf("page[%d][%d]\tpid %d\tp_ind %d\t ovf %d\t ovflen %d: %p %d %d %hu\n",
 					i, j, pdata->pid, pg_index(pdata), pg_is_overflow(pdata), pdata->length, mdata, isOcc, isLast, curr_seg);
-			j+=curr_seg;	
 			if (isLast) {
-				j = num_segments;
-				if (pg_is_overflow(pdata)) ovf_len=curr_seg;
-				else ovf_len = 0;
+        printf("--------------------PAGE--------------------\n");
+        if (pg_is_overflow(pdata)) {
+				  i += pdata->length;
+				  j += curr_seg;
+				  if (j >= num_segments) {
+				    ++i;
+				    j %= num_segments;
+				  }
+				} else {
+          ++i;
+          j = 0;
+        }
+        break;
+			} else {
+			  j += curr_seg;
 			}
 		}
-		if (ovf_len) i+=(pdata->length-1);
-		else { i++; }
 	}
 	printf("</---------------------MEMORY---------------------->\n");
 }
@@ -96,11 +107,9 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 
 		// init tcbs for main, scheduler
 		scheduler_tcb = (tcb*)(myblock + pt_space * page_size);
-		scheduler_tcb->first_page_index = UINT16_MAX;
-		scheduler_tcb->last_page_index = -1;
+		scheduler_tcb->has_allocation = 0;
 		main_tcb = scheduler_tcb + 1;
-		main_tcb->first_page_index = UINT16_MAX;
-		main_tcb->last_page_index = -1;
+		main_tcb->has_allocation = 0;
 
 		mem_space = myblock + (pt_space + 1)*page_size;
 		ht_space = (ht_entry*) (mem_space + page_size*num_pages);
