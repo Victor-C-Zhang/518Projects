@@ -44,17 +44,19 @@ void* fetch_blank_page(my_pthread_t curr_id, int position) {
     if (!pg_block_occupied(page)) {
       pg_write_pagedata(page, curr_id, OCC, NOT_OVF, position, 1);
       ht_put(ht_space,curr_id,(ht_key)position, (ht_val)i);
-//      mprotect(mem_space + page_size*position, page_size, PROT_READ | PROT_WRITE);
+      mprotect(mem_space + page_size*position, page_size, PROT_READ | PROT_WRITE);
       if (position != i) {
-//        mprotect(mem_space + page_size * i, page_size, PROT_READ | PROT_WRITE);
+        mprotect(mem_space + page_size * i, page_size, PROT_READ | PROT_WRITE);
         swap(position, i);
-//        mprotect(mem_space + page_size*i, page_size, PROT_NONE);
+        mprotect(mem_space + page_size*i, page_size, PROT_NONE);
       }
       return mem_space + page_size*position;
     }
   }
   // no free pages in memory, return NULL
   // TODO: check for free disk pages
+  fprintf(stderr, "Could not find any free pages to fetch\n");
+  exit(1);
   return NULL;
 }
 
@@ -63,38 +65,30 @@ void* fetch_blank_page(my_pthread_t curr_id, int position) {
  * @param size			size of malloc request in bytes
  * @param curr_id		process making request
  */
-void* segment_allocate(size_t size, my_pthread_t curr_id) {
+void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
   // goes from page 0 to end of memory seeing if there's a free space.
   // if so, make sure all pages in the range are allocated, then allocate the
   // memory
 
-  int has_allocation;
-  if (curr_id == 0) { //scheduler
-    has_allocation = scheduler_tcb->has_allocation;
-  } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
-    has_allocation = main_tcb->has_allocation;
-  } else {
-    has_allocation = ((tcb*)get(all_threads, curr_id))->has_allocation;
-  }
-
   // nothing has been allocated for this thread yet, so allocate "all of
   // memory" for this thread as one big unused chunk
-  if (!has_allocation) {
-    if (curr_id == 0) { //scheduler
-      scheduler_tcb->has_allocation = 1;
-    } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
-      main_tcb->has_allocation = 1;
+  if (!has_allocations) {
+    if (curr_id == 0) { // never touch stack memory from scheduler
+      if (fetch_blank_page(curr_id, (int)stack_page_size) == NULL) return NULL;
+      dm_write_metadata((metadata *) mem_space + stack_page_size*page_size, 1,
+                        NOT_OCC, LAST);
+      pg_write_pagedata((pagedata *) myblock + stack_page_size, curr_id, OCC,
+                        OVF, stack_page_size,num_pages - stack_page_size);
     } else {
-      ((tcb*)get(all_threads,curr_id))->has_allocation = 1;
+      if (fetch_blank_page(curr_id, 0) == NULL) return NULL;
+      dm_write_metadata((metadata *) mem_space, 1, NOT_OCC, LAST);
+      pg_write_pagedata((pagedata *) myblock, curr_id, OCC, OVF, 0, num_pages);
     }
-    if (fetch_blank_page(curr_id, 0) == NULL) return NULL;
-    dm_write_metadata((metadata*) mem_space, 1, NOT_OCC, LAST);
-    pg_write_pagedata((pagedata*) myblock, curr_id, OCC, OVF, 0, num_pages);
   }
   // otherwise we will always be able to find page 0 of memory
   int segments_reqd = ((size+1) % SEGMENTSIZE) ? (size+1)/SEGMENTSIZE + 1 :
                       (size+1)/SEGMENTSIZE;
-  int curr_page_num = 0;
+  int curr_page_num = (curr_id == 0) ? (int)stack_page_size : 0;
   int curr_seg_num = 0;
   int space;
   while (curr_page_num < num_pages) { // try to find a space
@@ -140,6 +134,8 @@ void* segment_allocate(size_t size, my_pthread_t curr_id) {
     curr_seg_num %= num_segments;
   }
   // we've gone through all of memory without finding a space
+  fprintf(stderr, "No free spaces in memory\n");
+  exit(1);
   return NULL;
 }
 
@@ -172,25 +168,16 @@ curr_seg_num, metadata* mdata, pagedata* pdata, int space) {
  * @param p			pointer to free
  * @param curr_id		process owning the pointer
  */
-int free_ptr(void* p, my_pthread_t curr_id) {
+int free_ptr(void* p, my_pthread_t curr_id, int has_allocation) {
   // search memory for the pointer
   // keep track of previous pointer
   // meld together if necessary
   // if we go past pointer location without finding the pointer, oops
 
-  int has_allocation;
-  if (curr_id == 0) { //scheduler
-    has_allocation = scheduler_tcb->has_allocation;
-  } else if (curr_id == 2) { // main TODO: what if we aren't running in a scheduler?
-    has_allocation = main_tcb->has_allocation;
-  } else {
-    has_allocation = ((tcb*)get(all_threads, curr_id))->has_allocation;
-  }
-
   // nothing has been allocated for this thread yet, so it must be a bad pointer
   if (!has_allocation) return 2;
 
-  int curr_page_num = 0;
+  int curr_page_num = (curr_id == 0) ? (int)stack_page_size : 0;
   int curr_seg_num = 0;
   int prev_page_num = -1;
   int prev_seg_num = -1;
@@ -280,6 +267,8 @@ int free_ptr(void* p, my_pthread_t curr_id) {
       free_seg_num = curr_seg_num;
       free_page_num = curr_page_num;
     }
+
+    // release free pages
     space -= num_segments - free_seg_num;
     ++free_page_num; // cannot de-alloc first page no matter what we do
     while (space >= num_segments) {
@@ -288,6 +277,7 @@ int free_ptr(void* p, my_pthread_t curr_id) {
         pg_write_pagedata((pagedata*)myblock + actual, -1, NOT_OCC,
                           NOT_OVF, -1, 1);
         ht_delete(ht_space, curr_id, (ht_key)free_page_num);
+        mprotect(mem_space + page_size*actual, page_size, PROT_NONE);
       }
       ++free_page_num;
       space -= num_segments;

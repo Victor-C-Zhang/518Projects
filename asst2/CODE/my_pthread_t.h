@@ -29,7 +29,7 @@ typedef pid_t my_pthread_t;
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
   int locked; //0 FREE, 1 LOCKED
-  uint32_t owner;
+  my_pthread_t owner;
   int hoisted_priority; // priority assigned to this mutex. Updated when any thread blocks on this mutex.
   int holding_thread_priority; //priority of the thread which acquired lock
 } my_pthread_mutex_t;
