@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <errno.h>
 #include "my_malloc.h"
 #include "global_vals.h"
 #include "my_pthread_t.h"
@@ -223,6 +224,22 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
       fprintf(stderr, "Problem allocating swapfile size.\n");
       strerror(alloc_res);
       exit(1);
+    }
+    // zero the swapfile before we use it
+    char zeroes[page_size];
+    memset(zeroes, 0, page_size);
+    for (int i = resident_pages; i < num_pages; ++i) {
+      lseek(swapfile, (i - resident_pages)*page_size, SEEK_SET);
+      int to_write = page_size;
+      int num_write = 0;
+      while (to_write > 0) {
+        num_write = write(swapfile, zeroes + num_write, to_write);
+        if (num_write == -1) {
+          strerror(errno);
+          exit(1);
+        }
+      to_write -= num_write;
+      }
     }
 
 		memset(&segh, 0, sizeof(struct sigaction));
