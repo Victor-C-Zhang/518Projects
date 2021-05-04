@@ -20,6 +20,7 @@ void swap(int indexA, int indexB){
 	if (indexA == indexB) {return;}
 	pagedata* pdA = (pagedata*)myblock+indexA;
 	pagedata* pdB = (pagedata*)myblock+indexB;
+//	printf("swap indexA %d indexB %d\n", indexA, indexB);
 //	printf("swap pidA: %d pg_idxA: %d pidB: %d pg_idxB: %d\n", pdA->pid,
 //        (ht_key)pg_index(pdA), pdB->pid, (ht_key)pg_index(pdB));
 	if (pdA->pid != -1) ht_put(ht_space, pdA->pid, (ht_key)pg_index(pdA), indexB);
@@ -44,7 +45,7 @@ void* fetch_blank_page(my_pthread_t curr_id, int position) {
   for (int i = 0; i < num_pages; ++i) {
     pagedata* page = (pagedata*)myblock + i;
     if (!pg_block_occupied(page)) {
-      pg_write_pagedata(page, curr_id, OCC, NOT_OVF, position, 1);
+     pg_write_pagedata(page, curr_id, OCC, NOT_OVF, position, 1);
       ht_put(ht_space,curr_id,(ht_key)position, (ht_val)i);
       mprotect(mem_space + page_size*position, page_size, PROT_READ | PROT_WRITE);
       if (position != i) {
@@ -111,8 +112,8 @@ void* segment_allocate(size_t size, my_pthread_t curr_id, int has_allocations) {
                                                                 PROT_WRITE);
       swap(curr_page_num, page_pos);
       mprotect(mem_space + page_pos*page_size, page_size, PROT_NONE);
-      printf("after swap id: %d pos: %d act: %d\n", curr_id, curr_page_num,
-             ht_get(ht_space,curr_id,curr_page_num));
+  //    printf("after swap id: %d pos: %d act: %d\n", curr_id, curr_page_num,
+    //         ht_get(ht_space,curr_id,curr_page_num));
     }
     metadata* mdata = (metadata*)mem_space + curr_page_num*page_size +
           curr_seg_num*SEGMENTSIZE;
@@ -319,7 +320,8 @@ int free_ptr(void* p, my_pthread_t curr_id, int has_allocation) {
     ++free_page_num; // cannot de-alloc first page no matter what we do
     while (space >= num_segments) {
       ht_val actual = ht_get(ht_space, curr_id, free_page_num);
-      if (actual != HT_NULL_VAL) {
+      if (actual != HT_NULL_VAL && (((pagedata*)myblock+actual)->pid == curr_id)) {
+//	printf("del pid %d indx %d act %d\n", curr_id, free_page_num, actual);
         pg_write_pagedata((pagedata*)myblock + actual, -1, NOT_OCC,
                           NOT_OVF, -1, 1);
         ht_delete(ht_space, curr_id, (ht_key)free_page_num);

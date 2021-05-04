@@ -189,7 +189,7 @@ void* TEST_thread_func_swap3(void* i) {
 
 void TEST_thread_swap( void*(f(void*))) {
 
-  int len = 3;
+  int len = 2;
   pthread_t other[len];
   void* ret_val[len]; 
   for (int i = 0; i < len; i++) {

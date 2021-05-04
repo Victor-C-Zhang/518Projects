@@ -18,10 +18,10 @@ int main() {
   int throwaway = -1000;
 //  TEST_thread_func_swap2(&throwaway);
 
-//  printf("swap1\n");
+  printf("swap1\n");
   TEST_thread_swap(TEST_thread_func_swap1);
-//  printf("swap2\n");
+  printf("swap2\n");
   TEST_thread_swap(TEST_thread_func_swap2);
-//  printf("swap3\n");
+  printf("swap3\n");
   TEST_thread_swap(TEST_thread_func_swap3);
 }

@@ -223,6 +223,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
     ((tcb*)get(all_threads, curr_id))->has_allocation = 1;
   }
   prev_id = enter_mem_manager(curr_id);
+// printf("id: %d malloc call %s:%d\n", curr_id, file, line);
   void* p = segment_allocate(size, curr_id, has_allocations);
 //	printf("malloc %d call %s:%d %p\n", size / SEGMENTSIZE+1, file, line, p);
 //	printMemory();
@@ -279,9 +280,10 @@ void mydeallocate(void* p, char* file, int line, int threadreq) {
   }
   prev_id = enter_mem_manager(curr_id);
 
-//	printf("free call %s:%d %p\n", file, line, p);
+//	printf("id: %d free call %s:%d %p\n",curr_id, file, line, p);
 	int d = free_ptr(p, curr_id, has_allocations);
-//	printMemory();
+//	printf("free done\n");
+	//	printMemory();
 	if (d == 1) {
 		error_message("Cannot free an already free pointer!", file, line);
 	}
