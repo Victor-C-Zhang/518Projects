@@ -10,7 +10,7 @@ INSTALLDIR  = ./build
 .PHONY: all
 all: $(OUTPUTFILE)
 
-$(OUTPUTFILE): datastructs.o my_scheduler.o my_pthread.o my_malloc.o test_runner.o open_address_ht.o direct_mapping.o memory_finder.o
+$(OUTPUTFILE): datastructs.o my_scheduler.o my_pthread.o my_malloc.o open_address_ht.o direct_mapping.o memory_finder.o
 	ar ru $@ $^
 	ranlib $@
 

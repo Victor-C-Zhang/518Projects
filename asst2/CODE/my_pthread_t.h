@@ -35,6 +35,8 @@ typedef struct my_pthread_mutex_t {
 } my_pthread_mutex_t;
 
 #define pthread_mutex_t my_pthread_mutex_t
+#define pthread_attr_t void*
+#define pthread_mutexattr_t void*
 #define pthread_create(a,b,c,d) my_pthread_create((my_pthread_t*)a,b,c,d)
 #define pthread_yield() my_pthread_yield()
 #define pthread_exit(x) my_pthread_exit(x)
