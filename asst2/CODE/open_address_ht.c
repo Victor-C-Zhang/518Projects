@@ -10,8 +10,8 @@ int lin_hash(pid_t pid, ht_key key) {
 
 void createTable(void* ptr) {
   MEM_LIMIT = MEMSIZE/sysconf(_SC_PAGESIZE);
-  VIRT_LIMIT = MEMSIZE*3/sysconf(_SC_PAGESIZE);
-  HT_SIZE = MEM_LIMIT;
+  VIRT_LIMIT = VIRTSIZE/sysconf(_SC_PAGESIZE);
+  HT_SIZE = VIRT_LIMIT;
   ht_entry* table = ptr;
   for (int i = 0; i < HT_SIZE; ++i) {
     table[i] = (ht_entry) {0,HT_NULL_KEY, HT_NULL_VAL};

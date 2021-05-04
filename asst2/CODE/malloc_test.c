@@ -49,43 +49,43 @@ void TEST_malloc_directmapping() {
   char* ptrs[5]; 
   for (int i = 0 ; i < 5; i++) { 
     char* p = (char*) myallocate(5*sizeof(char), __FILE__, __LINE__, THREADREQ);
-    strcpy(p,"help"); 
+//    strcpy(p,"help");
     ptrs[i] = p;
-    printMemory();
+ //   printMemory();
   }
   char* t1 = myallocate(59*64 - 1, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
   char* t2 = myallocate(5, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
   char* t3 = myallocate(64*64 - 2, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
   char* t4 = myallocate(64*64*25 + 64*12, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
 
   // hacky workaround, but this isn't indicative of any error, just how
   // printMemory works
   for (int i = 0 ; i < 5; i++) {
     mprotect(mem_space, page_size, PROT_READ | PROT_WRITE);
-    printf("%s\n", ptrs[i]);
+//    printf("%s\n", ptrs[i]);
     mydeallocate(ptrs[i], __FILE__, __LINE__, THREADREQ);
-    printMemory();
+//    printMemory();
   }
   mydeallocate(t3, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
   char* t5 = myallocate(64*32 - 2, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
   char* t6 = myallocate(3*64 + 12, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+//  printMemory();
   mydeallocate(t5, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
   mydeallocate(t1, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
   mydeallocate(t2, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
   mydeallocate(t4, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
   mydeallocate(t6, __FILE__, __LINE__, THREADREQ);
-  printMemory();
+ // printMemory();
 //  char fault_exit = *t2;
 //  printf("Segfault test 2 failed\n");
 }

@@ -2,7 +2,9 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
+#include <fcntl.h>
 #include "my_malloc.h"
 #include "global_vals.h"
 #include "my_pthread_t.h"
@@ -25,7 +27,6 @@ static void handler(int sig, siginfo_t* si, void* unused) {
   int pagenum = ((char*)si->si_addr - mem_space)/page_size;
   my_pthread_t curr_id = mm_curr_id;
   if (curr_id == -1) {
-    // TODO
     fprintf(stderr, "my_malloc line 29: Curr_id is -1\n");
   }
   ht_val actual_loc = ht_get(ht_space, curr_id, pagenum);
@@ -37,9 +38,11 @@ static void handler(int sig, siginfo_t* si, void* unused) {
   // find and swap requested page
   mprotect(mem_space + page_size*pagenum, page_size, PROT_READ | PROT_WRITE);
   if (actual_loc != pagenum) {
-    mprotect(mem_space + page_size*actual_loc, page_size, PROT_READ | PROT_WRITE);
+    if (actual_loc < resident_pages)
+      mprotect(mem_space + page_size*actual_loc, page_size, PROT_READ | PROT_WRITE);
     swap(pagenum, actual_loc);
-    mprotect(mem_space + page_size*actual_loc, page_size, PROT_NONE);
+    if (actual_loc < resident_pages)
+      mprotect(mem_space + page_size*actual_loc, page_size, PROT_NONE);
   }
 }
 
@@ -54,12 +57,12 @@ void error_message(char* error, char* file, int line) {
 //followed by 0 for free or any other integer for occupied
 //followed by the size of user data
 void printMemory() {
-  mprotect(mem_space, page_size*num_pages, PROT_READ | PROT_WRITE);
+  mprotect(mem_space, page_size*resident_pages, PROT_READ | PROT_WRITE);
 	printf("<----------------------MEMORY---------------------->\n");
 	int ovf_len = 0;
 	int i = 0;
   int j = 0;
-  while (i < num_pages){
+  while (i < resident_pages){
 //	for (int i = 0; i < num_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
 //		int j = ovf_len;
@@ -98,37 +101,48 @@ void printMemory() {
 		}
 	}
 	printf("</---------------------MEMORY---------------------->\n");
-  mprotect(mem_space, page_size*num_pages, PROT_NONE);
+  mprotect(mem_space, page_size*resident_pages, PROT_NONE);
 
 }
 
+void close_swapfile() {
+  close(swapfile);
+}
+
 void initialize_pages() {
-	for (int i = 0; i < num_pages; i++) {
+	for (int i = 0; i < resident_pages; i++) {
 		pagedata* pdata = (pagedata*)myblock + i;	
 		pg_write_pagedata(pdata, -1, NOT_OCC, NOT_OVF, -1, 1);
 		metadata* mdata = (metadata*) ((uint8_t*)mem_space + i*page_size);
 		dm_write_metadata(mdata, num_segments, 0, 1);
 	}
+  for (int i = resident_pages; i < num_pages; ++i) {
+    pagedata* pdata = (pagedata*)myblock + i;
+    pg_write_pagedata(pdata, -1, NOT_OCC, NOT_OVF, -1, 1);
+    metadata writ;
+    dm_write_metadata(&writ, num_segments, 0, 1);
+    lseek(swapfile, (i - resident_pages)*page_size, SEEK_SET);
+    write(swapfile, &writ, 1);
+  }
 }
 
 my_pthread_t enter_mem_manager(my_pthread_t curr_id) {
   mm_in_memory_manager = 1;
   my_pthread_t retval = mm_curr_id;
   mm_curr_id = curr_id;
-  mprotect(mem_space + stack_page_size*page_size, (num_pages -
+  mprotect(mem_space + stack_page_size*page_size, (resident_pages -
   stack_page_size)*page_size, PROT_NONE);
   return retval;
 }
 
 void exit_mem_manager(my_pthread_t prev_id) {
   mm_in_memory_manager = 0;
-  mprotect(mem_space + stack_page_size*page_size, (num_pages -
+  mprotect(mem_space + stack_page_size*page_size, (resident_pages -
   stack_page_size)*page_size, PROT_NONE);
   mprotect(mem_space, page_size*stack_page_size, PROT_READ | PROT_WRITE);
   mm_curr_id = prev_id;
 }
 
-//TODO: update num_pages in phase c
 void* myallocate(size_t size, char* file, int line, int threadreq){
 	enter_scheduler(&timer_pause_dump);
 	my_pthread_t temp_id = enter_mem_manager(0);
@@ -160,6 +174,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
   }
 
 	if (firstMalloc == 1) { // first time using malloc
+    atexit(close_swapfile);
 	  // init runtime constants
 	  // calculate size of necessary metadata/auxiliary structures
 		myblock = memalign(sysconf( _SC_PAGESIZE), MEMSIZE);
@@ -169,10 +184,8 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
                       (STACKSIZE+1)/page_size + 1 : (STACKSIZE+1)/page_size;
     pages_for_contexts = 200;
     max_thread_id = (int)(pages_for_contexts*page_size)/(int)sizeof(ucontext_t) - 1;
-    // TODO: update for phase C
-    num_pages = (MEMSIZE - page_size * (stack_page_size + 1 + pages_for_contexts))
+    num_pages = (VIRTSIZE - page_size * (stack_page_size + 1 + pages_for_contexts))
           / (page_size + sizeof(pagedata) + sizeof(ht_entry));
-
     // leave space for
     // - (inverted) PT
     // - scheduler stack
@@ -194,10 +207,23 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
     main_tcb->context = &mm_contextarr[2];
 //    getcontext(&mm_contextarr[2]);
     mem_space = myblock + (pt_space + stack_page_size + 1 + pages_for_contexts) * page_size;
-
-		ht_space = (ht_entry*) (mem_space + page_size*num_pages);
+    resident_pages = ((myblock + MEMSIZE) - mem_space)/page_size -
+          (VIRTSIZE/page_size)*sizeof(ht_entry)/page_size;
+		ht_space = (ht_entry*) (mem_space + page_size*resident_pages);
 		createTable(ht_space);
 		initialize_pages();
+
+    swapfile = open("./SWAPFILE", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    if (swapfile == -1) {
+      fprintf(stderr, "Could not create swapfile. Aborting\n");
+      exit(1);
+    }
+    int alloc_res = posix_fallocate(swapfile, 0, 16*(1<<20));
+    if (alloc_res != 0) {
+      fprintf(stderr, "Problem allocating swapfile size.\n");
+      strerror(alloc_res);
+      exit(1);
+    }
 
 		memset(&segh, 0, sizeof(struct sigaction));
 		sigemptyset(&segh.sa_mask);
@@ -207,7 +233,7 @@ void* myallocate(size_t size, char* file, int line, int threadreq){
 		sigaction(SIGSEGV, &segh, NULL);
 
 		// protect all pages
-    mprotect(mem_space, page_size*num_pages, PROT_NONE);
+    mprotect(mem_space, page_size*resident_pages, PROT_NONE);
 
 		firstMalloc = 0;
 	}

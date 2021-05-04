@@ -4,6 +4,7 @@
 #include "my_scheduler.h"
 
 #define MEMSIZE 8388608
+#define VIRTSIZE 25165824
 #define SEGMENTSIZE 64
 
 int MEM_LIMIT;
@@ -13,6 +14,7 @@ int HT_SIZE;
 // runtime constants
 size_t page_size;  //size of page given to each process
 int num_pages; //number of pages available for user
+int resident_pages; // number of pages resident in memory
 int num_segments; //number of segments within a page available for allocation
 uint32_t stack_page_size; // number of pages consumed by a stack
 int pages_for_contexts; // number of pages we segregate for contexts
@@ -28,6 +30,8 @@ ucontext_t* mm_contextarr; // (array) space for context structs to live in
 
 char* mem_space; //user space, after page table
 OpenAddrHashtable ht_space; //space where our hashtable starts
+
+int swapfile; // file descriptor for swapfile
 
 // global values for segfault handler
 int mm_in_memory_manager; // if we are running an allocation/de-allocation
