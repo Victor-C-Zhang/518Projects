@@ -10,19 +10,25 @@
 #include "my_scheduler.h"
 #include "my_malloc.h"
 #include "global_vals.h"
+#include "memory_finder.h"
 
 static my_pthread_t tid = 0;
 int initScheduler = 1;
+static int s_initScheduler = 1;
 // wraps user-provided func to ensure pthread_exit is called
 void thread_func_wrapper(void* (*function)(void*), void* arg) {
+  void* retval = function(arg);
+  enter_mem_manager(0);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
-  curr_thread->ret_val = function(arg);
+  curr_thread->ret_val = retval;
   my_pthread_exit(curr_thread->ret_val);
 }
 
+// DOESN'T ALLOCATE STACK
 tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   tcb* new_thread = (tcb*) myallocate(sizeof(tcb), __FILE__, __LINE__, LIBRARYREQ);
   new_thread->id = id;
+  new_thread->context = &mm_contextarr[id];
   new_thread->ret_val = NULL;
   new_thread->status= READY;
   new_thread->priority = 0;
@@ -32,29 +38,48 @@ tcb* create_tcb(void* (*function)(void*), void* arg, my_pthread_t id) {
   new_thread->waited_on = create_list();
   new_thread->has_allocation = 0;
 
-  getcontext(&new_thread->context);
-  new_thread->context.uc_stack.ss_size = STACKSIZE;
-  new_thread->context.uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, LIBRARYREQ);
-  sigemptyset(&new_thread->context.uc_sigmask);
-  makecontext(&new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
+  getcontext(new_thread->context);
+  new_thread->context->uc_stack.ss_size = STACKSIZE;
+  sigemptyset(&new_thread->context->uc_sigmask);
 
   return new_thread;
 }
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
-  tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
-  if (initScheduler) { // spin up a new scheduler
+  if (s_initScheduler) { // spin up a new scheduler
     atexit(free_data);
+    initScheduler = 0;
+    s_initScheduler = 0;
+    my_pthread_t prev_id = enter_mem_manager(0);
+
+    // make sure mem manager is inited
+    myallocate(60, __FILE__, __LINE__, LIBRARYREQ);
+    // create statically-allocated space for scheduler to run in
+    getcontext(scheduler_context);
+    scheduler_context->uc_stack.ss_size = STACKSIZE;
+    scheduler_context->uc_stack.ss_sp = sched_stack_ptr_;
+    sigemptyset(&scheduler_context->uc_sigmask);
+    sigaddset(&scheduler_context->uc_sigmask, SIGALRM); // ignore scheduling calls within scheduler
+    makecontext(scheduler_context, (void (*)(void)) schedule, 0);
     for (int i = 0; i < NUM_QUEUES; ++i) {
       ready_q[i] = create_list();
     }
     all_threads = create_map();
     should_maintain = ONE_SECOND/QUANTUM;
     prev_done = NULL;
+
+    tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
+    put(all_threads, new_thread->id, new_thread);
+    insert_head(ready_q[0], new_thread);
+
+    stack_creat_id = new_thread->id;
+    new_thread->context->uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, STACKREQ);
+    makecontext(new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
+    *thread = new_thread->id;
     // populate tcb for current thread
     main_tcb->id = ++tid; //no thread has 0 tid
-    getcontext(&main_tcb->context);
+//    getcontext(main_tcb->context);
     main_tcb->ret_val = NULL;
     main_tcb->status = READY;
     main_tcb->priority = 0;
@@ -62,11 +87,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     main_tcb->acq_locks = 0;
     main_tcb->waited_on = create_list();
     put(all_threads, main_tcb->id, main_tcb);
-    put(all_threads, new_thread->id, new_thread);
-
-    *thread = new_thread->id;
-    // add new thread to ready queue
-    insert_head(ready_q[0], new_thread);
     // add current thread to ready queue head (must be head for execution to continue!)
     insert_head(ready_q[0], main_tcb);
 
@@ -74,19 +94,26 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
     timer_create(CLOCK_THREAD_CPUTIME_ID, NULL, &sig_timer);
 
     // register signal handler for alarms
-    act.sa_sigaction = schedule;
+    act.sa_sigaction = alrm_handler;
     act.sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&act.sa_mask);
     sigaction(SIGALRM, &act, NULL);
 
+    exit_mem_manager(prev_id);
+
     // set timer
     timer_settime(sig_timer, 0, &timer_25ms, NULL);
-    initScheduler = 0;
   } else { // no need to init scheduler, can just add thread normally
     enter_scheduler(&timer_pause_dump);
-    insert_ready_q(new_thread,0);
-    *thread = new_thread->id;
+    my_pthread_t prev_id = enter_mem_manager(0);
+    tcb* new_thread = create_tcb(function,arg,++tid); //no thread has 0 tid
     put(all_threads, new_thread->id, new_thread);
+    insert_ready_q( new_thread, 0);
+    stack_creat_id = new_thread->id;
+    new_thread->context->uc_stack.ss_sp = myallocate(STACKSIZE, __FILE__, __LINE__, STACKREQ);
+    makecontext(new_thread->context, (void (*)(void)) thread_func_wrapper, 2, function, arg);
+    *thread = new_thread->id;
+    exit_mem_manager(prev_id);
     exit_scheduler(&timer_pause_dump);
   }
   return 0;
@@ -96,6 +123,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 /* give CPU pocession to other user level thread_blocks voluntarily */
 int my_pthread_yield() {
   enter_scheduler(&timer_pause_dump);
+  my_pthread_t prev_id = enter_mem_manager(0);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->cycles_left = -1; // tell the scheduler the scheduling is caused
   // by yield
@@ -106,6 +134,7 @@ int my_pthread_yield() {
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
   enter_scheduler(&timer_pause_dump);
+  my_pthread_t prev_id = enter_mem_manager(0);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   curr_thread->ret_val = value_ptr;
   // notify waiting threads
@@ -125,6 +154,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
     return -1;
   }
   enter_scheduler(&timer_pause_dump);
+  my_pthread_t prev_id = enter_mem_manager(0);
   tcb* curr_thread = (tcb*) get_head(ready_q[curr_prio]);
   tcb* t_block = get(all_threads, thread);
   if (t_block == NULL) {
@@ -135,11 +165,13 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
     curr_thread->status = BLOCKED;
     raise(SIGALRM);
   }
+  prev_id = enter_mem_manager(0);
+
   // by this point, t_block will be done
   if (value_ptr != NULL){
     *value_ptr = t_block->ret_val;
   }
-  
+  exit_mem_manager(prev_id);
   return 0;
 }
 
@@ -174,7 +206,7 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
           while (ptr != NULL) {
             tcb *thread = (tcb *) ptr->data;
             if (thread == holding_thread) {
-		insert_ready_q(thread, curr_thread->priority);
+              insert_ready_q(thread, curr_thread->priority);
               if (ptr == ready_q[prio]->head) {
                 ready_q[prio]->head = ptr->next;
               } else {

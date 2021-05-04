@@ -1,7 +1,11 @@
 #include <assert.h>
 #include <math.h>
+#include <sys/mman.h>
 #include "my_scheduler.h"
 #include "my_malloc.h"
+#include "global_vals.h"
+#include "direct_mapping.h"
+#include "memory_finder.h"
 
 void insert_ready_q(tcb* thread, int queue_num) {
   assert(queue_num < NUM_QUEUES);
@@ -14,16 +18,28 @@ void enter_scheduler(struct itimerspec* ovalue) {
 }
 
 void exit_scheduler(struct itimerspec* ovalue) {
+  for (unsigned i = stack_page_size; i < resident_pages; ++i) {
+    if (((pagedata*)myblock)[i].pid == 0)
+      mprotect(mem_space + page_size*i, page_size, PROT_NONE);
+  }
   timer_settime(&sig_timer,0,ovalue,NULL);
 }
 
-void schedule(int sig, siginfo_t* info, void* ucontext) {
+void alrm_handler(int sig, siginfo_t* info, void* ucontext) {
+  enter_mem_manager(0);
+  tcb* old_thread = (tcb*) ready_q[curr_prio]->head->data;
+  swapcontext(old_thread->context, scheduler_context);
+}
+
+void schedule() {
+  START_SCHED:
+  enter_mem_manager(0);
   if (prev_done != NULL) {
-    mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
+    mydeallocate(prev_done, __FILE__, __LINE__, STACKDESREQ);
     prev_done = NULL;
   }
   tcb* old_thread = (tcb*) delete_head(ready_q[curr_prio]);
-  ucontext_t* old_context = &old_thread->context;
+  ucontext_t* old_context = old_thread->context;
   old_thread->last_run = cycles_run;
   ++cycles_run;
   --should_maintain;
@@ -32,7 +48,8 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
       // multiple interrupt cycles
       --(old_thread->cycles_left);
       insert_head(ready_q[curr_prio], old_thread);
-      return;
+      swapcontext(scheduler_context, old_thread->context);
+      goto START_SCHED;
     }
     if (old_thread->cycles_left == -1 || old_thread->acq_locks > 0) { // yield()
       // prio shouldn't change; hoisted prio shouldn't change
@@ -48,6 +65,7 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
 
   } else if (old_thread->status == DONE && old_thread->id != 2) {
     prev_done = old_context->uc_stack.ss_sp;
+    prev_done_id = old_thread->id;
   }
 
   if (should_maintain <= 0) {
@@ -56,11 +74,13 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   }
 
   struct ucontext_t* new_context = NULL;
+  my_pthread_t new_id = -1;
   // pick highest priority task to run
   for (int i = 0; i < NUM_QUEUES; ++i) {
     if (!isEmpty(ready_q[i])) {
       curr_prio = i;
-      new_context = &((tcb*)get_head(ready_q[i]))->context;
+      new_context = ((tcb*)get_head(ready_q[i]))->context;
+      new_id = ((tcb *) get_head(ready_q[i]))->id;
       break;
     }
   }
@@ -71,7 +91,13 @@ void schedule(int sig, siginfo_t* info, void* ucontext) {
   if (new_context == NULL) { // teardown and cleanup
     exit(0);
   }
-  swapcontext(old_context, new_context);
+
+  // protect all data pages and swap stack of new thread
+  mprotect(mem_space, page_size*resident_pages, PROT_NONE);
+  swap_stack(new_id);
+  exit_mem_manager(new_id);
+  swapcontext(scheduler_context, new_context);
+  goto START_SCHED;
 }
 
 /* Uses function
@@ -117,13 +143,33 @@ void run_maintenance() {
 
 void free_data() {
   if (prev_done != NULL) {
-//     free(prev_done);
-   mydeallocate(prev_done, __FILE__, __LINE__, LIBRARYREQ);
+    mydeallocate(prev_done, __FILE__, __LINE__, STACKDESREQ);
   }
+  enter_mem_manager(0);
   free_map(all_threads);
   delete_head(ready_q[curr_prio]);
   for (int i = 0; i < NUM_QUEUES; ++i) {
     free_list(ready_q[i]);
   }
   timer_delete(&sig_timer);
+}
+
+void swap_stack(my_pthread_t new_id) {
+  if (new_id == 2) return;
+  for (int i = 0; i < stack_page_size; ++i) {
+    ht_val new_loc = ht_get(ht_space, new_id, i);
+    if (new_loc == HT_NULL_VAL) {
+      fprintf(stderr, "Could not find stack page %d of thread %d!\n", i,
+              new_id);
+      exit(1);
+    }
+    // unprotect relevant stack pages
+    mprotect(mem_space + page_size*i, page_size, PROT_READ | PROT_WRITE);
+    if (new_loc < resident_pages)
+      mprotect(mem_space + page_size*new_loc, page_size, PROT_READ | PROT_WRITE);
+    swap(i,new_loc);
+    // protect old stack page
+    if (new_loc < resident_pages)
+      mprotect(mem_space + page_size*new_loc, page_size, PROT_NONE);
+  }
 }

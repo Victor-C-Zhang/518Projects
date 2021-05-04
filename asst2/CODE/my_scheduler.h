@@ -7,7 +7,7 @@
 #include "my_pthread_t.h"
 #include "open_address_ht.h"
 
-#define STACKSIZE 32768
+#define STACKSIZE 65535
 #define QUANTUM 25000000
 #define ONE_SECOND 1000000000
 #define NUM_QUEUES 5
@@ -19,7 +19,7 @@ typedef enum thread_status{READY, DONE, BLOCKED} thread_status;
 /* tcb struct definition */
 typedef struct threadControlBlock {
   my_pthread_t id;
-  ucontext_t context;
+  ucontext_t* context;
   void* ret_val;
   thread_status status;
   int priority; // number from 0 to NUM_QUEUES-1
@@ -47,9 +47,11 @@ struct itimerspec timer_pause_dump;
 struct sigaction act;
 
 ready_q_t* ready_q[NUM_QUEUES]; // ready queue, will be inited when scheduler created
+ucontext_t* scheduler_context; // context that only runs the scheduler in a loop
 int curr_prio; // priority of the currently scheduled thread. should usually
 // be 0.
 void* prev_done; // stack pointer of previously done context
+my_pthread_t prev_done_id; // ID of thread whose stack is to be destroyed
 int in_scheduler; // if scheduler is running
 uint64_t cycles_run; // number of scheduling cycles run so far
 int should_maintain; // run a maintenance cycle once
@@ -63,7 +65,9 @@ hashmap* all_threads; //all threads accessed by ids
 void enter_scheduler(struct itimerspec* ovalue);
 
 /**
- * Resumes the alarm counter. Must be the LAST thing done prior to returning
+ * Protects all scheduler-owned pages.
+ * Resumes the alarm counter.
+ * Must be the LAST thing done prior to returning
  * control to user threads.
  * @param ovalue the itimerspec to resume.
  */
@@ -75,7 +79,13 @@ void exit_scheduler(struct itimerspec* ovalue);
  * Moves thread to end of ready queue.
  * Sets context to head of ready queue.
  */
-void schedule(int sig, siginfo_t* info, void* ucontext);
+void alrm_handler(int sig, siginfo_t* info, void* ucontext);
+
+/**
+ * Utility function that actually does swapping. Will be called from a different
+ * context as user threads, to allow swapping of user memory without issue.
+ */
+void schedule();
 
 /**
  * Decay long-running procs.
@@ -88,6 +98,13 @@ void run_maintenance();
  * @param queue_num the queue to insert to. 0 is highest priority.
  */
 void insert_ready_q(tcb* thread, int queue_num);
+
+/**
+ * Swap in the relevant pages for the stack of the "new" process.
+ * The new process stack will be unprotected. all other pages will retain
+ * their protection status.
+ */
+void swap_stack(my_pthread_t new_id);
 
 /**
  * Utility function to free data structures used by the scheduler. Called during

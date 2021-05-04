@@ -21,6 +21,8 @@ void* dm_allocate_block(my_pthread_t curr_id, int curr_page_num, int
 curr_seg_num, int space, int req_size) {
   if (ht_get(ht_space, curr_id, curr_page_num) != curr_page_num) {
     printf("BIG ERROR: PAGE METADATA OUT OF SYNC (1)\n");
+    printf("id: %d pos: %d act: %d\n", curr_id, curr_page_num, ht_get
+    (ht_space, curr_id, curr_page_num));
     exit(1);
   }
   metadata* curr = (metadata *) mem_space + curr_page_num * page_size +
@@ -72,6 +74,10 @@ curr_seg_num, int space, int req_size) {
   if (ht_get(ht_space, curr_id, space_page_offset + curr_page_num) !=
       curr_page_num + space_page_offset) {
     printf("BIG ERROR: PAGE METADATA OUT OF SYNC (3)\n");
+    printf("id: %d, pos: %d, actual: %d\n", curr_id, curr_page_num +
+    space_page_offset, ht_get(ht_space, curr_id, space_page_offset +
+    curr_page_num));
+
     exit(1);
   }
   if (leftover + ovf_amt < num_segments) { // space takes part of one page
